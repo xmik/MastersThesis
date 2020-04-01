@@ -34,19 +34,145 @@
 \usepackage{graphicx}
 %}}}
 
-\title{Lingwistyczne podsumowania baz danych.\\Inteligentne generowanie streszczeń}
-%\toctitle{Lingwistyczne podsumowania baz danych.Inteligentne\ldots}
+\title{Kubernetes cluster deployment \\ for production environment}
+%\toctitle{Kubernetes cluster deployment for production environment}
 
-\author{Adam Niewiadomski}
-\institute{Instytut Informatyki, Politechnika Łódzka}
-\date{Katowice, 29 stycznia 2010 r.}
+\author{Ewa Czechowska}
+\institute{Technical University of Lodz}
+\date{Łódź, 4th April 2020}
 
 %\begin{frame}{\tableofcontents[currentsection]}
 %\begin{frame}{\tableofcontents[currentsubsection]}
 
 \begin{document}
-
 \maketitle
+
+\section{Topic and study scope}
+\begin{frame}{Trends in IT}%{{{
+\begin{itemize}
+\item Architectural shift {\bfseries from monolith to microservices}
+\item Migration {\bfseries from on-premises services to Cloud Native Applications}
+\item Adoption of {\bfseries Docker containers}
+\item Evolution of the movement: {\bfseries DevOps}
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{Why follow trends?}%{{{
+\begin{center}
+	\begin{tabular}{ | c | c |}
+		\hline
+		{\bfseries Why microservices?} & {\bfseries Why Docker containers?} \\ \hline
+		simpler architecture & portability across clouds \\ \hline
+		reuse an application & limit "works on my machine" \\ \hline
+		less context at once & faster startup times \\ \hline
+		isolated failures &  light-weight \\ \hline
+		\hline
+	\end{tabular}
+	\begin{tabular}{ | c |}
+		\hline
+		 {\bfseries Why cloud?} \\ \hline
+		 scalability \\ \hline
+		 lower upfront infrastructure investment \\ \hline
+		 reliable hardware (SLAs) \\ \hline
+		 efficient utilization of resources \\ \hline
+		\hline
+	\end{tabular}
+\end{center}
+\end{frame}
+%}}}
+
+%make the code architecture less coupled  & more efficient resources utilization & %Potential solutions\\ \hline
+		% make the code architecture less coupled  & more efficient resources utilization & Potential solutions\\ \hline
+
+% \begin{frame}{Why follow trends?}%{{{
+% Why microservices?
+% \begin{itemize}
+% \item to simplify complex applications 
+% \item to put less context into a developer's head
+% \item to be able to easier navigate the failure
+
+% Why migrate to cloud?
+% \begin{itemize}
+% \item to satisfy the need for scalability
+% \item to decrease the upfront infrastructure investment
+% \item to pay only for used infrastructure, not for the allocated part
+% \item to utilize resources in a more efficient way
+% \item to use reliable infrastructure (thanks to e.g. S3 SLA)
+% \end{itemize}
+% \end{frame}
+% %}}}
+
+% \begin{frame}{Why follow these trends?}%{{{
+% Why choose Docker containers instead of virtual machines?
+% \begin{itemize}
+% \item to ensure such a deployment which is portable across infrastructure providers (across clouds)
+% \item to avoid/decrease the frequency of the common problem "works on my machine"
+% \item for faster startup times
+% Docker instances are lighter-weight. To ship an app as a virtual machine image, you have to bake an entire operating system into the image. With a container, only the app itself has to go inside the container. This translates to a less complicated build process, plus the ability to host many more containers on a single physical server.
+% \end{itemize}
+% \end{frame}
+% %}}}
+
+\begin{frame}{Kubernetes is useful}%{{{
+Challenges:
+\begin{itemize}
+	\item How to deploy a microservice if it depends on many other microservices?
+	\item How to satisfy the need for scalability?
+	\item How to ensure repetitive and fast deployments?
+\end{itemize}
+
+Solutions:
+\begin{itemize}
+	\item Use a containers' orchestrator like: Docker-compose, \textbf{Kubernetes}, Mesos, Docker Swarm
+	\item Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Kubernetes is popular}%{{{
+\begin{figure}
+	\includegraphics[width=10cm]{figures/k8s-openstack-survey.png}
+	%\caption{Preferred containers orchestration tools on OpenStack, OpenStack Survey, 2018}
+	\label{fig:k8s-openstack-survey}
+\end{figure}
+\end{frame}
+
+\begin{frame}{Kubernetes is popular}%{{{
+\begin{figure}
+	\includegraphics[width=10cm]{figures/cncf-container-orchestrators.png}
+	%\caption{Preferred container management platforms, CNCF Survey, 2017}
+	\label{fig:cncf-container-orchestrators}
+\end{figure}
+\end{frame}
+
+% \begin{center}
+% \begin{tabular}{| p{0.5\textwidth} | p{0.5\textwidth} |}
+% 	\hline
+% 	{\bfseries Challenges} & {\bfseries Potential solutions} \\ \hline
+% 	How to deploy a microservice if it depends on many other microservices? & Use a containers' orchestrator like: Docker-compose, \textbf{Kubernetes}, Mesos, Docker Swarm \\ \hline
+% 	How to ensure repetitive and fast deployments? & Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems \\ \hline
+% 	How to ensure self-healing of services (e.g. automated restarts) and diminish the number of needed for on-site engineers? &  \\ \hline
+% 	How to satisfy the need for scalability? & Migrate to a public cloud which provides elastic resources; Use orchestrator like \textbf{Kubernetes} \\ \hline
+% 	\hline
+% \end{tabular}
+% \end{center}
+%}}}
+% \begin{frame}{Challenges and potential solutions}%{{{
+% \begin{center}
+% 	\begin{tabular}{ | c | c | }
+% 		\hline
+% 		Challenges & Potential solutions \\ \hline
+% 		How to deploy a microservice if it depends on many other microservices? & Use a containers' orchestrator like: Docker-compose, \textbf{Kubernetes}, Mesos, Docker Swarm \\ \hline
+% 		How to ensure repetitive and fast deployments? & Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems \\ \hline
+% 		How to ensure self-healing of services (e.g. automated restarts) and diminish the number of needed for on-site engineers? &  \\ \hline
+% 		How to satisfy the need for scalability? & Migrate to a public cloud which provides elastic resources; Use orchestrator like \textbf{Kubernetes} \\ \hline
+% 	\end{tabular}
+% \end{center}
+
+% Conclusion: Kubernetes is useful.
+% %}}}
+
+
 \section{Problematyka}
 \begin{frame}{Problematyka}%{{{
 \uncover<1->{
@@ -76,9 +202,6 @@ ilość liczb}}\ldots
 \end{frame}
 
 %\begin{minipage}{0.55\textwidth} \centering {\bfseries {\color{blue}Blisko połowa} pracowników ma {\color{blue}} pensję ok.  $3\,000$}\\ {\footnotesize \em zamiast}\\ {\color{red}$4807$ z $10\,000$} pracowników ma pensję {\color{red}$\geq 2000$} \end{minipage}
-
-
-
 %}}}
 
 \section{Zbiory rozmyte i terminy lingwistyczne}
