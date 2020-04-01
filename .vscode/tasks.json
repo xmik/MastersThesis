@@ -1,8 +1,22 @@
 {
  "version": "2.0.0",
  "tasks": [
+            {
+            "label": "Run pdflatex on conspect",
+            "type": "shell",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "command": "pdflatex",
+            "args": [
+                "-interaction=nonstopmode",
+                "-file-line-error",
+                "conspect-tex/conspect.tex"
+            ]
+        },
        {
-         "label": "Run pdflatex on conspect",
+         "label": "Run pdflatex on presentation",
          "type": "shell",
          "group": {
              "kind": "build",
@@ -12,7 +26,7 @@
          "args": [
              "-interaction=nonstopmode",
              "-file-line-error",
-             "conspect-tex/conspect.tex"
+             "presentation/presentation.tex"
          ]
      },
      {
