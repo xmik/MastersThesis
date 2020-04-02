@@ -50,7 +50,25 @@
 \begin{document}
 \maketitle
 
-\section{Topic and study scope}
+\section{Introduction}
+\subsection{Table of Contents}
+\begin{frame}{Table of Contents}%{{{
+\begin{center}
+\begin{tabular}{@{}  l  l }
+	\begin{figure}
+		\includegraphics[width=5.5cm]{figures/table-of-c1.png}
+		\label{fig:table-of-c1}
+	\end{figure} &
+	\begin{figure}
+		\includegraphics[width=5.5cm]{figures/table-of-c2.png}
+		\label{fig:table-of-c2}
+	\end{figure} \\
+	\end{tabular}
+\end{center}
+\end{frame}
+%}}}
+
+\subsection{Topic and study scope}
 \begin{frame}{Trends in IT}%{{{
 \begin{itemize}
 \item Architectural shift {\bfseries from monolith to microservices}
@@ -58,6 +76,21 @@
 \item Adoption of {\bfseries Docker containers}
 \item Evolution of the movement: {\bfseries DevOps}
 \end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{Docker containers - definition}%{{{
+\begin{itemize}
+\item Docker provides \textbf{a new way of virtualization}
+\item Docker containers offer ready to use, installed, software packages including OS, software dependencies and runtime
+\item Docker allows for quick deployments
+\item \textbf{Virtual machines virtualize hardware, containers virtualize the operating system of a server}
+\end{itemize}
+\begin{figure}
+	\includegraphics[width=6cm]{figures/docker-vs-vms.png}
+	\label{fig:docker-vs-vms}
+	\source{https://docs.docker.com/get-started/}
+\end{figure}
 \end{frame}
 %}}}
 
@@ -133,6 +166,28 @@ Solutions:
 \end{frame}
 %}}}
 
+\begin{frame}{Kubernetes (k8s) - definition}%{{{
+\begin{itemize}
+\item An open-source system for \textbf{automating deployment, scaling, and management of containerized applications}
+\item \textbf{Features}: self-healing, secret and configuration management, service discovery and load balancing, automated containers placing based on their resource requirements
+\item Can be \textbf{deployed on many clouds} (AWS, GCP, Azure) or \textbf{on-premises} - unified experience
+\item Bases \textbf{15 years of experience} of running production workloads at Google
+\item A \textbf{CNCF} graduated project
+\end{itemize}
+
+\begin{tabular}{  c c }
+	\begin{figure}
+		\includegraphics[width=3cm]{figures/kubernetes-logo.png}
+		\label{fig:kubernetes-logo}
+	\end{figure} &
+	\begin{figure}
+		\includegraphics[width=3cm]{figures/cncf-logo.png}
+		\label{fig:cncf-logo}
+	\end{figure} 
+\end{tabular}
+\end{frame}
+%}}}
+
 \begin{frame}{Kubernetes is popular}%{{{
 \begin{figure}
 	\includegraphics[width=10cm]{figures/k8s-openstack-survey.png}
@@ -183,57 +238,94 @@ Solutions:
 
 \begin{frame}{Why compare two deployment methods on AWS?}%{{{
 	\begin{itemize}
-		\item Kubernetes cluster deployment methods are described by blog posts and tutorials - not formal literature, but practitioners use them
-		\item Comparison of two deployment methods on AWS is not found in literature
-		\item AWS is a stable cloud with long history
-		\item AWS is popular among practitioners
+		\item Kubernetes cluster deployment methods are described by blog posts and tutorials - not formal literature, but \textbf{practitioners use them}
+		\item Comparison of two deployment methods on AWS is \textbf{not found in literature}
+		\item \textbf{AWS is a stable cloud} with long history
+		\item \textbf{AWS is popular} among practitioners
 	\end{itemize}
 \end{frame}
 %}}}
 
-\begin{frame}{Why deploy Kubernetes in production?}%{{{
+\begin{frame}{Why focus on production environment?}%{{{
 	\begin{itemize}
-		\item To facilitate others plan such deployment better by letting them be aware upfront of its limitations and known issues
-		\item To apply a practical approach
-		\item Such a topic was not handled by academic literature
+		\item To \textbf{facilitate others plan such deployment better} by letting them be aware upfront of its limitations and known issues
+		\item To \textbf{apply a practical approach}
+		\item Such a topic was \textbf{not handled by academic literature} (however usage of Kubernetes cluster in production environment was handled)
+		\item To conform to the \textbf{DevOps best practices} and \textbf{Agile methodology}
 	\end{itemize}
 \end{frame}
 %}}}
 
-\begin{frame}{Study scope}%{{{
+\subsection{About this study}
+\begin{frame}{Aims and research methodology}%{{{
 	\begin{itemize}
-		\item todo
+		\item Theoretical approach
+		\begin{itemize}
+			\item Search of existing literature (academic and other)
+			\item Gather requirements of deployment in production environment
+			\item Describe two deployment methods of Kubernetes cluster on AWS
+		\end{itemize}
+		\item Practical approach
+		\begin{itemize}
+			\item Perform the two deployments while conforming to the DevOps best practices and Agile methodology
+			\item Compare these methods in the context of production environment
+			\item List encountered problems and try to provide solutions
+		\end{itemize}
 	\end{itemize}
 \end{frame}
 %}}}
 
-% \begin{center}
-% \begin{tabular}{| p{0.5\textwidth} | p{0.5\textwidth} |}
-% 	\hline
-% 	{\bfseries Challenges} & {\bfseries Potential solutions} \\ \hline
-% 	How to deploy a microservice if it depends on many other microservices? & Use a containers' orchestrator like: Docker-compose, \textbf{Kubernetes}, Mesos, Docker Swarm \\ \hline
-% 	How to ensure repetitive and fast deployments? & Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems \\ \hline
-% 	How to ensure self-healing of services (e.g. automated restarts) and diminish the number of needed for on-site engineers? &  \\ \hline
-% 	How to satisfy the need for scalability? & Migrate to a public cloud which provides elastic resources; Use orchestrator like \textbf{Kubernetes} \\ \hline
-% 	\hline
-% \end{tabular}
-% \end{center}
+\begin{frame}{Related work - Formal literature}%{{{
+\begin{itemize}
+	\item book: Hideto, Saito, et. al. \textit{DevOps with Kubernetes}. - many clouds, practical approach, some production environment elements
+	\item book: Sayfan, Gigi, et. al. \textit{Mastering Kubernetes}. - many clouds, practical approach, some production environment elements
+	\item book: Burns, Brendan, et. al. \textit{Kubernetes Up \& Running}. - many clouds, practical approach, no production environment elements
+	\item book: Arundel, John, et. al. \textit{Cloud Native DevOps with Kubernetes}. - many clouds, theoretical approach
+	\item book: Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker, and Kubernetes}. - AWS, practical approach
+	\item papers acknowledge using Kubernetes, but do not explain how it was deployed
+\end{itemize}
+\end{frame}
 %}}}
-% \begin{frame}{Challenges and potential solutions}%{{{
-% \begin{center}
-% 	\begin{tabular}{ | c | c | }
-% 		\hline
-% 		Challenges & Potential solutions \\ \hline
-% 		How to deploy a microservice if it depends on many other microservices? & Use a containers' orchestrator like: Docker-compose, \textbf{Kubernetes}, Mesos, Docker Swarm \\ \hline
-% 		How to ensure repetitive and fast deployments? & Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems \\ \hline
-% 		How to ensure self-healing of services (e.g. automated restarts) and diminish the number of needed for on-site engineers? &  \\ \hline
-% 		How to satisfy the need for scalability? & Migrate to a public cloud which provides elastic resources; Use orchestrator like \textbf{Kubernetes} \\ \hline
-% 	\end{tabular}
-% \end{center}
 
-% Conclusion: Kubernetes is useful.
-% %}}}
+\begin{frame}{Related work - Informal literature}%{{{
+\begin{itemize}
+	\item \textbf{Many clouds compared, only theoretical approach}:
+	\begin{itemize}
+		\item https://platform9.com/blog/kubernetes-cloud-services-comparing-gke-eks-and-aks/
+		\item https://logz.io/blog/kubernetes-as-a-service-gke-aks-eks/
+		\item https://www.presslabs.com/blog/kubernetes-cloud-providers-2019/
+	\end{itemize}
+	\item \textbf{Practical approach, one method described}:
+	\begin{itemize}
+		\item https://eksctl.io/
+		\item https://gruntwork.io/guides/kubernetes/how-to-deploy-production-grade-kubernetes-cluster-aws
+		\item https://github.com/kelseyhightower/kubernetes-the-hard-way
+		\item https://logz.io/blog/amazon-eks-cluster/
+	\end{itemize}
+\end{itemize}
+\end{frame}
+%}}}
 
+\section {Definitions}
+\subsection{Production deployment requirements}
+\begin{frame}{Production deployment requirements}%{{{
+\begin{itemize}
+	\item \textbf{Many clouds compared, only theoretical approach}:
+	\begin{itemize}
+		\item https://platform9.com/blog/kubernetes-cloud-services-comparing-gke-eks-and-aks/
+		\item https://logz.io/blog/kubernetes-as-a-service-gke-aks-eks/
+		\item https://www.presslabs.com/blog/kubernetes-cloud-providers-2019/
+	\end{itemize}
+	\item \textbf{Practical approach, one method described}:
+	\begin{itemize}
+		\item https://eksctl.io/
+		\item https://gruntwork.io/guides/kubernetes/how-to-deploy-production-grade-kubernetes-cluster-aws
+		\item https://github.com/kelseyhightower/kubernetes-the-hard-way
+		\item https://logz.io/blog/amazon-eks-cluster/
+	\end{itemize}
+\end{itemize}
+\end{frame}
+%}}}
 
 \section{Problematyka}
 \begin{frame}{Problematyka}%{{{
