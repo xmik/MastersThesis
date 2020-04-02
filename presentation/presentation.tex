@@ -32,6 +32,9 @@
 \usepackage{txfonts}
 \usepackage{array}
 \usepackage{graphicx}
+\usepackage{caption}
+\newcommand{\source}[1]{\caption*{Source: {#1}} }
+
 %}}}
 
 \title{Kubernetes cluster deployment \\ for production environment}
@@ -128,22 +131,81 @@ Solutions:
 	\item Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems
 \end{itemize}
 \end{frame}
+%}}}
 
 \begin{frame}{Kubernetes is popular}%{{{
 \begin{figure}
 	\includegraphics[width=10cm]{figures/k8s-openstack-survey.png}
 	%\caption{Preferred containers orchestration tools on OpenStack, OpenStack Survey, 2018}
 	\label{fig:k8s-openstack-survey}
+	\caption{Source: OpenStack Survey, 2018}
+	\source{OpenStack Survey, 2018}
 \end{figure}
 \end{frame}
+%}}}
 
 \begin{frame}{Kubernetes is popular}%{{{
 \begin{figure}
-	\includegraphics[width=10cm]{figures/cncf-container-orchestrators.png}
+	\includegraphics[width=8cm]{figures/cncf-container-orchestrators.png}
 	%\caption{Preferred container management platforms, CNCF Survey, 2017}
 	\label{fig:cncf-container-orchestrators}
+	\source{Source: CNCF Survey, 2017}
 \end{figure}
 \end{frame}
+%}}}
+
+\begin{frame}{Kubernetes is used in production environment}%{{{
+\begin{figure}
+	\includegraphics[width=10cm]{figures/cncf-k8s-used-in-production.png}
+	\label{fig:cncf-k8s-used-in-production}
+	\source{Source: CNCF Survey, 2019}
+\end{figure}
+\end{frame}
+%}}}
+
+\begin{frame}{Kubernetes is used by NASA in production environment}%{{{
+	\begin{figure}
+		\includegraphics[width=8cm]{figures/k8s-used-by-nasa.png}
+		\label{fig:k8s-used-by-nasa}
+		\source{Fundamentals of effective cloud management for the new NASA Astrophysics Data System, 2019}
+	\end{figure}
+\end{frame}
+%}}}
+
+\begin{frame}{Many available methods of Kubernetes cluster deployment}%{{{
+\begin{figure}
+\includegraphics[width=8cm]{figures/cncf-k8s-deployment-methods.png}
+\label{fig:cncf-k8s-deployment-methods}
+\source{CNCF Survey, 2019}
+\end{figure}
+\end{frame}
+%}}}
+
+\begin{frame}{Why compare two deployment methods on AWS?}%{{{
+	\begin{itemize}
+		\item Kubernetes cluster deployment methods are described by blog posts and tutorials - not formal literature, but practitioners use them
+		\item Comparison of two deployment methods on AWS is not found in literature
+		\item AWS is a stable cloud with long history
+		\item AWS is popular among practitioners
+	\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{Why deploy Kubernetes in production?}%{{{
+	\begin{itemize}
+		\item To facilitate others plan such deployment better by letting them be aware upfront of its limitations and known issues
+		\item To apply a practical approach
+		\item Such a topic was not handled by academic literature
+	\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{Study scope}%{{{
+	\begin{itemize}
+		\item todo
+	\end{itemize}
+\end{frame}
+%}}}
 
 % \begin{center}
 % \begin{tabular}{| p{0.5\textwidth} | p{0.5\textwidth} |}
