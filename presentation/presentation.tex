@@ -23,7 +23,6 @@
 \newcommand{\clm}{\mbox{\textnormal{clm}}
 }
 
-\usepackage{polski}%{{{
 \usepackage[utf8]{inputenc}
 \usepackage{amssymb}
 \usepackage{graphicx} %for eps graphics
@@ -35,13 +34,11 @@
 \usepackage{caption}
 \newcommand{\source}[1]{\caption*{Source: {#1}} }
 
-%}}}
-
 \title{Kubernetes cluster deployment \\ for production environment}
 %\toctitle{Kubernetes cluster deployment for production environment}
 
 \author{Ewa Czechowska}
-\institute{Technical University of Lodz}
+\institute{Lodz University of Technology}
 \date{Łódź, 4th April 2020}
 
 %\begin{frame}{\tableofcontents[currentsection]}
@@ -102,7 +99,7 @@
 		simpler architecture & portability across clouds \\ \hline
 		reuse an application & limit "works on my machine" \\ \hline
 		less context at once & faster startup times \\ \hline
-		isolated failures &  light-weight \\ \hline
+		isolated failures &  light-weight \\ 
 		\hline
 	\end{tabular}
 	\begin{tabular}{ | c |}
@@ -111,7 +108,7 @@
 		 scalability \\ \hline
 		 lower upfront infrastructure investment \\ \hline
 		 reliable hardware (SLAs) \\ \hline
-		 efficient utilization of resources \\ \hline
+		 efficient utilization of resources \\ 
 		\hline
 	\end{tabular}
 \end{center}
@@ -150,7 +147,7 @@
 % \end{frame}
 % %}}}
 
-\begin{frame}{Kubernetes is useful}%{{{
+\begin{frame}{Why Kubernetes? It is useful}%{{{
 Challenges:
 \begin{itemize}
 	\item How to deploy a microservice if it depends on many other microservices?
@@ -188,23 +185,23 @@ Solutions:
 \end{frame}
 %}}}
 
-\begin{frame}{Kubernetes is popular}%{{{
+\begin{frame}{Why Kubernetes? It is popular}%{{{
 \begin{figure}
 	\includegraphics[width=10cm]{figures/k8s-openstack-survey.png}
 	%\caption{Preferred containers orchestration tools on OpenStack, OpenStack Survey, 2018}
 	\label{fig:k8s-openstack-survey}
-	\caption{Source: OpenStack Survey, 2018}
+	%\caption{Source: OpenStack Survey, 2018}
 	\source{OpenStack Survey, 2018}
 \end{figure}
 \end{frame}
 %}}}
 
-\begin{frame}{Kubernetes is popular}%{{{
+\begin{frame}{Why Kubernetes? It is popular}%{{{
 \begin{figure}
 	\includegraphics[width=8cm]{figures/cncf-container-orchestrators.png}
 	%\caption{Preferred container management platforms, CNCF Survey, 2017}
 	\label{fig:cncf-container-orchestrators}
-	\source{Source: CNCF Survey, 2017}
+	\source{CNCF Survey, 2017}
 \end{figure}
 \end{frame}
 %}}}
@@ -213,21 +210,21 @@ Solutions:
 \begin{figure}
 	\includegraphics[width=10cm]{figures/cncf-k8s-used-in-production.png}
 	\label{fig:cncf-k8s-used-in-production}
-	\source{Source: CNCF Survey, 2019}
+	\source{CNCF Survey, 2019}
 \end{figure}
 \end{frame}
 %}}}
 
 \begin{frame}{Kubernetes is used by NASA in production environment}%{{{
 	\begin{figure}
-		\includegraphics[width=8cm]{figures/k8s-used-by-nasa.png}
+		\includegraphics[width=6cm]{figures/k8s-used-by-nasa.png}
 		\label{fig:k8s-used-by-nasa}
 		\source{Fundamentals of effective cloud management for the new NASA Astrophysics Data System, 2019}
 	\end{figure}
 \end{frame}
 %}}}
 
-\begin{frame}{Many available methods of Kubernetes cluster deployment}%{{{
+\begin{frame}{Methods how to deploy a Kubernetes cluster}%{{{
 \begin{figure}
 \includegraphics[width=8cm]{figures/cncf-k8s-deployment-methods.png}
 \label{fig:cncf-k8s-deployment-methods}
@@ -239,7 +236,7 @@ Solutions:
 \begin{frame}{Why compare two deployment methods on AWS?}%{{{
 	\begin{itemize}
 		\item Kubernetes cluster deployment methods are described by blog posts and tutorials - not formal literature, but \textbf{practitioners use them}
-		\item Comparison of two deployment methods on AWS is \textbf{not found in literature}
+		\item Comparison of two deployment methods on AWS is \textbf{not found in literature} (however usage of Kubernetes cluster in production environment was handled)
 		\item \textbf{AWS is a stable cloud} with long history
 		\item \textbf{AWS is popular} among practitioners
 	\end{itemize}
@@ -250,7 +247,6 @@ Solutions:
 	\begin{itemize}
 		\item To \textbf{facilitate others plan such deployment better} by letting them be aware upfront of its limitations and known issues
 		\item To \textbf{apply a practical approach}
-		\item Such a topic was \textbf{not handled by academic literature} (however usage of Kubernetes cluster in production environment was handled)
 		\item To conform to the \textbf{DevOps best practices} and \textbf{Agile methodology}
 	\end{itemize}
 \end{frame}
@@ -277,12 +273,15 @@ Solutions:
 
 \begin{frame}{Related work - Formal literature}%{{{
 \begin{itemize}
-	\item book: Hideto, Saito, et. al. \textit{DevOps with Kubernetes}. - many clouds, practical approach, some production environment elements
-	\item book: Sayfan, Gigi, et. al. \textit{Mastering Kubernetes}. - many clouds, practical approach, some production environment elements
-	\item book: Burns, Brendan, et. al. \textit{Kubernetes Up \& Running}. - many clouds, practical approach, no production environment elements
-	\item book: Arundel, John, et. al. \textit{Cloud Native DevOps with Kubernetes}. - many clouds, theoretical approach
-	\item book: Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker, and Kubernetes}. - AWS, practical approach
-	\item papers acknowledge using Kubernetes, but do not explain how it was deployed
+	\item Concern many clouds, practical approach, some production environment elements:
+	\begin{itemize}
+		\item \textbf{book}: Hideto, Saito, et. al. \textit{DevOps with Kubernetes}
+		\item \textbf{book}: Sayfan, Gigi, et. al. \textit{Mastering Kubernetes}
+	\end{itemize}
+	\item \textbf{book}: Burns, Brendan, et. al. \textit{Kubernetes Up \& Running}. - many clouds, practical approach, no production environment elements
+	\item \textbf{book}: Arundel, John, et. al. \textit{Cloud Native DevOps with Kubernetes}. - many clouds, theoretical approach
+	\item \textbf{book}: Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker, and Kubernetes}. - AWS, practical approach
+	\item \textbf{papers} acknowledge using Kubernetes, but do not explain details of its deployment
 \end{itemize}
 \end{frame}
 %}}}
@@ -309,296 +308,251 @@ Solutions:
 \section {Definitions}
 \subsection{Production deployment requirements}
 \begin{frame}{Production deployment requirements}%{{{
-\begin{itemize}
-	\item \textbf{Many clouds compared, only theoretical approach}:
-	\begin{itemize}
-		\item https://platform9.com/blog/kubernetes-cloud-services-comparing-gke-eks-and-aks/
-		\item https://logz.io/blog/kubernetes-as-a-service-gke-aks-eks/
-		\item https://www.presslabs.com/blog/kubernetes-cloud-providers-2019/
-	\end{itemize}
-	\item \textbf{Practical approach, one method described}:
-	\begin{itemize}
-		\item https://eksctl.io/
-		\item https://gruntwork.io/guides/kubernetes/how-to-deploy-production-grade-kubernetes-cluster-aws
-		\item https://github.com/kelseyhightower/kubernetes-the-hard-way
-		\item https://logz.io/blog/amazon-eks-cluster/
-	\end{itemize}
-\end{itemize}
+\begin{enumerate}
+	\item Automation, Continuous Integration, Continuous Development, Infrastructure as Code
+	\item Security
+	\item High Availability, failover, fault-tolerancy
+	\item Backup and restore, Disaster Recovery
+	\item Centralized Monitoring
+	\item Centralized Logging
+	\item Centralized Audit
+\end{enumerate}
 \end{frame}
 %}}}
 
-\section{Problematyka}
-\begin{frame}{Problematyka}%{{{
-\uncover<1->{
-\begin{itemize}
-\item {\bfseries Bazy i hurtownie danych} -- {\bfseries {\color{red} olbrzymia
-ilość liczb}}\ldots
-\item \dots a ludzka percepcja jest ograniczona
-\end{itemize}
-}
-
-\setbeamercovered{transparent} 
-\begin{block}<2->{Wymagania użytkowników}
-	{\color{blue}\bfseries Przyjazna, naturalna reprezentacja danych}
-	\begin{itemize}
-		\item czytelność danych i wiedzy -- {\color{blue}język naturalny} 
-		\item znaczenie i kontekst -- {\color{blue} objaśnianie, podsumowywanie}
-	\end{itemize}
-\end{block}
-\setbeamercovered{visible}
-%\item {\bfseries\color{blue}Dziedzina zdecydowanie wymaga wsparcia ze strony IT}
-
-\uncover<3->{
-	\begin{center}
-		\includegraphics[width=6cm]{../generator-min}
-	\end{center}
-} %<2->
-\end{frame}
-
-%\begin{minipage}{0.55\textwidth} \centering {\bfseries {\color{blue}Blisko połowa} pracowników ma {\color{blue}} pensję ok.  $3\,000$}\\ {\footnotesize \em zamiast}\\ {\color{red}$4807$ z $10\,000$} pracowników ma pensję {\color{red}$\geq 2000$} \end{minipage}
-%}}}
-
-\section{Zbiory rozmyte i terminy lingwistyczne}
-\subsection{Reprezentacja wyrażeń nieprecyzyjnych}
-\begin{frame}{Reprezentacja wyrażeń nieprecyzyjnych} %{{{
-
-\begin{block}{Zbiór rozmyty}
-\begin{equation}\label{formfs}
-A = \{\langle x, \mu_A(x)\rangle\colon x \in {\cal X}\}
-\end{equation}
-$\mu_A\colon{\cal X}\to[0,1]$ -- funkcja przynależności [Zadeh 1965]
-\end{block}
-
+\subsection{Kubernetes architecture}
+\begin{frame}{Kubernetes architecture}%{{{
 \begin{figure}
-\centering
-\includegraphics[width=0.6\textwidth]{../1figmftallpl.jpg}
-%\caption{Reprezentacja wyrażeń ,,średni'' i ,,wysoki człowiek''}
+	\includegraphics[width=10cm]{figures/k8s-arch.png}
+	\label{fig:k8s-arch}
+	\source{https://kubernetes.io/docs/concepts/architecture/cloud-controller/}
 \end{figure}
+\end{frame}
+%}}}
 
-\setbeamercovered{transparent} 
+\section{Available Kubernetes deployment methods}
+\subsection{Using Managed Kubernetes}
+\begin{frame}{Using Managed Kubernetes}%{{{
+\begin{center}
+	\begin{tabular}{ c c c}
+		\begin{figure}
+			\includegraphics[width=3cm]{figures/managed-aws-eks.png}
+			\label{fig:managed-aws-eks}
+		\end{figure} &
+		\begin{figure}
+			\includegraphics[width=3cm]{figures/managed-azure-kubernetes-service-aks.png}
+			\label{fig:managed-azure-kubernetes-service-aks}
+		\end{figure} &
+		\begin{figure}
+			\includegraphics[width=4cm]{figures/managed-gcp-gke.png}
+			\label{fig:managed-gcp-gke}
+		\end{figure}
+	\end{tabular}
+\end{center}
+\end{frame}
+%}}}
+
+
+\subsection{More custom solutions}
+\begin{frame}{Using popular programs}%{{{
+\begin{figure}
+	\includegraphics[width=11cm]{figures/custom-kops.png}
+	\label{fig:custom-kops}
+\end{figure}
+\begin{figure}
+	\includegraphics[width=11cm]{figures/custom-kubeadm.png}
+	\label{fig:custom-kubeadm}
+\end{figure}
+\begin{figure}
+	\includegraphics[width=11cm]{figures/custom-kubespray.png}
+	\label{fig:custom-kubespray}
+\end{figure}
+\begin{figure}
+	\includegraphics[width=11cm]{figures/custom-digitalrebar-provision.png}
+	\label{fig:custom-digitalrebar-provision}
+\end{figure}
+\end{frame}
+%}}}
+
+
+\subsection{Entirely customized solutions}
+\begin{frame}{Entirely customized solutions}%{{{
 \begin{itemize}
-\item <2-> \textbf{Własność $\equiv$ zbiór posiadających ją obiektów}
+	\item Configuration Management frameworks: SaltStack, Ansible, Chef, Puppet
+	\item Infrastructure provisioning frameworks: Terraform, CloudFormation
 \end{itemize}
+\end{frame}
+%}}}
+
+\section{Kubernetes cluster deployment in production environment}
+\subsection{Preparations}
+\begin{frame}{How to satisfy the Automation requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item TODO paste some image of a CICD pipeline
+	\item TODO design 2 environments: testing and production 
+\end{itemize}
+\end{frame}
+%}}}
+\begin{frame}{How to satisfy the Security requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item HTTPS
+	\item no hardcoded passwords or ssh keys
+	\item maybe use a static linter 
+	\item RBAC - identity and access management
+\end{itemize}
+\end{frame}
+%}}}
+\begin{frame}{How to satisfy the High Availability (HA) requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item 3 Kubernetes master nodes? etcd as a cluster
+	\item at least 2 worker nodes
+	\item AWS ASG (auto scaling groups)
+	\item provide health checks to verify that cluster is up and running (healthy)
+	\item or: blue green deployments
+	\item test HA by introducing failures, measure the time needed to recover (compare with a paper)
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{How to satisfy the Backup and Restore requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item automated script for etcd backup 
+	\item send backup outside
+	\item test the restore operation
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{How to satisfy the Centralized Monitoring requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item use a server like Nagios, Grafana, InfluxDB, Prometheus, etc.
+	\item use some AWS service e.g. CloudWatch
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{How to satisfy the Centralized Logging requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item use a server like Graylog, Fluentd, LogStash
+	\item use some AWS service e.g. CloudWatch
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{How to satisfy the Centralized Audit requirement?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item use some AWS service e.g. CloudTrail
+	\item allow access to production only through CICD pipeline
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{How to test that k8s cluster is healthy?}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item check health status of all k8s services
+	\item use a status dashboard
+	\item check it every 1 minute
+	\item deploy a small app on k8s to test that k8s is usable
+	\item run these tests also in a CICD pipeline
+\end{itemize}
+\end{frame}
+%}}}
+
+\subsection{The deployment}
+\begin{frame}{Method: AWS EKS}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item link to code
+	\item main steps summarized
+	\item overall how it went
+	\item some problems + solutions 
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{Method: AWS with Kops}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item link to code
+	\item main steps summarized
+	\item overall how it went
+	\item some problems + solutions 
+\end{itemize}
+\end{frame}
+%}}}
+
+\subsection{Comparison}
+\begin{frame}{Criterium 1: Cost}%{{{
+\textit{this is just a draft!}
 
 \end{frame}
 %}}}
 
-\subsection{Spójniki, modyfikatory, wyrażenia kwantyfikowane}
-\begin{frame}{Spójniki, modyfikatory, wyrażenia kwantyfikowane}%{{{
-\begin{itemize}
-\item ORAZ, LUB, NIE - iloczyn, suma, dopełnienie zb. rozm. 
-\item BARDZO, MNIEJ WIĘCEJ, PRAWIE - modyfikatory, {\em hedges}
-\begin{itemize}
-\item operacje na funkcjach przynależności, np. potęgowanie
-\end{itemize}
-\end{itemize}
+\begin{frame}{Criterium 2: The amount of problems}%{{{
+\textit{this is just a draft!}
 
-\setbeamercovered{transparent} 
-\begin{block}<2->{Wyrażenia kwantyfikowane lingwistycznie}
-\begin{equation} \label{eq.truthofformcanq1}
-T\left(\mbox{ $Q$ $x$'ów jest $S$} \right) = \mu_Q \Big(\card(S)\Big)
-\end{equation}
-\begin{equation} \label{eq.truthofformcanq2}
-T\left(\mbox{ $Q$ $x$'ów, które są $W$, jest $S$} \right) = \mu_Q \left(
-{{\card(S \cap W)}\over{\card(W)}}  \right)
-\end{equation}
-\end{block}
-
-\begin{itemize}
-\item <3-> gdzie: $S, W$ -- zbiory rozmyte w $\cal X$, $Q$ -- kwantyfikator rozmyty\begin{itemize}
-\item np. {\em OKOŁO POŁOWY studentów ma WYSOKĄ ŚREDNIĄ}
-\end{itemize}
-\end{itemize}
 \end{frame}
 %}}}
 
-\subsection{Lingwistyczne podsumowania baz danych}
-\begin{frame}{Lingwistyczne podsumowania baz danych}%{{{
-\setbeamercovered{transparent}
-		\begin{itemize}
-			\item <1->{{\color{blue}Większość} pracowników ma {\color{blue}
-średnią pensję}} 
-\begin{itemize}
-\item {\footnotesize \alert<1>{1-sza forma}, $Q^{I}$, [Yager 1982]}
-\end{itemize}
-\begin{equation}
-T = \mu_Q\left( {{\sum\nolimits_{d_i\in{\cal D}}\mu_S(d_i)}\over|{\cal D}|}\right)
-\end{equation} 
-\item <2->{{\color{blue}Większość} pracowników {\bfseries\color{blue}  około 30 lat}, ma {\color{blue} średnią pensję}} 
-\begin{itemize}
-\item {\footnotesize \alert<2>{2-ga forma}, $Q^{II}$, [Kacprzyk, Yager, Zadrożny 2001]}
-\end{itemize}
-\begin{equation}
-T=\mu_Q\left( {\sum\nolimits_{d_i\in{\cal D}}\mu_S(d_i)\wedge
-\mu_W(d_i)}\over{\sum\nolimits_{d_i\in{\cal D}}\mu_W(d_i)}\right)
-\end{equation}
-\end{itemize}
-gdzie ${\cal D}=\{d_1, d_2, \ldots, d_m\}$
+\begin{frame}{Criterium 3: The amount of not automated resources}%{{{
+\textit{this is just a draft!}
+
 \end{frame}
 %}}}
 
-\subsection{Generator podsumowań}
-\begin{frame}{Generator podsumowań}%{{{
+\begin{frame}{Criterium 4: Production deployment requirements met?}%{{{
+\textit{this is just a draft!}
 
-\setbeamercovered{transparent} 
-	\begin{center}
-		\includegraphics[width=0.6\textwidth]{../generator}
+\end{frame}
+%}}}
+
+\begin{frame}{Comparison summary}%{{{
+	\textit{this is just a draft!}
+	\begin{tabular}{| l | c | c |}
+		\hline
+		& AWS EKS & AWS Kops \\
+		\hline
+		Cost &  &  \\
+		\hline
+		Problems count &  &  \\
+		\hline
+		Not automated resources count &  &  \\
+		\hline
+		Production requirements met &  &  \\
+		\hline
+		\end{tabular}
 	\end{center}
+	\end{frame}
+\end{frame}
+%}}}
 
-
+\section{Summary}
+\subsection{Lessons learned}
+\begin{frame}{Lessons learned}%{{{
+	\textit{this is just a draft!}
+\end{frame}
+%}}}
+\subsection{Future work potential}
+\begin{frame}{Future work potential}%{{{
+	\textit{this is just a draft!}
 \begin{itemize}
-\item <2->{\footnotesize\bfseries
-\alert<3>{Około połowy pracowników} ma \alert<4>{około 30 lat}
-\alert<5>{[0.61]}. \alert<6>{Znacznie więcej niż
-2000 pracowników} ma \alert<7>{wyższe wykształcenie} [0.74]. Około połowy pracowników
-zarabia blisko 4000 [0.53]. Wielu pracowników \alert<8>{ma wyższe wykształcenie i
-zarabia blisko 4000} [0.36]
-}
+	\item compare more methods of deployment
+	\item use more comparison criteria - e.g. automated upgrades
+	\item apply more load and run load and performance tests
+	\item instead of satisfying production requirements, test enterprise and big data deployments requirements - create a survey to get lessons learned based on long running clusters and their administration
 \end{itemize}
 \end{frame}
 %}}}
 
 
-\section{Zastosowania podsumowań lingwistycznych}
-\subsection{Znane opracowania}
-\begin{frame}{Znane opracowania}%{{{
-\begin{itemize}
-\setbeamercovered{transparent}
-\item <1->Kacprzyk, Zadrożny 1995		-- \alert<1>{FQUERY for MS Access}
-\item George, Srikanth 1996		-- \alert<2>{zastosowanie alg. genetycznych}
-\item <3->Kacprzyk, Strykowski 1996	-- \alert<3>{wspomaganie marketingu}
-\item <3->Ochelska 2001			-- \alert<4>{podsumowania dokumentów
-medycznych}
-\item <5->Kacprzyk, Zadrożny 2003		-- \alert<5>{protoformy, podsumowania interaktywne i przez internet}
-\item <5->Kacprzyk, Wilbik 2007		-- \alert<6>{podsumowania szeregów
-czasowych}
-\item <5->wiele innych
-\end{itemize}
-\end{frame}
-%}}}
-
-\subsection{Prace bieżące}
-\begin{frame}{Prace bieżące}%{{{
-\setbeamercovered{transparent} 
- \begin{columns}
-  \begin{column}{0.64\textwidth}
-	\begin{itemize}
-		\item <1->Podsumowania danych \alert<1>{rozmytych} poprzez {\em type-2 fuzzy sets}
-	\end{itemize}
- \end{column}
- \begin{column}{0.36\textwidth}
-\includegraphics[width=\textwidth]{2figfst2exc}
-		\vspace{-2mm}
- \end{column}
-\end{columns}
-
-\begin{columns}
-\begin{column}{0.64\textwidth}
-	\begin{itemize}
-		\item <2->Przyspieszone i/lub nowe algorytmy obliczania
-\alert<2>{\em degrees of~truth}
-	\end{itemize}
-\end{column}
-\begin{column}{0.36\textwidth}
-   	\begin{itemize}
-		\item <2>GD $O(n \log n)$
-		\item <2>MVCP $O(n)$
-	\end{itemize}
-\end{column}
-\end{columns}
-
-\begin{columns}
-\begin{column}{0.64\textwidth}
-	\begin{itemize}
-		\item <3->\alert<3>{Miary jakości} podsumowań
-	\end{itemize}
-\end{column}
-\begin{column}{0.36\textwidth}
-	\begin{itemize}
-		\item<3> $T_1\div T_5$, $T_6\div T_{11}$, $I$, $SP(\cdot)$,
-		{\em descriptors}
-	\end{itemize}
-\end{column}
-\end{columns}
-
-\begin{columns}
-\begin{column}{0.64\textwidth}
-	\begin{itemize}
-		\item <4-> \alert<4>{Gramatyka i fleksja} podsumowań
-	\end{itemize}
-\end{column}
-\begin{column}{0.36\textwidth}
-	\begin{itemize}
-		\item <4>Jęz. słowiańskie \vspace{1mm}\\
-		\setbeamercovered{visible}
-		\uncover<4>{\includegraphics[width=0.5\textwidth]{ubuntu}}
-		\setbeamercovered{transparent}
-	\end{itemize}
-\end{column}
-\end{columns}
-
-\begin{columns}
-\begin{column}{0.64\textwidth}
-	\begin{itemize}
-		\item <5->\alert<5->{Interfejsy} użytkownika i eksperta/-ów
-	\end{itemize}
-\end{column}
-\begin{column}{0.36\textwidth}
-	\begin{itemize}
-		\item <5->Wykresy JChart, format XML
-	\end{itemize}
-\end{column}
-\end{columns}
-\end{frame}
-%}}}
-
-\subsection{Możliwości, uogólnienia}
-\begin{frame}{Możliwości, uogólnienia}%{{{
-\setbeamercovered{transparent}
-\begin{itemize}
-	\item <1->Nadal olbrzymi i \alert<1->{niewykorzystany potencjał
-aplikacyjny}
- \begin{itemize}
-	\item<1-> Barwise'a i Coopera teoria uogólnionej kwantyfikacji (TGQ) -- ponad
-30 rodzajów kwantyfikatorów lingwistycznych (!)
-\end{itemize}
-\item <2-> \alert<2>{Rozszerzenia zbiorów rozmytych}
-	\begin{itemize}
-		\item Przedziałowe zbiory rozmyte
-		\item Intuicjonistyczne zbiory rozmyte oraz {\em I-fuzzy sets}
-		\item Zbiory rozmyte typu 2
-		\item Zbiory przybliżone Pawlaka
-	\end{itemize}
-\item <3-> \alert<3->{Nowe implementacje}, w połączeniu np. z Fuzzy SQL
-\end{itemize}
-\end{frame}
-%}}}
-
-\subsection{Ostatnie publikacje}
-\begin{frame}{Ostatnie publikacje}%{{{
-\begin{itemize}
-		{\scriptsize
-\item {\bf Niewiadomski, A.}, {\em   On Finity, Countability, Cardinalities, And
-Cylindric Extensions of~Type-2 Fuzzy Sets in Linguistic Summarization
-of~Databases}, IEEE Transactions on Fuzzy Systems, 2010, (w druku).
-\item {\bf Niewiadomski, A.}, Korczak, O., {\em Methods of~evaluating degrees
-of~truth for~linguistic summaries of data: a~comparative~analysis}. Lecture
-Notes in Artificial Intelligence, 2010, (w druku). 
-\item {\bf Niewiadomski, A.}, {\em On type-2 fuzzy logic and linguistic summarization of databases}, Bulletin of the Section of Logic, Vol. 38, Nr 3/4, 2009, ss. 215--227.
-\item  {\bf Niewiadomski, A.}, {\em Methods for the Linguistic
-Summarization of~Data: Applications of~Fuzzy Sets and Their
-Extensions}. Akademicka
-Oficyna Wydawnicza EXIT, 2008. Seria IBS PAN, Badania Systemowe, tom 60. 
-\item {\bf Niewiadomski, A.}, {\em A type-2 fuzzy approach to linguistic summarization of~data}, IEEE Transactions on Fuzzy Systems, Vol. 16, Nr 1, 2008, ss. 198-212. 
-\item {\bf Niewiadomski, A.}, Ochelska, J., Szczepaniak, P. S., {\em Interval-
-valued linguistic summaries of~databases}, Control and Cybernetics, Vol. 35, Nr
-2, 2006, ss. 415-444. 
-
-}
-
-\end{itemize}
-\end{frame}
-%}}}
 
 \end{document}
 
