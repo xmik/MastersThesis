@@ -289,10 +289,11 @@ Trends related to software deployment:
 \begin{frame}{1.1 Topic and study scope - topic choice}%{{{
 k8s is popular and used by practicioners
 \begin{figure}
-	\includegraphics[width=8cm]{figures/cncf-container-orchestrators.png}
+	\includegraphics[width=7.5cm]{figures/cncf-container-orchestrators.png}
 	%\caption{Preferred container management platforms, CNCF Survey, 2017}
 	\label{fig:cncf-container-orchestrators}
-	\tiny{CNCF Survey, 2017}
+	\\
+	\tiny{Source: CNCF Survey, 2017}
 \end{figure}
 \end{frame}
 %}}}
@@ -305,7 +306,7 @@ k8s is popular and used by practicioners
 	\label{fig:k8s-openstack-survey}
 	%\caption{Source: OpenStack Survey, 2018}
 	\\
-	\tiny{OpenStack Survey, 2018}
+	\tiny{Source: OpenStack Survey, 2018}
 \end{figure}
 \end{frame}
 %}}}
@@ -316,7 +317,7 @@ k8s is used in production environment
 	\includegraphics[width=10cm]{figures/cncf-k8s-used-in-production.png}
 	\label{fig:cncf-k8s-used-in-production}
 	\\
-	\tiny{CNCF Survey, 2019}
+	\tiny{Source: CNCF Survey, 2019}
 \end{figure}
 \end{frame}
 %}}}
@@ -340,7 +341,7 @@ k8s is used by NASA in production environment
 	\includegraphics[width=8cm]{figures/cncf-k8s-deployment-methods.png}
 	\label{fig:cncf-k8s-deployment-methods}
 	\\
-	\tini{CNCF Survey, 2019}
+	\tiny{Source: CNCF Survey, 2019}
 	\end{figure}	
 \end{center}
 \end{frame}
@@ -393,12 +394,13 @@ The choice of \textbf{focusing on production environment}:
 \begin{itemize}
 	\item Concern many clouds, practical approach, some production environment elements:
 	\begin{itemize}
-		\item \textbf{book}: Hideto, Saito, et. al. \textit{DevOps with Kubernetes}
-		\item \textbf{book}: Sayfan, Gigi, et. al. \textit{Mastering Kubernetes}
+		\item \textbf{book}: Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017. ISBN-13: 978-1788396646.
+		\item Morris, Kief. \textit{Infrastructure as Code}. Edition 1. O'Reilly Media, 2016. ISBN-13: 978-1491924358.
+		\item \textbf{book}: Sayfan, Gigi, et. al. \textit{Mastering Kubernetes}. Edition: 2.  Packt Publishing, 2018. ISBN-13: 978-1788999786.
 	\end{itemize}
-	\item \textbf{book}: Burns, Brendan, et. al. \textit{Kubernetes Up \& Running}. - many clouds, practical approach, no production environment elements
-	\item \textbf{book}: Arundel, John, et. al. \textit{Cloud Native DevOps with Kubernetes}. - many clouds, theoretical approach
-	\item \textbf{book}: Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker, and Kubernetes}. - AWS, practical approach
+	\item \textbf{book}: Burns, Brendan, et. al. \textit{Kubernetes: Up and Running: Dive into the Future of Infrastructure}. Edition: 2. O'Reilly Media, 2019. ISBN-13: 978-1492046530. - many clouds, practical approach, no production environment elements
+	\item \textbf{book}: Arundel, John, et. al. \textit{Cloud Native DevOps with Kubernetes: Building, Deploying, and Scaling Modern Applications in the Cloud}. Edition: 1. O'Reilly Media, 2019. ISBN-13: 978-1492040767. - many clouds, theoretical approach
+	\item \textbf{book}: Source: Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker and Kubernetes}. Packt Publishing, 2017. ISBN 978-1788297615. - AWS, practical approach
 	\item \textbf{papers} acknowledge using Kubernetes, but do not explain details of its deployment
 \end{itemize}
 \end{frame}
@@ -442,7 +444,7 @@ The choice of \textbf{focusing on production environment}:
 \section{2. Definitions, 3. Available k8s cluster deployment methods}
 \subsection{2.2 Production deployment requirements}
 \begin{frame}{2.2 Production deployment requirements}%{{{
-\begin{enumerate}
+\begin{itemize}
 	\item Automation, Continuous Integration, Continuous Development, Infrastructure as Code
 	\item Security
 	\item High Availability, failover, fault-tolerancy
@@ -450,9 +452,9 @@ The choice of \textbf{focusing on production environment}:
 	\item Centralized Monitoring
 	\item Centralized Logging
 	\item Centralized Audit
-\end{enumerate}
+\end{itemize}
 \\
-\tiny{Source: Humble, Hez, et. al. \textit{Continuous Delivery}. Addison-Wesley, 2010}
+\tiny{Source: Humble, Jez, et. al. \textit{Continuous Delivery}. Addison-Wesley, 2010. ISBN-13: 978-0321601919.}
 \end{frame}
 %}}}
 
@@ -513,191 +515,226 @@ The choice of \textbf{focusing on production environment}:
 \end{frame}
 %}}}
 
-% \section{Kubernetes cluster deployment in production environment}
-% \subsection{Preparations}
-% \begin{frame}{How to satisfy the Automation requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item TODO paste some image of a CICD pipeline
-% 	\item TODO design 2 environments: testing and production 
-% \end{itemize}
-% \end{frame}
-% %}}}
-% \begin{frame}{How to satisfy the Security requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item HTTPS
-% 	\item no hardcoded passwords or ssh keys
-% 	\item maybe use a static linter 
-% 	\item RBAC - identity and access management
-% \end{itemize}
-% \end{frame}
-% %}}}
-% \begin{frame}{How to satisfy the High Availability (HA) requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item 3 Kubernetes master nodes? etcd as a cluster
-% 	\item at least 2 worker nodes
-% 	\item AWS ASG (auto scaling groups)
-% 	\item provide health checks to verify that cluster is up and running (healthy)
-% 	\item or: blue green deployments
-% 	\item test HA by introducing failures, measure the time needed to recover (compare with a paper)
-% \end{itemize}
-% \end{frame}
-% %}}}
+\section{4. Preparations for production deployment of Kubernetes cluster}
+\subsection{4.1 Chosen requirements of production deployment}
+\begin{frame}{4.1 Chosen requirements of production deployment}%{{{
+	\textit{this is just a draft!}
+	\begin{itemize}
+		\item Automation, Continuous Integration, Continuous Development, Infrastructure as Code
+		\item Security
+		\item High Availability, failover, fault-tolerancy
+		\item Backup and restore, Disaster Recovery
+		\item Centralized Monitoring
+		\item Centralized Logging
+		\item Centralized Audit
+	\end{itemize}
+\end{frame}
 
-% \begin{frame}{How to satisfy the Backup and Restore requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item automated script for etcd backup 
-% 	\item send backup outside
-% 	\item test the restore operation
-% \end{itemize}
-% \end{frame}
-% %}}}
+\subsection{4.2 Satisfying the automation requirement}
+\begin{frame}{4.2 Satisfying the Automation requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item TODO paste some image of a CICD pipeline
+	\item TODO design 2 environments: testing and production 
+\end{itemize}
+\end{frame}
+%}}}
+\begin{frame}{4.3 Satisfying the Security requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item HTTPS
+	\item no hardcoded passwords or ssh keys
+	\item maybe use a static linter 
+	\item RBAC - identity and access management
+\end{itemize}
+\end{frame}
+%}}}
+\begin{frame}{4.4 Satisfying the High Availability (HA) requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item 3 Kubernetes master nodes? etcd as a cluster
+	\item at least 2 worker nodes
+	\item AWS ASG (auto scaling groups)
+	\item provide health checks to verify that cluster is up and running (healthy)
+	\item or: blue green deployments
+	\item test HA by introducing failures, measure the time needed to recover (compare with a paper)
+\end{itemize}
+\end{frame}
+%}}}
 
-% \begin{frame}{How to satisfy the Centralized Monitoring requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item use a server like Nagios, Grafana, InfluxDB, Prometheus, etc.
-% 	\item use some AWS service e.g. CloudWatch
-% \end{itemize}
-% \end{frame}
-% %}}}
+\begin{frame}{4.5 Satisfying the Backup and Restore  requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item automated script for etcd backup 
+	\item send backup outside
+	\item test the restore operation
+\end{itemize}
+\end{frame}
+%}}}
 
-% \begin{frame}{How to satisfy the Centralized Logging requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item use a server like Graylog, Fluentd, LogStash
-% 	\item use some AWS service e.g. CloudWatch
-% \end{itemize}
-% \end{frame}
-% %}}}
+\begin{frame}{4.6 Satisfying the Centralized Monitoring  requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item use a server like Nagios, Grafana, InfluxDB, Prometheus, etc.
+	\item use some AWS service e.g. CloudWatch
+\end{itemize}
+\end{frame}
+%}}}
 
-% \begin{frame}{How to satisfy the Centralized Audit requirement?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item use some AWS service e.g. CloudTrail, AWS Config
-% 	\item allow access to production only through CICD pipeline
-% 	\item some k8s built-in solution? cloud agnostic method
-% \end{itemize}
-% \end{frame}
-% %}}}
+\begin{frame}{4.7 Satisfying the Centralized Logging  requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item use a server like Graylog, Fluentd, LogStash
+	\item use some AWS service e.g. CloudWatch
+\end{itemize}
+\end{frame}
+%}}}
 
-% \begin{frame}{How to test that k8s cluster is healthy?}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item check health status of all k8s services
-% 	\item use a status dashboard
-% 	\item check it every 1 minute
-% 	\item deploy a small app on k8s to test that k8s is usable
-% 	\item run these tests also in a CICD pipeline
-% \end{itemize}
-% \end{frame}
-% %}}}
+\begin{frame}{4.8 Satisfying the Centralized Audit requirement}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item use some AWS service e.g. CloudTrail, AWS Config
+	\item allow access to production only through CICD pipeline
+	\item some k8s built-in solution? cloud agnostic method
+\end{itemize}
+\end{frame}
+%}}}
 
-% \subsection{The deployment}
-% \begin{frame}{Method: AWS EKS}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item link to code
-% 	\item main steps summarized
-% 	\item overall how it went
-% 	\item some problems + solutions 
-% \end{itemize}
-% \end{frame}
-% %}}}
+\begin{frame}{4.9 Verifying that k8s cluster is healthy}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item check health status of all k8s services
+	\item use a status dashboard
+	\item check it every 1 minute
+	\item deploy a small app on k8s to test that k8s is usable
+	\item run these tests also in a CICD pipeline
+\end{itemize}
+\end{frame}
+%}}}
 
-% \begin{frame}{Method: AWS with Kops}%{{{
-% \textit{this is just a draft!}
-% \begin{itemize}
-% 	\item link to code
-% 	\item main steps summarized
-% 	\item overall how it went
-% 	\item some problems + solutions 
-% \end{itemize}
-% \end{frame}
-% %}}}
+\section{5. Production deployment, 6. Comparison}
+\subsection{5.1 Production deployment - using method: AWS EKS}
+\begin{frame}{5.1 Production deployment - using method: AWS EKS}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item link to code
+	\item main steps summarized
+	\item overall how it went
+	\item some problems + solutions 
+\end{itemize}
+\end{frame}
+%}}}
 
-% \subsection{Comparison}
-% \begin{frame}{Criterium 1: Cost}%{{{
-% \textit{this is just a draft!}
+\subsection{5.2 Production deployment - using method: AWS with Kops}
+\begin{frame}{5.2 Production deployment - using method: AWS with Kops}%{{{
+\textit{this is just a draft!}
+\begin{itemize}
+	\item link to code
+	\item main steps summarized
+	\item overall how it went
+	\item some problems + solutions 
+\end{itemize}
+\end{frame}
+%}}}
 
-% \end{frame}
-% %}}}
+\subsection{6. Comparison}
+\begin{frame}{6.1 Criterium 1: Cost}%{{{
+\textit{this is just a draft!}
 
-% \begin{frame}{Criterium 2: The amount of problems}%{{{
-% \textit{this is just a draft!}
+\end{frame}
+%}}}
 
-% \end{frame}
-% %}}}
+\begin{frame}{6.2 Criterium 2: The amount of problems}%{{{
+\textit{this is just a draft!}
 
-% \begin{frame}{Criterium 3: The amount of not automated resources}%{{{
-% \textit{this is just a draft!}
+\end{frame}
+%}}}
 
-% \end{frame}
-% %}}}
+\begin{frame}{6.3 Criterium 3: The amount of not automated resources}%{{{
+\textit{this is just a draft!}
 
-% \begin{frame}{Criterium 4: Production deployment requirements met?}%{{{
-% \textit{this is just a draft!}
+\end{frame}
+%}}}
 
-% \end{frame}
-% %}}}
+\begin{frame}{6.4 - Criterium 4: Production deployment requirements met?}%{{{
+\textit{this is just a draft!}
 
-% \subsection{Comparison summary}
-% \begin{frame}{Comparison summary}%{{{
-% 	\textit{this is just a draft!}
-% 	\begin{tabular}{| l | c | c |}
-% 		\hline
-% 		& AWS EKS & AWS Kops \\
-% 		\hline
-% 		Cost &  &  \\
-% 		\hline
-% 		Problems count &  &  \\
-% 		\hline
-% 		Not automated resources count &  &  \\
-% 		\hline
-% 		Production requirements met &  &  \\
-% 		\hline
-% 		\end{tabular}
-% \end{frame}
-% %}}}
+\end{frame}
+%}}}
 
-% \section{Summary}
-% \subsection{Lessons learned}
-% \begin{frame}{Lessons learned and achieved results}%{{{
-% 	\textit{this is just a draft!}
-% \end{frame}
-% %}}}
-% \subsection{Future work potential}
-% \begin{frame}{Future work potential}%{{{
-% 	\textit{this is just a draft!}
-% \begin{itemize}
-% 	\item compare more methods of deployment
-% 	\item use more comparison criteria 
-% 	\item use more production requirements, e.g. automated upgrades
-% 	\item apply more load and run load and performance tests
-% 	\item instead of satisfying production requirements, test enterprise and big data deployments requirements - create a survey to get lessons learned based on long running clusters and their administration
-% \end{itemize}
-% \end{frame}
-% %}}}
-% \subsection{Literature}
-% \begin{frame}{Literature}%{{{
-% 	\textit{this is just a draft!}
-% \begin{itemize}
-% 	\item Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker and Kubernetes}. Packt Publishing, 2017. ISBN 978-1788297615
-% 	\item Alonso, Ruben. \textit{Software containerization with Docker}. Bachelor's thesis. Turku University of Applied Sciences, 2017.
-% 	\item Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017.
-% \item Morris, Kief. \textit{Infrastructure as Code}. Edition 1. O'Reilly Media, 2016.
-% \item Nemer, Joe. \textit{Advantages and Disadvantages of Microservices Architecture}. Cloud Academy, 2019. [Accessed: 06.04.2020] Available at: https://cloudacademy.com/blog/microservices-architecture-challenge-advantage-drawback/
-% \item Balalaie, Armin, et. al. \textit{Microservices Architecture Enables DevOps: An Experience Report on Migration to a Cloud-Native Architecture}. IEEE Software, 2016, vol. 33.
-% \item https://continuousdelivery.com/ [Accessed: 06.04.2020]
-% \item Humble, Hez, et. al. \textit{Continuous Delivery}. Addison-Wesley, 2010.
-% \end{itemize}
-% \end{frame}
-% %}}}
+\subsection{6.5 Comparison summary}
+\begin{frame}{6.5 Comparison summary}%{{{
+	\textit{this is just a draft!}
+	\begin{tabular}{| l | c | c |}
+		\hline
+		& AWS EKS & AWS Kops \\
+		\hline
+		Cost &  &  \\
+		\hline
+		Problems count &  &  \\
+		\hline
+		Not automated resources count &  &  \\
+		\hline
+		Production requirements met &  &  \\
+		\hline
+		\end{tabular}
+\end{frame}
+%}}}
+
+\section{7. Summary, 8. Literature}
+\subsection{7.1 Lessons learned and achieved results}
+\begin{frame}{7.1 Lessons learned and achieved results}%{{{
+	\textit{this is just a draft!}
+\end{frame}
+%}}}
+\subsection{7.2 Future work potential}
+\begin{frame}{7.2 Future work potential}%{{{
+	\textit{this is just a draft!}
+\begin{itemize}
+	\item compare more methods of deployment
+	\item use more comparison criteria 
+	\item use more production requirements, e.g. automated upgrades
+	\item apply more load and run load and performance tests
+	\item instead of satisfying production requirements, test enterprise and big data deployments requirements - create a survey to get lessons learned based on long running clusters and their administration
+\end{itemize}
+\end{frame}
+%}}}
+\subsection{8. Literature}
+\begin{frame}{8. Literature}%{{{
+	\tiny{
+\begin{itemize}
+	\item Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker and Kubernetes}. Packt Publishing, 2017. ISBN 978-1788297615
+	\item Alonso, Ruben. \textit{Software containerization with Docker}. Bachelor's thesis. Turku University of Applied Sciences, 2017.
+	\item Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017. ISBN-13: 978-1788396646.
+	\item Morris, Kief. \textit{Infrastructure as Code}. Edition 1. O'Reilly Media, 2016. ISBN-13: 978-1491924358.
+	\item Nemer, Joe. \textit{Advantages and Disadvantages of Microservices Architecture}. Cloud Academy, 2019. [Accessed: 06.04.2020] Available at: https://cloudacademy.com/blog/microservices-architecture-challenge-advantage-drawback/
+	\item Balalaie, Armin, et. al. \textit{Microservices Architecture Enables DevOps: An Experience Report on Migration to a Cloud-Native Architecture}. IEEE Software, 2016, vol. 33.
+	\item https://continuousdelivery.com/ [Accessed: 06.04.2020]
+	\item Humble, Jez, et. al. \textit{Continuous Delivery}. Addison-Wesley, 2010. ISBN-13: 978-0321601919.
+	\item Burns, Brendan, et. al. \textit{Kubernetes: Up and Running: Dive into the Future of Infrastructure}. Edition: 2. O'Reilly Media, 2019. ISBN-13: 978-1492046530.
+	\item Blanco-Cuaresma, Sergi, et. al. \textit{Fundamentals of effective cloud management for the new NASA Astrophysics Data System}, 2019.
+	\item Arundel, John, et. al. \textit{Cloud Native DevOps with Kubernetes: Building, Deploying, and Scaling Modern Applications in the Cloud}. Edition: 1. O'Reilly Media, 2019. ISBN-13: 978-1492040767.
+	\item Sayfan, Gigi, et. al. \textit{Mastering Kubernetes}. Edition: 2.  Packt Publishing, 2018. ISBN-13: 978-1788999786.
+\end{itemize}
+	}
+\end{frame}
+%}}}
 
 
+\begin{frame}{8. Literature}%{{{
+	\tiny{
+\begin{itemize}
+\item https://platform9.com/blog/kubernetes-cloud-services-comparing-gke-eks-and-aks/
+\item https://logz.io/blog/kubernetes-as-a-service-gke-aks-eks/
+\item https://www.presslabs.com/blog/kubernetes-cloud-providers-2019/
+\item https://eksctl.io/
+\item https://gruntwork.io/guides/kubernetes/how-to-deploy-production-grade-kubernetes-cluster-aws
+\item https://github.com/kelseyhightower/kubernetes-the-hard-way
+\item https://logz.io/blog/amazon-eks-cluster/
+\end{itemize}
+	}
+\end{frame}
+%}}}
 
 \end{document}
 
