@@ -37,7 +37,8 @@
 \title{Kubernetes cluster deployment \\ for production environment}
 %\toctitle{Kubernetes cluster deployment for production environment}
 
-\author{Ewa Czechowska}
+\author{Ewa Czechowska \\
+ \textbf{Supervisor: }dr hab. inż. Aneta Poniszewska-Marańda}
 \institute{Lodz University of Technology}
 \date{Łódź, 4th April 2020}
 
@@ -48,6 +49,176 @@
 \maketitle
 
 \section{Introduction and definitions}
+\subsection{Virtualization and Docker containers}
+\begin{frame}{Virtualization - history}%{{{
+\begin{center}
+\begin{tabular}{@{}  l  l l }
+	\begin{figure}
+		\includegraphics[width=3cm]{figures/virtualization-physical.png}
+		\label{fig:virtualization-physical}
+	\end{figure} &
+	\begin{figure}
+		\includegraphics[width=3cm]{figures/virtualization-vms.png}
+		\label{fig:virtualization-vms}
+	\end{figure} &
+	\begin{figure}
+		\includegraphics[width=3cm]{figures/virtualization-c.png}
+		\label{fig:virtualization-c}
+	\end{figure} \\
+	\end{tabular}
+\end{center}
+\tiny{Source: Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker and Kubernetes}. Packt Publishing, 2017. ISBN 978-1788297615}
+\\
+\footnotesize{
+\begin{enumerate}
+	\item Applications were installed on \textbf{physical hardware} directly
+	\item Virtualization was invented. \textbf{Virtual Machines (VMs)} have separate OS and provide a safer environment
+	\item In 2013 Docker was created as a standard way to manage \textbf{containers}.
+\end{enumerate}
+}
+\end{frame}
+
+	% In order to make this presentation understandable, we need to start with some history.
+
+	% At first all applications were installed on physical hardware directly. This had some drawbacks like: long maintenance cycle, hardware resources were underutilized and also a risk/stress of breaking down the whole host.
+
+	% Then, virtualization was invented to overcome these limitations. Virtual machines were (and still are) emulating the hardware. Each virtual machine has a guest Operating System, which means we can e.g. deploy Windows VM on a laptop with Linux. Virtualization has advantages like: isolation, higher flexibility (we can choose and change how many RAM and how many CPUs we want attached to a VM). However, there are also costs: increased complexity and redundancy. Redundancy: guest OS is redundant. 
+
+	% Then, in 2013, Docker was created as a standard way to manage \textbf{containers}. Docker uses Linux's underlying kernel features which enable containerization. Docker containers support various OSs but  the kernel is shared with the host OS. This leads e.g. to a better utilization of resources (because the kernel is shared among containers).
+
+
+\begin{frame}{Reasons for using VMs and containers}%{{{
+VMs and containers:
+\begin{itemize}
+\item Provide \textbf{safer, isolated environment} - facilitate experiments
+\item Easier to automate, manage and replace
+\item \textbf{Reproducible environment}
+\item Limit "works on my machine" problem
+\item More \textbf{secure}, the firewall can be set to deny any access to host
+\item Additional features, e.g. memory replication
+\end{itemize}
+\end{frame}
+%}}}
+
+\begin{frame}{Comparison of Docker containers and VMs}%{{{
+\begin{center}
+	\begin{flushleft}
+	\begin{tabular}{@{}  | c | c | c | @{}}
+		\hline
+		 & \textbf{Containers} & \textbf{VMs} \\
+		 \hline
+		 Isolation & Yes, but less & Yes, more \\
+		 \hline
+		 Pre-baked images & Yes & Yes \\
+		 \hline
+		Portability across clouds & Yes & No \\
+		\hline
+		Light-weight & Yes & No \\
+		\hline
+		Limited OS selection & Yes & No \\
+		\hline
+		Standardized way of building image & Yes (Dockerfile) & No \\
+		\hline
+		\end{tabular}
+	\end{flushleft}
+\end{center}
+\tiny{Source: Alonso, Ruben. \textit{Software containerization with Docker}. Bachelor's thesis. Turku University of Applied Sciences, 2017.} \\
+\tiny{Source: Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017.}
+\end{frame}
+%Docker containers and VMs are similar. VMs emulate hardware while containers are an abstract way of packaging software.%
+% doing immutable deployment with VM images is costly, because of image sizes and because we have to use custom Configuration Management system
+% Standardized way of building such image - for vms a nice solution is using Packer
+% Docker instances are lighter-weight. To ship an app as a virtual machine image, you have to bake an entire operating system into the image. With a container, only the app itself has to go inside the container. This translates to a less complicated build process, plus the ability to host many more containers on a single physical server.
+%}}}
+
+\subsection{Microservices}
+\begin{frame}{Microservices - definition}%{{{
+\textbf{Microservices} = A new \textbf{architecture for applications} which evolved as a solution to \textbf{monolith}'s problems.
+
+~\\
+
+\begin{figure}
+	\includegraphics[width=6.5cm]{figures/Microservices_architecture_vs_monolith.png}
+	\label{fig:micro-vs-mono}
+\end{figure} 
+\tiny{Source: Pogrebnoy, Konstantin, et. al. \textit{Microservices Architecture: to Build or Not to Build}. codetiburon, 2019. [Accessed: 06.04.2020] Available at: \url{https://codetiburon.com/app/uploads/2018/07/Microservices_architecture_vs_monolith.png}} 
+\end{frame}
+%}}}
+
+\begin{frame}{Advantages of microservices compared to monoliths}%{{{
+	\textbf{Advantages of microservices compared to monoliths}:
+	\begin{itemize}
+		\item Simpler architecture
+		\item We can reuse an application
+		\item Less context at once
+		\item Isolated failures
+		\item Smaller and faster deployments
+		\item We can use new technology
+		\item Scalability
+	\end{itemize}
+	
+	\tiny{Source: Nemer, Joe. \textit{Advantages and Disadvantages of Microservices Architecture}. Cloud Academy, 2019. [Accessed: 06.04.2020] Available at: https://cloudacademy.com/blog/microservices-architecture-challenge-advantage-drawback/} 
+	\tiny{Source: Balalaie, Armin, et. al. \textit{Microservices Architecture Enables DevOps: An Experience Report on Migration to a Cloud-Native Architecture}. IEEE Software, 2016, vol. 33.} 
+	\end{frame}
+	% Improved fault isolation: Larger applications can remain mostly unaffected by the failure of a single module.
+	% Scalability: Since your services are separate, you can more easily scale the most needed ones at the appropriate times, as opposed to the whole application. When done correctly, this can impact cost savings.
+	%}}}
+
+\begin{frame}{Microservices challenges}%{{{
+\begin{itemize}
+	\item Communication between services is complex
+	\item Global testing is difficult
+	\item Debugging problems can be harder
+	\item Deployment challengers
+	\item Management problems - now there are many services deployed instead of one
+\end{itemize}
+~\\
+\tiny{Source: Nemer, Joe. \textit{Advantages and Disadvantages of Microservices Architecture}. Cloud Academy, 2019. [Accessed: 06.04.2020] Available at: https://cloudacademy.com/blog/microservices-architecture-challenge-advantage-drawback/} 
+\end{frame}
+%}}}
+
+\subsection{DevOps}
+\begin{frame}{The DevOps movement}%{{{
+``DevOps is a movement to \textbf{reduce barriers and friction between organizational silos} - development, operations, and other stakeholders involved in planning, building, and running software. Although technology is the most visible (...), it’s \textbf{culture, people, and processes} which have the most impact on flow and effectiveness.``
+\\
+~\\
+\tiny{Source: Morris, Kief. \textit{Infrastructure as Code}. Edition 1. O'Reilly Media, 2016.} 
+\end{frame}
+%}}}
+
+\begin{frame}{Continuous Delivery (CD)}%{{{
+Continuous Delivery helps us to \textbf{incorporate software changes into production environment}, including bug fixes and experiments, safely, quickly in a sustainable way.
+\\
+The goal is to \textbf{continuously deploy} the software. It is necessary to master this task, so that the deployments and predictable and reliable.
+\\
+\textbf{Benefits}:
+\begin{itemize}
+	\item Low risk releases
+	\item Faster time to market
+	\item Higher quality
+	\item Lower costs
+\end{itemize}
+\tiny{Source: https://continuousdelivery.com/ [Accessed: 06.04.2020]} 
+\end{frame}
+%}}}
+
+\begin{frame}{Introduction summary}%{{{
+Trends related to software deployment:
+\begin{itemize}
+\item Architectural shift {\bfseries from monolith to microservices}
+\item Adoption of {\bfseries Docker containers}
+\item Emerging movement: {\bfseries DevOps}
+\item Migration {\bfseries from on-premises services to Cloud Native Applications}
+\end{itemize}
+\end{frame}
+%}}}
+% \item to satisfy the need for scalability
+% \item to decrease the upfront infrastructure investment
+% \item to pay only for used infrastructure, not for the allocated part
+% \item to utilize resources in a more efficient way
+% \item to use reliable infrastructure (thanks to e.g. S3 SLA)
+
+\section{About this study}
 \subsection{Table of Contents}
 \begin{frame}{Table of Contents}%{{{
 \begin{center}
@@ -65,195 +236,140 @@
 \end{frame}
 %}}}
 
-\subsection{Topic and study scope}
-\begin{frame}{Trends in IT}%{{{
-\begin{itemize}
-\item Architectural shift {\bfseries from monolith to microservices}
-\item Migration {\bfseries from on-premises services to Cloud Native Applications}
-\item Adoption of {\bfseries Docker containers}
-\item Evolution of the movement: {\bfseries DevOps}
-\end{itemize}
-\end{frame}
-%}}}
 
-\begin{frame}{Docker containers - definition}%{{{
-\begin{itemize}
-\item Docker provides \textbf{a new way of virtualization}
-\item Docker containers offer ready to use, installed, software packages including OS, software dependencies and runtime
-\item Docker allows for quick deployments
-\item \textbf{Virtual machines virtualize hardware, containers virtualize the operating system of a server}
-\end{itemize}
-\begin{figure}
-	\includegraphics[width=6cm]{figures/docker-vs-vms.png}
-	\label{fig:docker-vs-vms}
-	\source{https://docs.docker.com/get-started/}
-\end{figure}
-\end{frame}
-%}}}
-
-\begin{frame}{Why follow trends?}%{{{
+\subsection{1.1 Topic and study scope}	
+\begin{frame}{Title again}%{{{
 \begin{center}
-	\begin{tabular}{ | c | c |}
-		\hline
-		{\bfseries Why microservices?} & {\bfseries Why Docker containers?} \\ \hline
-		simpler architecture & portability across clouds \\ \hline
-		reuse an application & limit "works on my machine" \\ \hline
-		less context at once & faster startup times \\ \hline
-		isolated failures &  light-weight \\ 
-		\hline
-	\end{tabular}
-	\begin{tabular}{ | c |}
-		\hline
-		 {\bfseries Why cloud?} \\ \hline
-		 scalability \\ \hline
-		 lower upfront infrastructure investment \\ \hline
-		 reliable hardware (SLAs) \\ \hline
-		 efficient utilization of resources \\ 
-		\hline
-	\end{tabular}
+\LARGE{Kubernetes cluster deployment for production environment}
 \end{center}
 \end{frame}
 %}}}
 
-%make the code architecture less coupled  & more efficient resources utilization & %Potential solutions\\ \hline
-		% make the code architecture less coupled  & more efficient resources utilization & Potential solutions\\ \hline
-
-% \begin{frame}{Why follow trends?}%{{{
-% Why microservices?
-% \begin{itemize}
-% \item to simplify complex applications 
-% \item to put less context into a developer's head
-% \item to be able to easier navigate the failure
-
-% Why migrate to cloud?
-% \begin{itemize}
-% \item to satisfy the need for scalability
-% \item to decrease the upfront infrastructure investment
-% \item to pay only for used infrastructure, not for the allocated part
-% \item to utilize resources in a more efficient way
-% \item to use reliable infrastructure (thanks to e.g. S3 SLA)
-% \end{itemize}
-% \end{frame}
-% %}}}
-
-% \begin{frame}{Why follow these trends?}%{{{
-% Why choose Docker containers instead of virtual machines?
-% \begin{itemize}
-% \item to ensure such a deployment which is portable across infrastructure providers (across clouds)
-% \item to avoid/decrease the frequency of the common problem "works on my machine"
-% \item for faster startup times
-% Docker instances are lighter-weight. To ship an app as a virtual machine image, you have to bake an entire operating system into the image. With a container, only the app itself has to go inside the container. This translates to a less complicated build process, plus the ability to host many more containers on a single physical server.
-% \end{itemize}
-% \end{frame}
-% %}}}
-
-\begin{frame}{Why Kubernetes? It is useful}%{{{
-Challenges:
-\begin{itemize}
-	\item How to deploy a microservice if it depends on many other microservices?
-	\item How to satisfy the need for scalability?
-	\item How to ensure repetitive and fast deployments?
-\end{itemize}
-
-Solutions:
-\begin{itemize}
-	\item Use a containers' orchestrator like: Docker-compose, \textbf{Kubernetes}, Mesos, Docker Swarm
-	\item Use \textbf{DevOps} practices like: Infrastructure as Code, Continuous Integration, Continuous Delivery, Configuration Management Systems
-\end{itemize}
-\end{frame}
-%}}}
-
-\begin{frame}{Kubernetes (k8s) - definition}%{{{
+\begin{frame}{1.1 Topic and study scope - Kubernetes (k8s) - definition}%{{{
 \begin{itemize}
 \item An open-source system for \textbf{automating deployment, scaling, and management of containerized applications}
-\item \textbf{Features}: self-healing, secret and configuration management, service discovery and load balancing, automated containers placing based on their resource requirements
+\item A platform for managing application containers across multiple hosts
+\item First released in 2014
 \item Can be \textbf{deployed on many clouds} (AWS, GCP, Azure) or \textbf{on-premises} - unified experience
-\item Bases \textbf{15 years of experience} of running production workloads at Google
+\item Based on \textbf{15 years of experience} of running production workloads at Google
 \item A \textbf{CNCF} graduated project
 \end{itemize}
-
 \begin{tabular}{  c c }
-	\begin{figure}
-		\includegraphics[width=3cm]{figures/kubernetes-logo.png}
-		\label{fig:kubernetes-logo}
-	\end{figure} &
-	\begin{figure}
-		\includegraphics[width=3cm]{figures/cncf-logo.png}
-		\label{fig:cncf-logo}
-	\end{figure} 
-\end{tabular}
+\begin{figure}
+	\includegraphics[width=2cm]{figures/kubernetes-logo.png}
+	\label{fig:kubernetes-logo}
+\end{figure} &
+\begin{figure}
+	\includegraphics[width=2cm]{figures/cncf-logo.png}
+	\label{fig:cncf-logo}
+\end{figure} 
+\end{tabular} \\
+\tiny{Source: https://kubernetes.io/ [Accessed: 06.04.2020]} \\
+\tiny{Source: Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017.}
+\end{frame}
+
+\begin{frame}{1.1 Topic and study scope - k8s features}%{{{
+\begin{itemize}
+	\item Container deployment
+	\item Persistent storage
+	\item Container health monitoring
+	\item Compute resource management
+	\item Auto-scaling
+	\item High availability by cluster federation
+	\item Secret and configuration management
+	\item Service discovery and load balancing
+\end{itemize}
+
+\tiny{Source: https://kubernetes.io/ [Accessed: 06.04.2020]} 
+\tiny{Source: Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017.}
+% it's useful
 \end{frame}
 %}}}
 
-\begin{frame}{Why Kubernetes? It is popular}%{{{
+\begin{frame}{1.1 Topic and study scope - topic choice}%{{{
+k8s is popular and used by practicioners
+\begin{figure}
+	\includegraphics[width=8cm]{figures/cncf-container-orchestrators.png}
+	%\caption{Preferred container management platforms, CNCF Survey, 2017}
+	\label{fig:cncf-container-orchestrators}
+	\tiny{CNCF Survey, 2017}
+\end{figure}
+\end{frame}
+%}}}
+	
+\begin{frame}{1.1 Topic and study scope - topic choice}%{{{
+k8s is popular and used by practicioners
 \begin{figure}
 	\includegraphics[width=10cm]{figures/k8s-openstack-survey.png}
 	%\caption{Preferred containers orchestration tools on OpenStack, OpenStack Survey, 2018}
 	\label{fig:k8s-openstack-survey}
 	%\caption{Source: OpenStack Survey, 2018}
-	\source{OpenStack Survey, 2018}
+	\\
+	\tiny{OpenStack Survey, 2018}
 \end{figure}
 \end{frame}
 %}}}
-
-\begin{frame}{Why Kubernetes? It is popular}%{{{
-\begin{figure}
-	\includegraphics[width=8cm]{figures/cncf-container-orchestrators.png}
-	%\caption{Preferred container management platforms, CNCF Survey, 2017}
-	\label{fig:cncf-container-orchestrators}
-	\source{CNCF Survey, 2017}
-\end{figure}
-\end{frame}
-%}}}
-
-\begin{frame}{Kubernetes is used in production environment}%{{{
+	
+\begin{frame}{1.1 Topic and study scope - topic choice}%{{{
+k8s is used in production environment
 \begin{figure}
 	\includegraphics[width=10cm]{figures/cncf-k8s-used-in-production.png}
 	\label{fig:cncf-k8s-used-in-production}
-	\source{CNCF Survey, 2019}
+	\\
+	\tiny{CNCF Survey, 2019}
 \end{figure}
 \end{frame}
 %}}}
-
-\begin{frame}{Kubernetes is used by NASA in production environment}%{{{
+	
+\begin{frame}{1.1 Topic and study scope - topic choice}%{{{
+k8s is used by NASA in production environment
+\begin{center}
 	\begin{figure}
 		\includegraphics[width=6cm]{figures/k8s-used-by-nasa.png}
 		\label{fig:k8s-used-by-nasa}
-		\source{Fundamentals of effective cloud management for the new NASA Astrophysics Data System, 2019}
-	\end{figure}
+		\\
+		\tiny{Blanco-Cuaresma, Sergi, et. al. \textit{Fundamentals of effective cloud management for the new NASA Astrophysics Data System}, 2019.}
+	\end{figure}	
+\end{center}
 \end{frame}
 %}}}
 
-\begin{frame}{Methods how to deploy a Kubernetes cluster}%{{{
-\begin{figure}
-\includegraphics[width=8cm]{figures/cncf-k8s-deployment-methods.png}
-\label{fig:cncf-k8s-deployment-methods}
-\source{CNCF Survey, 2019}
-\end{figure}
+\begin{frame}{1.1 Topic and study scope - k8s deployment methods}%{{{
+\begin{center}
+	\begin{figure}
+	\includegraphics[width=8cm]{figures/cncf-k8s-deployment-methods.png}
+	\label{fig:cncf-k8s-deployment-methods}
+	\\
+	\tini{CNCF Survey, 2019}
+	\end{figure}	
+\end{center}
 \end{frame}
 %}}}
 
-\begin{frame}{Why compare two deployment methods on AWS?}%{{{
+\begin{frame}{1.1 Topic and study scope - topic choice}%{{{
+The choice of \textbf{comparing two deployment methods on AWS}:
 	\begin{itemize}
 		\item Kubernetes cluster deployment methods are described by blog posts and tutorials - not formal literature, but \textbf{practitioners use them}
 		\item Comparison of two deployment methods on AWS is \textbf{not found in literature} (however usage of Kubernetes cluster in production environment was handled)
-		\item \textbf{AWS is a stable cloud} with long history
-		\item \textbf{AWS is popular} among practitioners
+		\item \textbf{AWS is a broadly adopted cloud} with long history
 	\end{itemize}
 \end{frame}
 %}}}
-
-\begin{frame}{Why focus on production environment?}%{{{
+	
+\begin{frame}{1.1 Topic and study scope - topic choice}%{{{
+The choice of \textbf{focusing on production environment}:
 	\begin{itemize}
 		\item To \textbf{facilitate others plan such deployment better} by letting them be aware upfront of its limitations and known issues
 		\item To \textbf{apply a practical approach}
-		\item To conform to the \textbf{DevOps best practices} and \textbf{Agile methodology}
+		\item Production environment is the one \textbf{creates value for businesses and customers}, it generates profit
+		\item Because it is \textbf{challenging and interesting} to satisfy the requirements of a production environment
 	\end{itemize}
 \end{frame}
 %}}}
 
-\subsection{About this study}
-\begin{frame}{Aims and research methodology}%{{{
+
+\subsection{1.2 Aims and 1.3 Research Methodology}
+\begin{frame}{1.2 Aims and 1.3 Research Methodology}%{{{
 	\begin{itemize}
 		\item Theoretical approach
 		\begin{itemize}
@@ -271,7 +387,9 @@ Solutions:
 \end{frame}
 %}}}
 
-\begin{frame}{Related work - Formal literature}%{{{
+
+\subsection{1.4 Related work}
+\begin{frame}{1.4 Related work - Formal literature}%{{{
 \begin{itemize}
 	\item Concern many clouds, practical approach, some production environment elements:
 	\begin{itemize}
@@ -286,7 +404,7 @@ Solutions:
 \end{frame}
 %}}}
 
-\begin{frame}{Related work - Informal literature}%{{{
+\begin{frame}{1.4 Related work - Informal literature}%{{{
 \begin{itemize}
 	\item \textbf{Many clouds compared, only theoretical approach}:
 	\begin{itemize}
@@ -305,8 +423,25 @@ Solutions:
 \end{frame}
 %}}}
 
-\subsection{Production deployment requirements}
-\begin{frame}{Production deployment requirements}%{{{
+\subsection{1.5 Structure of this thesis}
+\begin{frame}{1.5 Structure of this thesis}%{{{
+\begin{itemize}
+	\item The 1st chapter serves as introduction and presents study topic, scope, aims, research methodology and related work  
+	\item The chapters: 2. and 3. are theoretical 
+	\item Chapter 2. focuses on definitions 
+	\item Chapter 3. presents available k8s cluster deployment methods
+	\item The chapters: 4., 5. and 6. are practical 
+	\item Chapter 4. focuses on preparations before producing any code 
+	\item Chapter 5. summarizes the deployment methods performed for this study by the author
+	\item Chapter 6. compares the deployment methods 
+	\item Chapter 7. provides a summary and future potential
+\end{itemize}
+\end{frame}
+%}}}
+
+\section{2. Definitions, 3. Available k8s cluster deployment methods}
+\subsection{2.2 Production deployment requirements}
+\begin{frame}{2.2 Production deployment requirements}%{{{
 \begin{enumerate}
 	\item Automation, Continuous Integration, Continuous Development, Infrastructure as Code
 	\item Security
@@ -316,22 +451,23 @@ Solutions:
 	\item Centralized Logging
 	\item Centralized Audit
 \end{enumerate}
+\\
+\tiny{Source: Humble, Hez, et. al. \textit{Continuous Delivery}. Addison-Wesley, 2010}
 \end{frame}
 %}}}
 
-\subsection{Kubernetes architecture}
-\begin{frame}{Kubernetes architecture}%{{{
+\subsection{2.5 Kubernetes architecture}
+\begin{frame}{2.5 Kubernetes architecture}%{{{
 \begin{figure}
 	\includegraphics[width=10cm]{figures/k8s-arch.png}
 	\label{fig:k8s-arch}
-	\source{https://kubernetes.io/docs/concepts/architecture/cloud-controller/}
+	\tiny{Source: https://kubernetes.io/docs/concepts/architecture/cloud-controller/}
 \end{figure}
 \end{frame}
 %}}}
 
-\section{Available Kubernetes deployment methods}
-\subsection{Using Managed Kubernetes}
-\begin{frame}{Using Managed Kubernetes}%{{{
+\subsection{3. k8s cluster deployment methods}
+\begin{frame}{3. k8s cluster deployment methods - Managed k8s}%{{{
 \begin{center}
 	\begin{tabular}{ c c c}
 		\begin{figure}
@@ -352,8 +488,7 @@ Solutions:
 %}}}
 
 
-\subsection{More custom solutions}
-\begin{frame}{Using popular programs}%{{{
+\begin{frame}{3. k8s cluster deployment methods - custom solutions}%{{{
 \begin{figure}
 	\includegraphics[width=11cm]{figures/custom-kops.png}
 	\label{fig:custom-kops}
@@ -366,16 +501,11 @@ Solutions:
 	\includegraphics[width=11cm]{figures/custom-kubespray.png}
 	\label{fig:custom-kubespray}
 \end{figure}
-\begin{figure}
-	\includegraphics[width=11cm]{figures/custom-digitalrebar-provision.png}
-	\label{fig:custom-digitalrebar-provision}
-\end{figure}
 \end{frame}
 %}}}
 
 
-\subsection{Entirely customized solutions}
-\begin{frame}{Entirely customized solutions}%{{{
+\begin{frame}{3. k8s cluster deployment methods - custom solutions}%{{{
 \begin{itemize}
 	\item Configuration Management frameworks: SaltStack, Ansible, Chef, Puppet
 	\item Infrastructure provisioning frameworks: Terraform, CloudFormation
@@ -383,179 +513,189 @@ Solutions:
 \end{frame}
 %}}}
 
-\section{Kubernetes cluster deployment in production environment}
-\subsection{Preparations}
-\begin{frame}{How to satisfy the Automation requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item TODO paste some image of a CICD pipeline
-	\item TODO design 2 environments: testing and production 
-\end{itemize}
-\end{frame}
-%}}}
-\begin{frame}{How to satisfy the Security requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item HTTPS
-	\item no hardcoded passwords or ssh keys
-	\item maybe use a static linter 
-	\item RBAC - identity and access management
-\end{itemize}
-\end{frame}
-%}}}
-\begin{frame}{How to satisfy the High Availability (HA) requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item 3 Kubernetes master nodes? etcd as a cluster
-	\item at least 2 worker nodes
-	\item AWS ASG (auto scaling groups)
-	\item provide health checks to verify that cluster is up and running (healthy)
-	\item or: blue green deployments
-	\item test HA by introducing failures, measure the time needed to recover (compare with a paper)
-\end{itemize}
-\end{frame}
-%}}}
+% \section{Kubernetes cluster deployment in production environment}
+% \subsection{Preparations}
+% \begin{frame}{How to satisfy the Automation requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item TODO paste some image of a CICD pipeline
+% 	\item TODO design 2 environments: testing and production 
+% \end{itemize}
+% \end{frame}
+% %}}}
+% \begin{frame}{How to satisfy the Security requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item HTTPS
+% 	\item no hardcoded passwords or ssh keys
+% 	\item maybe use a static linter 
+% 	\item RBAC - identity and access management
+% \end{itemize}
+% \end{frame}
+% %}}}
+% \begin{frame}{How to satisfy the High Availability (HA) requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item 3 Kubernetes master nodes? etcd as a cluster
+% 	\item at least 2 worker nodes
+% 	\item AWS ASG (auto scaling groups)
+% 	\item provide health checks to verify that cluster is up and running (healthy)
+% 	\item or: blue green deployments
+% 	\item test HA by introducing failures, measure the time needed to recover (compare with a paper)
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\begin{frame}{How to satisfy the Backup and Restore requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item automated script for etcd backup 
-	\item send backup outside
-	\item test the restore operation
-\end{itemize}
-\end{frame}
-%}}}
+% \begin{frame}{How to satisfy the Backup and Restore requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item automated script for etcd backup 
+% 	\item send backup outside
+% 	\item test the restore operation
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\begin{frame}{How to satisfy the Centralized Monitoring requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item use a server like Nagios, Grafana, InfluxDB, Prometheus, etc.
-	\item use some AWS service e.g. CloudWatch
-\end{itemize}
-\end{frame}
-%}}}
+% \begin{frame}{How to satisfy the Centralized Monitoring requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item use a server like Nagios, Grafana, InfluxDB, Prometheus, etc.
+% 	\item use some AWS service e.g. CloudWatch
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\begin{frame}{How to satisfy the Centralized Logging requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item use a server like Graylog, Fluentd, LogStash
-	\item use some AWS service e.g. CloudWatch
-\end{itemize}
-\end{frame}
-%}}}
+% \begin{frame}{How to satisfy the Centralized Logging requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item use a server like Graylog, Fluentd, LogStash
+% 	\item use some AWS service e.g. CloudWatch
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\begin{frame}{How to satisfy the Centralized Audit requirement?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item use some AWS service e.g. CloudTrail
-	\item allow access to production only through CICD pipeline
-\end{itemize}
-\end{frame}
-%}}}
+% \begin{frame}{How to satisfy the Centralized Audit requirement?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item use some AWS service e.g. CloudTrail, AWS Config
+% 	\item allow access to production only through CICD pipeline
+% 	\item some k8s built-in solution? cloud agnostic method
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\begin{frame}{How to test that k8s cluster is healthy?}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item check health status of all k8s services
-	\item use a status dashboard
-	\item check it every 1 minute
-	\item deploy a small app on k8s to test that k8s is usable
-	\item run these tests also in a CICD pipeline
-\end{itemize}
-\end{frame}
-%}}}
+% \begin{frame}{How to test that k8s cluster is healthy?}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item check health status of all k8s services
+% 	\item use a status dashboard
+% 	\item check it every 1 minute
+% 	\item deploy a small app on k8s to test that k8s is usable
+% 	\item run these tests also in a CICD pipeline
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\subsection{The deployment}
-\begin{frame}{Method: AWS EKS}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item link to code
-	\item main steps summarized
-	\item overall how it went
-	\item some problems + solutions 
-\end{itemize}
-\end{frame}
-%}}}
+% \subsection{The deployment}
+% \begin{frame}{Method: AWS EKS}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item link to code
+% 	\item main steps summarized
+% 	\item overall how it went
+% 	\item some problems + solutions 
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\begin{frame}{Method: AWS with Kops}%{{{
-\textit{this is just a draft!}
-\begin{itemize}
-	\item link to code
-	\item main steps summarized
-	\item overall how it went
-	\item some problems + solutions 
-\end{itemize}
-\end{frame}
-%}}}
+% \begin{frame}{Method: AWS with Kops}%{{{
+% \textit{this is just a draft!}
+% \begin{itemize}
+% 	\item link to code
+% 	\item main steps summarized
+% 	\item overall how it went
+% 	\item some problems + solutions 
+% \end{itemize}
+% \end{frame}
+% %}}}
 
-\subsection{Comparison}
-\begin{frame}{Criterium 1: Cost}%{{{
-\textit{this is just a draft!}
+% \subsection{Comparison}
+% \begin{frame}{Criterium 1: Cost}%{{{
+% \textit{this is just a draft!}
 
-\end{frame}
-%}}}
+% \end{frame}
+% %}}}
 
-\begin{frame}{Criterium 2: The amount of problems}%{{{
-\textit{this is just a draft!}
+% \begin{frame}{Criterium 2: The amount of problems}%{{{
+% \textit{this is just a draft!}
 
-\end{frame}
-%}}}
+% \end{frame}
+% %}}}
 
-\begin{frame}{Criterium 3: The amount of not automated resources}%{{{
-\textit{this is just a draft!}
+% \begin{frame}{Criterium 3: The amount of not automated resources}%{{{
+% \textit{this is just a draft!}
 
-\end{frame}
-%}}}
+% \end{frame}
+% %}}}
 
-\begin{frame}{Criterium 4: Production deployment requirements met?}%{{{
-\textit{this is just a draft!}
+% \begin{frame}{Criterium 4: Production deployment requirements met?}%{{{
+% \textit{this is just a draft!}
 
-\end{frame}
-%}}}
+% \end{frame}
+% %}}}
 
-\begin{frame}{Comparison summary}%{{{
-	\textit{this is just a draft!}
-	\begin{tabular}{| l | c | c |}
-		\hline
-		& AWS EKS & AWS Kops \\
-		\hline
-		Cost &  &  \\
-		\hline
-		Problems count &  &  \\
-		\hline
-		Not automated resources count &  &  \\
-		\hline
-		Production requirements met &  &  \\
-		\hline
-		\end{tabular}
-	\end{center}
-	\end{frame}
-\end{frame}
-%}}}
+% \subsection{Comparison summary}
+% \begin{frame}{Comparison summary}%{{{
+% 	\textit{this is just a draft!}
+% 	\begin{tabular}{| l | c | c |}
+% 		\hline
+% 		& AWS EKS & AWS Kops \\
+% 		\hline
+% 		Cost &  &  \\
+% 		\hline
+% 		Problems count &  &  \\
+% 		\hline
+% 		Not automated resources count &  &  \\
+% 		\hline
+% 		Production requirements met &  &  \\
+% 		\hline
+% 		\end{tabular}
+% \end{frame}
+% %}}}
 
-\section{Summary}
-\subsection{Lessons learned}
-\begin{frame}{Lessons learned and achieved results}%{{{
-	\textit{this is just a draft!}
-\end{frame}
-%}}}
-\subsection{Future work potential}
-\begin{frame}{Future work potential}%{{{
-	\textit{this is just a draft!}
-\begin{itemize}
-	\item compare more methods of deployment
-	\item use more comparison criteria - e.g. automated upgrades
-	\item apply more load and run load and performance tests
-	\item instead of satisfying production requirements, test enterprise and big data deployments requirements - create a survey to get lessons learned based on long running clusters and their administration
-\end{itemize}
-\end{frame}
-%}}}
-\subsection{Literature}
-\begin{frame}{Literature}%{{{
-	\textit{this is just a draft!}
-
-\end{frame}
-%}}}
+% \section{Summary}
+% \subsection{Lessons learned}
+% \begin{frame}{Lessons learned and achieved results}%{{{
+% 	\textit{this is just a draft!}
+% \end{frame}
+% %}}}
+% \subsection{Future work potential}
+% \begin{frame}{Future work potential}%{{{
+% 	\textit{this is just a draft!}
+% \begin{itemize}
+% 	\item compare more methods of deployment
+% 	\item use more comparison criteria 
+% 	\item use more production requirements, e.g. automated upgrades
+% 	\item apply more load and run load and performance tests
+% 	\item instead of satisfying production requirements, test enterprise and big data deployments requirements - create a survey to get lessons learned based on long running clusters and their administration
+% \end{itemize}
+% \end{frame}
+% %}}}
+% \subsection{Literature}
+% \begin{frame}{Literature}%{{{
+% 	\textit{this is just a draft!}
+% \begin{itemize}
+% 	\item Uphill, Thomas, et. al. \textit{DevOps: Puppet, Docker and Kubernetes}. Packt Publishing, 2017. ISBN 978-1788297615
+% 	\item Alonso, Ruben. \textit{Software containerization with Docker}. Bachelor's thesis. Turku University of Applied Sciences, 2017.
+% 	\item Saito, Hideto. \textit{DevOps with Kubernetes: Accelerating software delivery with container orchestrators}. Packt Publishing, 2017.
+% \item Morris, Kief. \textit{Infrastructure as Code}. Edition 1. O'Reilly Media, 2016.
+% \item Nemer, Joe. \textit{Advantages and Disadvantages of Microservices Architecture}. Cloud Academy, 2019. [Accessed: 06.04.2020] Available at: https://cloudacademy.com/blog/microservices-architecture-challenge-advantage-drawback/
+% \item Balalaie, Armin, et. al. \textit{Microservices Architecture Enables DevOps: An Experience Report on Migration to a Cloud-Native Architecture}. IEEE Software, 2016, vol. 33.
+% \item https://continuousdelivery.com/ [Accessed: 06.04.2020]
+% \item Humble, Hez, et. al. \textit{Continuous Delivery}. Addison-Wesley, 2010.
+% \end{itemize}
+% \end{frame}
+% %}}}
 
 
 
