@@ -16,6 +16,10 @@
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 \setenumerate{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 
+\usepackage[backend=bibtex]{biblatex}
+\bibliography{thesis-tex/bibliography.bib}
+
+
 \usepackage{wrapfig}
 
 
@@ -35,6 +39,17 @@
 \newpage
 \thispagestyle{empty}
 
-This is my thesis
+\section{Introduction}
+\section{From microservices to automated orchestration}
+\subsection{Kubernetes as a Docker containers orchestration system}
+\textit{This section describes what Kubernetes is and what problems it solves. Furthermore, the section acknowledges Kubernetes popularity.}
+
+\subsection{Kubernetes architecture}
+% this short summary before each section helps me to stay focused on what i want to write about
+\textit{This section contains a deep dive into the Kubernetes architecture. The focus is on technical details and describing the responsibilities of each Kubernetes component.}
+A \textbf{Kubernetes cluster} is a single unit of computers that are connected to work together. Any such cluster includes two kinds of instances: Masters and Nodes \cite{k8s-cluster}. This is depicted on the figure below:
+
+
+\printbibliography
 
 \end{document}
