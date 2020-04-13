@@ -1,4 +1,3 @@
-
 \documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage{float}
@@ -21,8 +20,6 @@
 
 
 \usepackage{wrapfig}
-
-
 \graphicspath{{figures/}}
 
 \title{
@@ -37,17 +34,72 @@
 \maketitle
 ~\vspace{8cm}
 \newpage
-\thispagestyle{empty}
 
 \section{Introduction}
 \section{From microservices to automated orchestration}
 \subsection{Kubernetes as a Docker containers orchestration system}
 \textit{This section describes what Kubernetes is and what problems it solves. Furthermore, the section acknowledges Kubernetes popularity.}
-
+~\\
+~\\
 \subsection{Kubernetes architecture}
 % this short summary before each section helps me to stay focused on what i want to write about
-\textit{This section contains a deep dive into the Kubernetes architecture. The focus is on technical details and describing the responsibilities of each Kubernetes component.}
-A \textbf{Kubernetes cluster} is a single unit of computers that are connected to work together. Any such cluster includes two kinds of instances: Masters and Nodes \cite{k8s-cluster}. This is depicted on the figure below:
+\textit{This section contains a high level description of the Kubernetes architecture. The focus is on the responsibilities of each Kubernetes component.}
+~\\
+~\\
+A \textbf{Kubernetes cluster} is a single unit of computers which are connected to work together. Any such cluster includes two kinds of instances: masters and nodes. An instance can be a virtual machine or a physical computer. This is depicted on the figure below\cite{k8s-cluster}:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=7cm]{figures/cluster.png}
+    \label{fig:cluster}
+    \caption{Kubernetes cluster diagram}
+    \small{Source: https://kubernetes.io/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/}
+\end{figure}
+
+\paragraph{}
+\textbf{The role of the master is to manage the cluster} which means: schedule applications, maintain their desired state, scale them, handle events, manage nodes. \textbf{Nodes serve as the worker machines}. They are responsible for running containers and handling container operations. Masters schedule containers to run on nodes\cite{book-mastering-k8s,k8s-cluster}. At least one node and one master is needed in a Kubernetes cluster. In order to provide fault-tolerance and high availability in production environments multiple master and multiple node instances are run\cite{k8s-components}.
+
+The instances in a Kubernetes cluster (masters and nodes) are hosts to several \textbf{Kubernetes components}. There are master components, used to control the cluster and there are also node components, run on each node. All the components are presented on the next image:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=14cm]{figures/components-of-kubernetes.png}
+    \label{fig:cluster}
+    \caption{Kubernetes components}
+    \small{Source: https://kubernetes.io/docs/concepts/overview/components/}
+\end{figure}
+
+
+The master components are also known as the control plane’s components\cite{k8s-components}. The following are the master components\cite{book-mastering-k8s,k8s-components}:
+\begin{itemize}
+\item API server
+\item Etcd
+\item Scheduler
+\item Controller manager and Cloud Controller manager
+\end{itemize}
+
+\paragraph{}
+\textbf{API server} exposes the Kubernetes REST API. It allows the nodes to communicate with the master and it also allows end users to interact with the cluster. Thanks to the fact that API server is stateless and that all its data is stored in Etcd, API server can easily scale horizontally. The main implementation of a Kubernetes API server is kube-apiserver\cite{book-mastering-k8s,k8s-cluster,k8s-components}.
+
+\textbf{Etcd} stores the entire cluster state. It is a highly-available key-value store. It is enough, for a test Kubernetes cluster, to deploy one instance of Etcd. However, for the purposes of high availability and redundancy, a 3-node or even 5-node Etcd cluster is typical. It is recommended to have a back up plan for the data stored in Etcd\cite{book-mastering-k8s,k8s-components}.
+
+\textbf{Scheduler} is responsible for assiging containers to nodes. Scheduler selects a node for a container to run on. It considers a range of factors: resource requirements, various constraints, affinity and anti-affinity specifications, data locality, inter-workload interference, and deadlines. The implementation is known as kube-scheduler\cite{book-mastering-k8s,k8s-components}.
+
+\textbf{Controller manager} runs controller process such as: watches the shared state of the cluster and makes changes needed to move the current state into the desired state. Controller manager is a collection of separate managers, but they are all compiled into a single binary and run in a single process in order to reduce complexity. The controllers consist of: Node Controller, Replication Controller, Endpoints Controller, Service Account and Token Controllers. The implementation of Controller manager is kube-controller-manager\cite{book-mastering-k8s,k8s-components}. \textbf{Cloud Controller manager} interacts with a specified underlying cloud provider (e.g. Amazon Web Services or Google Cloud Platform). It allows the Kubernetes code and the cloud vendor’s code to evolve independently. It is implemented by cloud-controller-manager\cite{k8s-components}.
+
+As aforementioned, there are also node components. They are listed below:
+\begin{itemize}
+\item Kubelet
+\item Proxy
+\item Container Runtime
+\end{itemize}
+
+\paragraph{}
+\textbf{Kubelet} oversees the communication with the master components and makes sure that containers, described by a Pod, are running and healthy. A Pod is a simple object from a Kubernetes API and it represents a set of containers. Containers which were not created by Kubenernetes are not managed by Kubelet\cite{book-mastering-k8s,k8s-components}.
+
+\textbf{Proxy} is implemented by kube-proxy. It is a network proxy and it implements a part of the Kubernetes Service concept, which means that it is responsible for exposing an application as a network service\cite{k8s-components}.
+
+\textbf{Container Runtime} is the software which is responsible for operating containers. Several container runtimes are supported: Docker, containerd, CRI-O, and any implementation of the Kubernetes CRI (Container Runtime Interface). It is a design policy of Kubernetes that is ought to be decoupled from a specific container runtime. Under some circumstates it should be possible to switch from one container runtime to another or to use multiple of them at once. Originally, Kubernetes was designed to manage only Docker containers\cite{book-mastering-k8s,k8s-components}.
+
+
 
 
 \printbibliography

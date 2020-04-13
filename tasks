@@ -3,15 +3,14 @@
 command="$1"
 case "${command}" in
     thesis)
+        set -x
         rm -f thesis-tex/*.{pdf,aux,bbl,blg,fls,fdb_latexmk,out,run.xml,synctex.gz,toc,log}
-        pdflatex thesis-tex/thesis.tex
-        bibtex thesis
-        pdflatex thesis-tex/thesis.tex
+        pdflatex -interaction=nonstopmode -file-line-error thesis-tex/thesis.tex &\
+          bibtex thesis &\
+          pdflatex -interaction=nonstopmode -file-line-error thesis-tex/thesis.tex
         ;;
     *)
         echo "Invalid command: '${command}'"
         exit 1
         ;;
 esac
-
-    
