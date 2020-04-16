@@ -25,7 +25,7 @@ Throughout this work a production deployment means such a deployment which targe
 \item \textbf{Audit} - to show who was responsible for what action\footnote{\cite{online-weave-guide}, p. 6}.
 \item \textbf{High Availability} - authors of \cite{book-mastering-k8s} go even further and state that the cluster should be tested for being reliable and highly available \textbf{before} it is deployed into production\footnote{\cite{book-mastering-k8s}, p. 65-80, \cite{book-cndwk}, p. 37}.
 \item \textbf{Live cluster upgrades} - it is not affordable for large Kubernetes clusters with many users to be offline for maintenance\footnote{\cite{book-mastering-k8s}, p. 80}.
-\item \textbf{Backup, Quick recovery or even Zero down-time}\footnote{\cite{book-mastering-k8s}, p. 87, \cite{online-weave-guide}, p. 2, \cite{book-cndwk}, p. 38}.
+\item \textbf{Backup, Distaster Recovery}\footnote{\cite{book-mastering-k8s}, p. 87, \cite{online-weave-guide}, p. 2, \cite{book-cndwk}, p. 38}.
 \item \textbf{Security, secrets management, image scanning} - security at many levels is needed (node, image, pod and container, etc.)\footnote{\cite{book-mastering-k8s}, p. 91-97, \cite{online-weave-checklists}, p. 5, 6, \cite{online-weave-guide}, p. 2, 4-6, \cite{book-cndwk}, p. 38}.
 \item \textbf{Passing tests, a healthy cluster} - "if you don't test it, assume it doesn't work"\footnote{\cite{book-mastering-k8s}, p. 78, \cite{book-cndwk}, p. 39}.
 \item \textbf{Automation and Infrastructure as Code} - in production environment a versioned, auditable, and repeatable way to manage the infrastructure is needed\footnote{\cite{book-mastering-k8s}, p. 269, \cite{online-weave-guide}, p. 2}.
@@ -40,8 +40,7 @@ Throughout this work a production deployment means such a deployment which targe
 \item setting up notifications or alarms to let people know about certain events
 \end{itemize}
 \paragraph{}
-Monitoring manages the following data: CPU usage, memory utilization, I/O per disk, disk space, number of network connections, response time, etc. Thus, it is helpful on many different levels: on hardware, operating system,  middleware and application level.
-There is a wide range of available open source and commercial tools: Nagios, OpenNMS, Flapjack, Zenoss, Tivoli from IBM, Operations Manager from HP, Splunk, etc.\footnote{\cite{book-cicd}, p. 318}. Solutions recommended for a Kubernetes cluster is: Heapster combined with InfluxDB as backend and Grafana as frontend and there is also cAdvisor\footnote{\cite{book-mastering-k8s}, p. 42, 43}. A nice feature of Grafana are its dashboards. Example Grafana dashboard is presented in the next image:
+Monitoring provides various metrics, e.g.: CPU usage, memory utilization, I/O per disk, disk space, number of network connections, response time, etc. Thus, it is helpful on many different levels: on hardware, operating system,  middleware and application level. There is a wide range of available open source and commercial tools to take care of monitoring: Nagios, OpenNMS, Flapjack, Zenoss, Tivoli from IBM, Operations Manager from HP, Splunk, etc.\footnote{\cite{book-cicd}, p. 318}. Solutions recommended for a Kubernetes cluster are: Heapster combined with InfluxDB as backend and Grafana as frontend and also cAdvisor\footnote{\cite{book-mastering-k8s}, p. 42, 43}. A nice feature of Grafana are its dashboards. Example Grafana dashboard is presented in the next image:
 \begin{figure}[H]
   \centering
   \includegraphics[width=11cm]{figures/grafana.png}
@@ -50,7 +49,9 @@ There is a wide range of available open source and commercial tools: Nagios, Ope
   \\
   \small{Source: \url{https://linoxide.com/linux-how-to/monitor-kubernetes-cluster-prometheus-grafana/}, (accessed: 15.04.2020)}
 \end{figure}
-Grafana also works well with Prometheus, which is a monitoring system and a time series database. Prometheus is also a CNCF graduated project\footnote{\cite{online-prometheus-gh}, \cite{online-prometheus-www}}. When a deployment happens on AWS, another solution for monitoring and logging may be: Amazon CloudWatch\footnote{\cite{online-cw}}. There is also Kubernetes dashboard, which is a built-in solution and doesn't require any customization. Heapster, InfluxDB and Grafana are great for heavy-duty purposes, whereas Kubernetes dashboard is probably able to satisfy the majority of monitoring needs of a Kubernetes cluster\footnote{\cite{book-mastering-k8s}, p. 48, \footnote{\cite{book-devops-k8s}, p. 875, 879-882}}. Example dashboard provided by Kubernetes dashboard is depicted on the next image:
+Grafana also works well with Prometheus, which is a monitoring system and a time series database. Prometheus is also a CNCF graduated project\footnote{\cite{online-prometheus-gh}, \cite{online-prometheus-www}}.
+
+If a system (like Kubernetes) is deployed on AWS, another solution for monitoring and logging may be: Amazon CloudWatch\footnote{\cite{online-cw}}. There is also Kubernetes dashboard, which is a built-in solution and doesn't require any customization. Heapster, InfluxDB and Grafana are great for heavy-duty purposes, whereas Kubernetes dashboard is probably able to satisfy the majority of monitoring needs of a Kubernetes cluster\footnote{\cite{book-mastering-k8s}, p. 48, \footnote{\cite{book-devops-k8s}, p. 875, 879-882}}. Example dashboard provided by Kubernetes dashboard is depicted on the next image:
 \begin{figure}[H]
   \centering
   \includegraphics[width=10cm]{figures/k8s-dashboard.png}
@@ -119,7 +120,7 @@ Together with automation, there are two inextricably entwined terms: Infrastruct
 The following illustration presents security features available by api server:
 \begin{figure}[H]
     \centering
-    \includegraphics[width=16cm]{figures/security-api-server.png}
+    \includegraphics[width=13cm]{figures/security-api-server.png}
     \label{fig:security-api-server}
     \caption{An example test and release process diagram}
     \small{Source: \cite{book-mastering-k8s}, p. 101}
@@ -127,8 +128,29 @@ The following illustration presents security features available by api server:
 
 There are many more security measures that Kubernetes administrators and end-users could apply. An interested reader is referred to\cite{book-cndwk}, p. 141-151, 199-205 and \cite{book-mastering-k8s} p. 91-119.
 
-When it comes to backup, rto, rpo
+\textbf{Disaster recovery} can be understood as the process which an organization has to undergo after a service  disruption happened in order to resume normal services. It is vital to know what actions are necessary to overcome the disaster. This set of predefined procedures is known as \textbf{Disaster Recovery Plan}. Furthermore, disaster recovery is not the same as fault tolerance. The latter ensures that a system will withstand and resist the failure\footnote{\cite{article-dr}, p. 1, 2}.
 
+Disaster recovery is an essential requirement of any business where continuity matters. In order to plan disaster recovery well the following key parameters should be considered: the initial cost, the cost of data transfers and the cost of data storage. Significant costs may be a reason why, in the past, around 40-50% of small businesses had no DRP and did not intend to change this. However, cloud computing provides affordable solutions, because of the employed model "pay-for-what is used". Another advantage of the cloud is that it is fairly easy to use resources deployed in multiple geographical areas. This is desired, because one the major concepts in a DRP is the geographical separation of the system servers and its backup\footnote{\cite{article-dr-cloud}, p. 1, 2}.
 
+Key metrics that can be taken into consideration while planning disaster recovery are\footnote{\cite{article-dr}, p. 2, \cite{article-dr-cloud}, p. 3}:
+\begin{itemize}
+\item Critical Business Function (CBF)
+\item Maximum Acceptable Outage (MAO)
+\item Recovery Point Objective (RPO)
+\item Recovery Time Objective (RTO)
+\item Business Impact Analysis (BIA)
+\end{itemize}
+RPO can be defined as the time between two successive backups. Thus, the time between the last backup and the the disaster, which is de facto the time of data loss, is maximally equal to RPO. RTO can be understood as the time needed to recover from the disaster, when the server experiences downtime\footnote{\cite{article-dr-cloud}, p. 3}. RPO and RTO are illustrated on the following image:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm]{figures/rpo-rto.png}
+    \label{fig:rpo-rto}
+    \caption{RPO and RTO}
+    \small{Source: Own work}
+\end{figure}
+
+Cloud services mitigate some risks that persistent data storage has: e.g. cloud services provide high-available data by replicating it across different geographical locations. However, replication is not the same as backup and it does not protect against accidentally deleting a volume or against a misconfigured application overwriting the data. Thus backup is still needed. In order to backup Kubernetes, the Etcd database has to be backuped. Apart from that, each application deployed on top of Kubernetes should be backuped on its own\footnote{\cite{book-cndwk}, p. 206, 207}. There are already available services that help with Kubernetes backup: Velero\footnote{\cite{book-cndwk}, p. 208-211}.
+
+TODO: tests
 \paragraph{}
 Deploying into testing environment and into production environment differ. However, the same process should be followed, despite of which environment is the target.

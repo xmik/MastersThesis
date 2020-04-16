@@ -8,7 +8,7 @@
 ~\\
 ~\\
 \subsubsection{Kubernetes cluster}
-A \textbf{Kubernetes cluster} is a single unit of computers which are connected to work together. Any such cluster includes two kinds of instances: masters and nodes. An instance can be a virtual machine or a physical computer. This is depicted on the figure below\footnote{\cite{k8s-cluster}, p. 4}:
+A \textbf{Kubernetes cluster} is a single unit of computers which are connected to work together and which are provisioned with Kubernetes components. Such a cluster consists of two kinds of instances: masters and nodes. An instance can be a virtual machine or a physical computer. This is depicted on the figure below\footnote{\cite{k8s-cluster}, p. 4}:
 \begin{figure}[H]
     \centering
     \includegraphics[width=8cm]{figures/cluster.png}
@@ -18,9 +18,9 @@ A \textbf{Kubernetes cluster} is a single unit of computers which are connected 
 \end{figure}
 
 \subsubsection{Masters and nodes}
-\textbf{The role of the master is to manage the cluster} which means: schedule applications, maintain their desired state, scale them, handle events, manage nodes. \textbf{Nodes serve as the worker machines}. They are responsible for running containers and handling container operations. Masters schedule containers to run on nodes\footnote{\cite{book-mastering-k8s}, p. 5, \cite{k8s-cluster}}. At least one node and one master is needed in a Kubernetes cluster. In order to provide fault-tolerance and high availability in production environments multiple master and multiple node instances are run\footnote{\cite{k8s-components}}.
+\textbf{The role of the master is to manage the cluster}. This means that master: schedules applications, maintains their desired state, scales them, handles events, manages nodes. \textbf{Nodes serve as the worker machines}. They are responsible for running containers and handling container operations. Masters schedule containers to run on nodes\footnote{\cite{book-mastering-k8s}, p. 5, \cite{k8s-cluster}}. At least one node and one master is needed in a Kubernetes cluster. In order to provide fault-tolerance and high availability in production environments, multiple master and multiple node instances are run\footnote{\cite{k8s-components}}.
 
-The instances in a Kubernetes cluster (masters and nodes) are hosts to several \textbf{Kubernetes components}. There are master components, used to control the cluster and there are also node components, run on each node. All the components are presented on the next image:
+The instances in a Kubernetes cluster (masters and nodes) are hosts to several \textbf{Kubernetes components}. There are \textbf{master components}, used to control the cluster and there are also \textbf{node components}, run on each node. All the components are presented on the next image:
 \begin{figure}[H]
     \centering
     \includegraphics[width=14cm]{figures/components-of-kubernetes.png}
