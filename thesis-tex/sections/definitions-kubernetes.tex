@@ -11,10 +11,10 @@
 A \textbf{Kubernetes cluster} is a single unit of computers which are connected to work together. Any such cluster includes two kinds of instances: masters and nodes. An instance can be a virtual machine or a physical computer. This is depicted on the figure below\footnote{\cite{k8s-cluster}, p. 4}:
 \begin{figure}[H]
     \centering
-    \includegraphics[width=7cm]{figures/cluster.png}
+    \includegraphics[width=8cm]{figures/cluster.png}
     \label{fig:cluster}
     \caption{Kubernetes cluster diagram}
-    \small{Source: https://kubernetes.io/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/}
+    \small{Source: https://kubernetes.io/docs/tutorials/kubernetes-basics/create-cluster/cluster-intro/, (accessed: 14.04.2020)}
 \end{figure}
 
 \subsubsection{Masters and nodes}
@@ -26,12 +26,12 @@ The instances in a Kubernetes cluster (masters and nodes) are hosts to several \
     \includegraphics[width=14cm]{figures/components-of-kubernetes.png}
     \label{fig:cluster}
     \caption{Kubernetes components}
-    \small{Source: https://kubernetes.io/docs/concepts/overview/components/}
+    \small{Source: https://kubernetes.io/docs/concepts/overview/components/, (accessed: 14.04.2020)}
 \end{figure}
 
 
 \subsubsection{Components}
-The master components are also known as the control plane’s components. Below the master components are itemized:\footnote{\cite{book-mastering-k8s}, p. 13,\cite{k8s-components}}:
+The master components are also known as the control plane’s components. Below the master components are itemized\footnote{\cite{book-mastering-k8s}, p. 13,\cite{k8s-components}}:
 \begin{itemize}
 \item API server
 \item Etcd
@@ -48,7 +48,7 @@ The master components are also known as the control plane’s components. Below 
 
 \textbf{Controller manager} runs controller process such as: watches the shared state of the cluster and makes changes needed to move the current state into the desired state. Controller manager is a collection of separate managers, but they are all compiled into a single binary and run in a single process in order to reduce complexity. The controllers consist of: Node Controller, Replication Controller, Endpoints Controller, Service Account and Token Controllers. The implementation of Controller manager is kube-controller-manager\footnote{\cite{book-mastering-k8s}, p. 14, \cite{k8s-components}}. \textbf{Cloud Controller manager} interacts with a specified underlying cloud provider (e.g. Amazon Web Services or Google Cloud Platform). It allows the Kubernetes code and the cloud vendor’s code to evolve independently. It is implemented by cloud-controller-manager\footnote{\cite{k8s-components}}.
 
-As aforementioned, there are also node components. They run on both: masters and nodes. They are listed below:
+As aforementioned, there are also node components. They run on both: masters and nodes. They are listed below\footnote{\cite{book-mastering-k8s}, p. 13,\cite{k8s-components}}:
 \begin{itemize}
 \item Kubelet
 \item Proxy
@@ -68,7 +68,7 @@ Apart from master and node components, there are also \textbf{add-ons, extension
 TODO: describe such of them which will be used later.
 
 \subsubsection{The Kubernetes networking model}
-Kubernetes states a few \textbf{networking requirements}:
+Kubernetes states a few \textbf{networking requirements}\footnote{\cite{k8s-net}}:
 \begin{itemize}
 \item pods on a node must be able to communicate with all pods on all nodes without Network Address Translation (NAT)
 \item agents on a node (e.g. system daemons, kubelet) must be able to communicate with all pods on that node
