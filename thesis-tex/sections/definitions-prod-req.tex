@@ -29,6 +29,7 @@ Throughout this work a production deployment means such a deployment which targe
 \item \textbf{Security, secrets management, image scanning} - security at many levels is needed (node, image, pod and container, etc.)\footnote{\cite{book-mastering-k8s}, p. 91-97, \cite{online-weave-checklists}, p. 5, 6, \cite{online-weave-guide}, p. 2, 4-6, \cite{book-cndwk}, p. 38}.
 \item \textbf{Passing tests, a healthy cluster} - "if you don't test it, assume it doesn't work"\footnote{\cite{book-mastering-k8s}, p. 78, \cite{book-cndwk}, p. 39}.
 \item \textbf{Automation and Infrastructure as Code} - in production environment a versioned, auditable, and repeatable way to manage the infrastructure is needed\footnote{\cite{book-mastering-k8s}, p. 269, \cite{online-weave-guide}, p. 2}.
+\item \textbf{Autoscaling} - if application deployed on a Kubernetes demand more resources, then a new Kubernetes node should be automatically created and added to the cluster. However, autoscaling, even though nice to have, is not that important\footnote{\cite{book-cndwk}, p. 110}.
 \end{itemize}
 
 \subsubsection{Requirements explanations and how to satisfy them}
@@ -82,10 +83,10 @@ Generally speaking, \textbf{"highly available systems are fault tolerant systems
 \item Deploy multiple master instances and ensure a load balancer in front of them
 \item Ensure that node instances are reliable: the Docker daemon and the Kubelet daemon should restart automatically in case of failure
 \item Apply RAID to ensure redundancy of data storage or apply Key-Value Multi-Device (KVMD), a hybrid data reliability manager\cite{data-rel-kv} or let cloud provide storage availability
-end{itemize}
+\end{itemize}
 
 \paragraph{}
-Furthermore, it may be needed to test high availability. This can be done by inducing a predictable failure and verifying if the system behaves as expected\footnote{\cite{book-mastering-k8s}, p. 79}.
+Furthermore, it may be needed to test high availability. This can be done by inducing a predictable failure and verifying if the system behaves as expected\footnote{\cite{book-mastering-k8s}, p. 79}. Such a kind of testing, where we kill one or more cluster nodes or pods is called Chaos Monkey, after the tool developed by Netflix. There are also ready to use tools basing on the idea of Chaos Monkey: chaoskube, kube-monkey, PowerfulSeal \footnote{\cite{book-cndwk}, p. 107-109}.
 
 \paragraph{}
 When it comes to \textbf{automation}, many guidelines can be found in \cite{book-cicd}, p. 13-29. Below are some of them listed:
@@ -117,6 +118,7 @@ Together with automation, there are two inextricably entwined terms: Infrastruct
 \item using available programs for security scanning\footnote{\cite{book-cndwk}, p. 204}.
 \end{itemize}
 
+\paragraph{}
 The following illustration presents security features available by api server:
 \begin{figure}[H]
     \centering
@@ -130,7 +132,7 @@ There are many more security measures that Kubernetes administrators and end-use
 
 \textbf{Disaster recovery} can be understood as the process which an organization has to undergo after a service  disruption happened in order to resume normal services. It is vital to know what actions are necessary to overcome the disaster. This set of predefined procedures is known as \textbf{Disaster Recovery Plan}. Furthermore, disaster recovery is not the same as fault tolerance. The latter ensures that a system will withstand and resist the failure\footnote{\cite{article-dr}, p. 1, 2}.
 
-Disaster recovery is an essential requirement of any business where continuity matters. In order to plan disaster recovery well the following key parameters should be considered: the initial cost, the cost of data transfers and the cost of data storage. Significant costs may be a reason why, in the past, around 40-50% of small businesses had no DRP and did not intend to change this. However, cloud computing provides affordable solutions, because of the employed model "pay-for-what is used". Another advantage of the cloud is that it is fairly easy to use resources deployed in multiple geographical areas. This is desired, because one the major concepts in a DRP is the geographical separation of the system servers and its backup\footnote{\cite{article-dr-cloud}, p. 1, 2}.
+Disaster recovery is an essential requirement of any business where continuity matters. In order to plan disaster recovery well the following key parameters should be considered: the initial cost, the cost of data transfers and the cost of data storage. Significant costs may be a reason why, in the past, around 40-50\% of small businesses had no DRP and did not intend to change this. However, cloud computing provides affordable solutions, because of the employed model "pay-for-what is used". Another advantage of the cloud is that it is fairly easy to use resources deployed in multiple geographical areas. This is desired, because one the major concepts in a DRP is the geographical separation of the system servers and its backup\footnote{\cite{article-dr-cloud}, p. 1, 2}.
 
 Key metrics that can be taken into consideration while planning disaster recovery are\footnote{\cite{article-dr}, p. 2, \cite{article-dr-cloud}, p. 3}:
 \begin{itemize}
@@ -151,6 +153,11 @@ RPO can be defined as the time between two successive backups. Thus, the time be
 
 Cloud services mitigate some risks that persistent data storage has: e.g. cloud services provide high-available data by replicating it across different geographical locations. However, replication is not the same as backup and it does not protect against accidentally deleting a volume or against a misconfigured application overwriting the data. Thus backup is still needed. In order to backup Kubernetes, the Etcd database has to be backuped. Apart from that, each application deployed on top of Kubernetes should be backuped on its own\footnote{\cite{book-cndwk}, p. 206, 207}. There are already available services that help with Kubernetes backup: Velero\footnote{\cite{book-cndwk}, p. 208-211}.
 
-TODO: tests
-\paragraph{}
-Deploying into testing environment and into production environment differ. However, the same process should be followed, despite of which environment is the target.
+However, before the production Kubernetes cluster is ready for end-users, it must be verified that it is healthy. Every component should be tested proving that it is working as expected, every node should be able to connect to a Docker registry, etc. Sometimes, applications, including the Kubernetes component: kube-scheduler, expose a custom \textbf{health endpoint}\footnote{\cite{book-devops-k8s}, p. 579, 580, 717}. Thanks to that, it is possible to verify regularly that a service is performing correctly. The solution is to send a request to the health endpoint. Usually, a HTTP response code of 200 indicates correct status of the service\footnote{\cite{online-ms-health}}. Kubernetes can monitor the health endpoints by using \textbf{liveness probes}. Based on a specified health endpoint response, Kubernetes can restart the faulty container\footnote{\cite{online-k8s-probes}}.
+
+The tests should be incorporated into a CICD pipeline. "Having a comprehensive test suite is essential to continuous integration" and test-driven development is a vital practice in this context{\cite{book-cicd}, p. 71}. There is even a possibility to implement test-driven changes to deployment environments. The recipe for achieving that is\footnote{\cite{book-cicd}, p. 292}:
+\begin{enumerate}
+\item Write such a check in a monitoring system that monitors the problem. Verify that the check is now failing.
+\item Implement the change in configuration to the cluster.
+\item Verify that, after the change is deployed, the monitoring check is passing.
+\end{enumerate}

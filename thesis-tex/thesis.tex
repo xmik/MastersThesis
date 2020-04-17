@@ -15,7 +15,7 @@
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 \setenumerate{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 
-\usepackage[backend=bibtex]{biblatex}
+\usepackage[backend=bibtex,sorting=ydnt]{biblatex}
 \bibliography{thesis-tex/bibliography.bib}
 
 
@@ -46,6 +46,8 @@
 \input{thesis-tex/sections/definitions-prod-req.tex}
 \newpage
 
-\printbibliography
+\printbibliography[type=book,title={Books only}]
+\printbibliography[type=article,title={Articles only}]
+\printbibliography[nottype=book,nottype=article,title={Other sources}]
 
 \end{document}
