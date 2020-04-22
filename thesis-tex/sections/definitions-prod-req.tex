@@ -17,6 +17,7 @@ Typically, there are \textbf{two reasons for which multiple environments are in 
 To briefly explain the second reason for multiple environments: they are used in order to ensure fault-tolerance (when one environment fails, the other can take over), scalability (the work can be spread among many clusters), segregation (it may be decided to handle a group of customers using one environment and the other group with the other environment, e.g. for latency purposes)\footnote{\cite{book-iac}, p. 192}.
 
 \subsubsection{Production deployment requirements}
+\label{Production deployment requirements}
 Throughout this work a production deployment means such a deployment which targets the production environment. A list of \textbf{requirements for a production deployment}, gathered through the literature, is provided below:
 \begin{itemize}
 \item \textbf{Central Monitoring} - this is helpful when troubleshooting a cluster\footnote{\cite{book-mastering-k8s}, p. 41-47, 60, \cite{online-weave-checklists}, p. 5, \cite{online-weave-guide}, p. 2, \cite{book-cndwk}, p. 38}.

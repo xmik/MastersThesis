@@ -1,6 +1,8 @@
 \documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[sfdefault]{carlito}
+%\renewcommand{\baselinestretch}{1.5}
+
 \usepackage{float}
 \usepackage[a4paper,hmargin=1.5cm,vmargin=2cm]{geometry}
 \usepackage{graphicx}
@@ -40,12 +42,35 @@
 \tableofcontents
 \newpage
 
+% 1
 \input{thesis-tex/sections/intro.tex}
 \newpage
 
+% 2
 \section{From microservices to automated orchestration}
 \input{thesis-tex/sections/definitions-kubernetes.tex}
 \input{thesis-tex/sections/definitions-prod-req.tex}
+\newpage
+
+% 3
+\section{Available Kubernetes cluster deployment methods}
+\newpage
+
+% 4
+\section{Preparations for production deployment of Kubernetes cluster}
+\input{thesis-tex/sections/practice-preps-prod.tex}
+\newpage
+
+% 5
+\section{Production deployment of Kubernetes cluster, using various methods}
+\newpage
+
+% 6
+\section{Comparison of the used methods}
+\newpage
+
+% 7
+\section{Summary}
 \newpage
 
 \printbibliography[type=book,title={Books only}]
