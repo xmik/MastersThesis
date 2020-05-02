@@ -1,0 +1,2 @@
+DOJO_DOCKER_IMAGE="kudulab/k8s-aws-dojo:954ea3fecd83853b508727e412a602adce37d8b7"
+DOJO_DOCKER_OPTIONS=-e K8S_ENDPOINT="http://my-k8s.example.com:8080"

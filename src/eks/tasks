@@ -1,0 +1,23 @@
+#!/bin/bash
+
+command="$1"
+case "${command}" in
+    _create)
+    # ssh key? vpc? ip public?
+        set -x
+        eksctl create cluster -f cluster.yaml
+        ;;
+    _test)
+        set -x
+        kubectl version --short
+        kubectl get nodes
+        ;;
+    _delete)
+        set -x
+        eksctl delete cluster -f cluster.yaml --wait
+        ;;
+    *)
+        echo "Invalid command: '${command}'"
+        exit 1
+        ;;
+esac
