@@ -5,7 +5,7 @@ case "${command}" in
     _create)
     # ssh key? vpc? ip public?
         set -x
-        eksctl create cluster -f cluster.yaml
+        eksctl create cluster -f cluster.yaml --version=1.16.8 --node-ami-family=Ubuntu1804
         ;;
     _test)
         set -x
