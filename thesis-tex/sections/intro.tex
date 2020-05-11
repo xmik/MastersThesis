@@ -1,8 +1,43 @@
 \section{Introduction}
 
-% TODO: write 2 or 3 pages;
+% this should take 2 or 3 pages;
 % the subsections are not mandatory
 
 \subsection{Topic and problem description}
+
+Microservices, Continuous Integration and Delivery, Docker, DevOps, Cloud Native Applications - these are the current trends and buzzwords in the technological world of 2020. \textbf{In order to ease the deployment and maintenance operations performed on microservices, Kubernetes was invented}. Kubernetes is a platform for running containerized applications, for example: microservices. The first part of the problem is: \textbf{how to deploy Kubernetes itself}? The second part: how to ensure that the deployment fulfills the needs of a production environment?
+
+
 \subsection{Aim and scope of this study}
+
+
+Nowadays, the world is full of choices. The technology is exuberant. However, time, as our resource, is limited. Thus, it is often advisable to use an already existing solution instead of inventing our own. It is even better if there are many such solutions. This work aims \textbf{to compare two methods of deploying a Kubernetes cluster}. Both of the methods concern AWS cloud. AWS cloud was chosen mainly because of its wide popularity and the range of provided services. Besides the two chosen methods of deployment, there are many more, including the DIY method and deploying on-premises.
+
+This work attempts \textbf{to stipulate the requirements of a production environment}. Then, the requirements are used as comparison criteria to help assess the two methods of deployment. It is expected that one method could be easier to use than the other but also a method could be insufficient to satisfy all the production environment requirements. Furthermore, other criteria will be used, such as: cost of both methods and amount of problems encountered.
+
+It is intended, that this work should \textbf{focus on the practical aspect of a Kubernetes cluster deployment}. The limitations and known issues of both methods are going to be described. Therefore, the thesis might be helpful to the engineers or consultants who are responsible for Kubernetes cluster deployment.
+
+There are already some literature sources that compare chosen methods of Kubernetes cluster deployment. However, they are not constructed in a scientific, formal form (they are either blog posts or tutorials available in the Internet) or they do not consider a production environment.
+
 \subsection{Structure of this study}
+
+This work is divided into seven chapters.
+
+The first chapter is \textbf{an introduction}. It describes briefly the topic and the problem. Then, it includes aim and scope of this study. And then, the structure of this study is presented.
+
+The second chapter focuses on \textbf{definitions}. It explains: microservices, DevOps, Docker and Kubernetes. Furthermore, AWS cloud is described there. The chapter ends with stipulating the requirements of a production deployment.
+
+In the next, third, chapter \textbf{the most popular methods of a Kubernetes cluster deployment are described}. The two methods that will be compared in the later part are also included.
+
+The fourth chapter is a practical one. It provides \textbf{planning and designing of the production deployment} which will be conducted later in the work. Some important decisions are taken here, for example: which Kubernetes version to use or which tools to use.
+
+Then, the fifth chapter \textbf{refers to code} and it is the core part of this work. It provides \textbf{the steps that were used to deploy Kubernetes clusters on AWS, using two methods}:
+\begin{enumerate}
+\item deployment on AWS EKS service,
+\item deployment with Kops on AWS EC2 instances.
+\end{enumerate}
+Anyone following these steps should be capable to recreate the same Kubernetes clusters as described here and thus, it should be possible to draw the same conclusions as the author of this work did. Furthermore, all the encountered problems and suggested solutions are provided.
+
+The sixth chapter \textbf{presents the comparison} of the two deployment methods using chosen comparison criteria. Each subsection of this chapter deals with a single comparison criterion.
+
+Finally, the last, seventh, chapter offers \textbf{the summary}, briefly describes the lessons learned and also provides some ideas for future work.
