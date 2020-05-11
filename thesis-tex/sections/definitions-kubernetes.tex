@@ -1,14 +1,14 @@
-\subsection{Trends in IT: microservices, DevOps and Docker containers}
-\subsection{Kubernetes as a Docker containers orchestration system}
+\mysubsec{Trends in IT: microservices, DevOps and Docker containers}
+\mysubsec{Kubernetes as a Docker containers orchestration system}
 \textit{This section describes what Kubernetes is and what problems it solves. Furthermore, the section acknowledges Kubernetes popularity and briefly presents chosen Kubernetes objects.}
 ~\\
 ~\\
-\subsection{Kubernetes architecture}
+\mysubsec{Kubernetes architecture}
 % this short summary before each section helps me to stay focused on what i want to write about
 \textit{This section contains a high level description of the Kubernetes architecture. The focus is on the responsibilities of each Kubernetes component.}
 ~\\
 ~\\
-\subsubsection{Kubernetes cluster}
+\mysubsubsec{Kubernetes cluster}
 A \textbf{Kubernetes cluster} may be defined as a collection of storage and networking resources which are used by Kubernetes to run various workloads\footnote{\cite{book-mastering-k8s}, p. 4}. Another definition states that a Kubernetes cluster is a single unit of computers which are connected to work together and which are provisioned with Kubernetes components\footnote{\cite{k8s-cluster}, p. 4}.
 
 A cluster consists of two kinds of instances: masters and nodes. An instance can be a virtual machine or a physical computer. This is depicted on the figure below\footnote{\cite{k8s-cluster}, p. 4}:
@@ -16,11 +16,13 @@ A cluster consists of two kinds of instances: masters and nodes. An instance can
     \centering
     \includegraphics[width=10cm]{figures/cluster.png}
     \label{fig:cluster}
+    %\DeclareCaptionLabelFormat{Figure}{ #1: #2}
+    %\captionsetup[table]{labelfont=bf,labelformat=tablel,labelsep=period}
     \caption{Kubernetes cluster diagram}
     \small{Source: \cite{k8s-cluster}, (accessed: 14.04.2020)}
 \end{figure}
 
-\subsubsection{Masters and nodes}
+\mysubsubsec{Masters and nodes}
 \textbf{The role of the master is to manage the cluster}. This means that master: schedules applications, maintains their desired state, scales them, handles events, manages nodes. \textbf{Nodes serve as the worker machines}. They are responsible for running containers and handling container operations. Masters schedule containers to run on nodes\footnote{\cite{book-mastering-k8s}, p. 5, \cite{k8s-cluster}}. At least one node and one master is needed in a Kubernetes cluster. In order to provide fault-tolerance and high availability in production environments, multiple master and multiple node instances are run\footnote{\cite{k8s-components}}.
 
 The instances in a Kubernetes cluster (masters and nodes) are hosts to several \textbf{Kubernetes components}. There are \textbf{master components}, used to control the cluster and there are also \textbf{node components}, run on each node. All the components are presented on the next image:
@@ -33,7 +35,7 @@ The instances in a Kubernetes cluster (masters and nodes) are hosts to several \
 \end{figure}
 
 
-\subsubsection{Components}
+\mysubsubsec{Components}
 The master components are also known as the control plane’s components. They are itemized below\footnote{\cite{book-mastering-k8s}, p. 13,\cite{k8s-components}}:
 \begin{itemize}
 \item API server
@@ -66,12 +68,12 @@ As aforementioned, there are also node components. They run on both: masters and
 
 \textbf{Container Runtime} is the software which is responsible for operating containers. Several container runtimes are supported: Docker, containerd, CRI-O, and any implementation of the Kubernetes CRI (Container Runtime Interface). It is a design policy of Kubernetes that is ought to be decoupled from a specific container runtime. Under some circumstates it should be possible to switch from one container runtime to another or to use multiple of them at once. Originally, Kubernetes was designed to manage only Docker containers\footnote{\cite{book-mastering-k8s}, p. 15, \cite{k8s-components}}.
 
-\subsubsection{Other services}
+\mysubsubsec{Other services}
 Apart from master and node components, there are also \textbf{add-ons, extensions, and third party tools} which communicate with Kubernetes by the API server and which provide additional functionality. Examples of such services are: DNS, Vertical Pod Autoscaler, Cluster Autoscaler, Istio, Kubernetes Dashboard, kube-ops-view, node-problem-detector, etc\footnote{\cite{book-cndwk}, p. 12, 84, 102, 175}}.
 
 TODO: describe such of them which will be used later.
 
-\subsubsection{The Kubernetes networking model}
+\mysubsubsec{The Kubernetes networking model}
 Kubernetes states a few \textbf{networking requirements}\footnote{\cite{k8s-net}}:
 \begin{itemize}
 \item pods on a node must be able to communicate with all pods on all nodes without Network Address Translation (NAT).
@@ -81,4 +83,5 @@ Kubernetes states a few \textbf{networking requirements}\footnote{\cite{k8s-net}
 There are many available options that help with satisfying these requirements, e.g.: AWS VPC CNI for Kubernetes, Azure CNI for Kubernetes, Flannel, OpenVSwitch, Project Calico, etc\footnote{\cite{k8s-net}}. CNI stands for Container Networking Interface and it is a specification and also a set of libraries for writing network plugins to configure network interfaces in Linux containers. A CNI container is bound to have its own IP address. For Kubernetes, \textbf{each pod has its own IP address}, so the pod is the CNI container\footnote{\cite{book-mastering-k8s}, p. 254, 255}. \textbf{Containers that belong to a one pod share the same IP address}, which means that these containers can reach all reach each other’s ports on localhost and also that none two containers should expose the same port. This model is known as "IP-per-pod"\footnote{\cite{k8s-net}}.
 
 TODO: AWS VPC CNI for Kubernetes or Flannel? describe such of them which will be used later.
+
 \subsection{AWS - the Amazon cloud}
