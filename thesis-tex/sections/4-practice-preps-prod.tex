@@ -1,0 +1,156 @@
+% 4
+\section{Preparations for production deployment of Kubernetes cluster}
+\textit{This is a practical section. It includes planning and designing the production deployment, considering: capacity planning, choosing which requirements to satisfy and taking any other deployment and infrastructure related decisions.}
+~\\
+
+\subsection{Version of Kubernetes}
+In order to compare two methods of Kubernetes deployment in a reasonable way, both methods should deploy the same Kubernetes version. Also, the version should be one of the latest released ones, for the sake of keeping this comparison up-to-date.
+
+At the time of writing this work, on 1st of May 2020, the latest released Kubernetes version was v1.18\footnote{\cite{online-k8s-blog-latest}}. The latest version supported by Kops is v1.16\cite{online-kops-versions}. And, the latest version supported by EKS is v1.16.8\cite{online-eksctl-versions}. Thus, the maximum version of Kubernetes of the two supported ones was chosen: v1.16.8.
+
+1.15 will be used because of the AMI
+
+Furthermore, using a specified version is important for the production environment and IaC. TODO some citation
+
+\subsection{AWS Region}
+All the work will be performed on AWS cloud. This cloud offers many data centers spread across multiple physical locations around the world. AWS calls these locations: Regions, Availability Zones, and Local Zones https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
+
+which region to choose? europe for latency? ireland over london for pricin https://aws.amazon.com/ec2/pricing/on-demand/
+2 figures
+
+\subsection{Tools}
+* kubectl
+* aws cli 2
+* eksctl
+* kops
+
+aws configure, use k8s-aws-dojo docker image, dojo out of scope of this work
+aws cli 2 problems on alpine linux (see k8s-aws-dojo)
+why aws cli 2? better security; AWS CLI version 2 uses an internal Python script that's compiled to use a minimum of TLS 1.2 when the service it's talking to supports it. No further steps are needed to enforce this minimum. https://docs.aws.amazon.com/cli/latest/userguide/cli-security-enforcing-tls.html#enforcing-tls-v2
+ use latest aws cli 2 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-troubleshooting.html
+
+* custom ssh pair? - possible
+* eks - custom vpc? custom cni? - this is possible, future work, https://github.com/weaveworks/eksctl/blob/master/examples/04-existing-vpc.yaml, https://github.com/weaveworks/eksctl/blob/master/examples/02-custom-vpc-cidr-no-nodes.yaml ; By default, eksctl create cluster will build a dedicated VPC https://eksctl.io/usage/vpc-networking/
+* node groups vs managed node groups vs cluster autoscaler?
+* custom iam and role?
+* eks: version in practice: 1.16.8 for nodes, 1.15 for master, also:
+```
+$ echo $(eksctl create cluster --version invalid 2>&1) | rev | sed 's/ //g' | cut -d ":" -f-1 | rev
+1.12,1.13,1.14,1.15
+```https://github.com/weaveworks/eksctl/issues/2040#issuecomment-614322730
+* security - isolate initial nodegroup from the public internet https://eksctl.io/usage/vpc-networking/
+* security - iam https://github.com/weaveworks/eksctl/blob/master/examples/17-permissions-boundary.yaml https://eksctl.io/usage/iam-permissions-boundary/
+* security - RBAC
+* autoscaleir https://github.com/weaveworks/eksctl/blob/master/examples/eks-quickstart-app-dev.yaml http://aws.amazon.com/ec2/autoscaling
+* change control plane config - need a custom ami? https://github.com/awslabs/amazon-eks-ami
+
+\subsection{Chosen requirements of production deployment}
+\textbf{There are numerous requirements for a production deployment of a Kubernetes cluster}. Some of them were gathered throughout available literature and presented in the section: \ref{Production deployment requirements}. It is common knowledge that companies, which deploy Kubernetes and similar systems, obey some set of best practices, dedicated to these companies only. Thus, the requirements presented in this work do not exhaust the topic.
+
+trobuleshooting? - chapter 5
+1. which version of k8s, helm, eksctl, kops...
+2. helm architecture (2 vs 3: no tiller, 3-way merge considers also live state, Release Names are now scoped to the Namespace, cli commands renamed e.g. helm fetch -> helm pull) HELM_VERSION=3.2.0
+3. eksctl or aws cli or aws management console?  https://docs.aws.amazon.com/eks/latest/userguide/create-cluster.html
+https://aws.amazon.com/blogs/opensource/eksctl-eks-cli/ "eksctl is now officially our command line for EKS"
+https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
+4. eks pricing?  $0.10 per hour for each Amazon EKS cluster  https://aws.amazon.com/eks/pricing/
+When you use Amazon EKS control plane logging, you're charged standard Amazon EKS pricing for each cluster that you run. You are charged the standard CloudWatch Logs data ingestion and storage costs for any logs sent to CloudWatch Logs from your clusters. You are also charged for any AWS resources, such as Amazon EC2 instances or Amazon EBS volumes, that you provision as part of your cluster.  https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html
+5. custom networking needed? not for eksctl, but possible
+6. eksctl needs cloudformation?
+7. eks HA - This control plane consists ofhttps://cloud-images.ubuntu.com/aws-eks/ at least two API server nodes and three etcd nodes that run across three Availability Zones within a Region.  https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html
+8. eks - how to set k8s version?
+```
++ eksctl create cluster -f cluster.yaml --version=1.16.8
+Error: cannot use --version when --config-file/-f is set
+```
+then, we also cannot set patch version:
+```
++ eksctl create cluster -f cluster.yaml
+[ℹ]  eksctl version 0.19.0-rc.0
+[ℹ]  using region eu-west-1
+Error: invalid version, supported values: 1.12, 1.13, 1.14, 1.15, 1.16
+```
+however:
+```
+metadata:
+  name: cluster-eks
+  region: eu-west-1
+  version: "1.16"
+```
+in cluster.yaml works fine. The only information how to set it i found on: https://github.com/weaveworks/eksctl/issues/1984#issuecomment-608583084 (missing documentation on the whole cluster.yaml file)
+9. eks - which AWS AMI to choose?
+https://docs.aws.amazon.com/eks/latest/userguide/eks-linux-ami-versions.html
+https://github.com/awslabs/amazon-eks-ami
+ubuntu https://docs.aws.amazon.com/eks/latest/userguide/eks-partner-amis.html
+
+t2.nano ami was ok for the default os (amazon linux 2) but is not ok for ubuntu: https://cloud-images.ubuntu.com/aws-eks/amazon-eks-ubuntu-nodegroup.yaml
+```
++ eksctl create cluster -f cluster.yaml
+[ℹ]  eksctl version 0.19.0-rc.0
+[ℹ]  using region eu-west-1
+[ℹ]  setting availability zones to [eu-west-1b eu-west-1c eu-west-1a]
+[ℹ]  subnets for eu-west-1b - public:192.168.0.0/19 private:192.168.96.0/19
+[ℹ]  subnets for eu-west-1c - public:192.168.32.0/19 private:192.168.128.0/19
+[ℹ]  subnets for eu-west-1a - public:192.168.64.0/19 private:192.168.160.0/19
+Error: unable to determine AMI to use: unable to determine AMI for region eu-west-1, version 1.16, instance type t2.nano and image family Ubuntu1804
+```
+we need at least t2.small and only the region US-WEST-2 or US-EAST-1 ? https://aws.amazon.com/blogs/opensource/optimized-support-amazon-eks-ubuntu-1804/ These commands confirm that there should be an ami for eu-west-1 too:
+```
+dojo@a7ba31d31b64(k8s-aws-dojo):/dojo/work/eks$ aws ec2 describe-images \
+> --filters "Name=owner-id,Values=099720109477" "Name=architecture,Values=x86_64" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" \
+> --query 'Images[?contains(Name, `ubuntu-eks`)] | [?contains(Name, `testing`) == `false`] | [?contains(Name, `minimal`) == `false`] | [?contains(Name, `hvm-ssd`) == `true`] | sort_by(@, &CreationDate)| [-1].ImageId' \
+> --output text \
+> --region us-west-2
+ami-031d5da11ccc1c07b
+
+dojo@a7ba31d31b64(k8s-aws-dojo):/dojo/work/eks$ aws ec2 describe-images --filters "Name=owner-id,Values=099720109477" "Name=architecture,Values=x86_64" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" --query 'Images[?contains(Name, `ubuntu-eks`)] | [?contains(Name, `testing`) == `false`] | [?contains(Name, `minimal`) == `false`] | [?contains(Name, `hvm-ssd`) == `true`] | sort_by(@, &CreationDate)| [-1].ImageId' --output text --region eu-west-1
+ami-0ceab0713d94f9276
+```
+but still:
+```
+Error: unable to determine AMI to use: unable to determine AMI for region eu-west-1, version 1.16, instance type t2.small and image family Ubuntu1804
+```
+This website however suggests that the ami is not available for k8s 1.16: https://cloud-images.ubuntu.com/aws-eks/
+
+---
+
+But Why Run Kubernetes on AWS? https://www.weave.works/technologies/kubernetes-on-aws/
+
+pricing? what resources does eks use? nat gateway? when? how?
+
+MAYBE TODO:
+Furthermore, the author if this work decided to satisfy only a few of the production deployment requirements. The reason - TODO.
+
+\begin{itemize}
+\item Passing tests, a healthy cluster - kubectl get nodes, kubectl version --short, deploy some service and test it; "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
+\item Automation and Infrastructure as Code - eksctl mystery, cloudformation?
+\item Central Logging
+\item Central Monitoring
+\item Backup
+\item HA - maybe
+\item Autoscaling - maybe
+\item Security - private network in cluster.yaml for eks (--node-private-networking); "in most common Kubernetes deployments, nodes in the cluster are not part of the public internet." https://kubernetes.io/docs/concepts/services-networking/ingress/; eksctl create cluster --authenticator-role-arn string
+\item Live Cluster Upgrades - rather not
+\item Audit - rather not
+\end{itemize}
+
+\subsubsection{Designing automated tests}
+bats, bats-core
+
+\subsection{Capacity planning}
+Virtualization and chicken-counting (0, 1, many) are your friends here. Virtu-
+alization makes it easy to create an environment that represents the important
+aspects of your production environment, while being able to run on a single
+physical machine. Chicken-counting means that if your production site has
+250 web servers, 2 should be enough to represent the significant process
+boundaries. book-cicd, p. 254
+
+\subsection{Other decisions and configuration}
+
+\subsection{Expected cost}
+
+ideas for the future:
+* tests - https://kubernetes.io/docs/setup/best-practices/node-conformance/
+
+
+troubleshooting k8s -mastering k8s p. 58
