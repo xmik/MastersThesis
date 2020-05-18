@@ -17,6 +17,13 @@
   edition      = {1},
 	keywords     = {trusted},
 }
+@book{book-devops-with-k8s,
+	author       = {Hideto Saito and Hui-Chuan Chloe Lee and Cheng-Yang Wu},
+	title        = {DevOps with Kubernetes},
+	publisher    = {Packt Publishing},
+	date         = {2017},
+  ISBN         = {978-1-78839-664-6},
+}
 @book{book-iac,
 	author       = {Kief Morris},
 	title        = {Infrastructure as Code},
@@ -221,17 +228,96 @@
     url  = "https://kops.sigs.k8s.io/welcome/releases/",
     addendum = "(accessed: 22.04.2020)"
 }
+@online{online-kops-gh,
+    author = "Kops Authors",
+    title = "Kops project page on Github.com",
+    url  = "https://github.com/kubernetes/kops",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{online-kops-install,
+    author = "Kops Authors",
+    title = "Installing",
+    url  = "https://kops.sigs.k8s.io/getting_started/install/",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{online-ks,
+    author = "Kubespray Authors",
+    title = "Kubespray project page on Github.com",
+    url  = "https://github.com/kubernetes-sigs/kubespray",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{online-ks-comp,
+    author = "Kubespray Authors",
+    title = "Comparison",
+    url  = "https://github.com/kubernetes-sigs/kubespray/blob/master/docs/comparisons.md",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{kubeadm-vision-2017,
+    author = "Kubernetes maintainer and SIG-Cluster-Lifecycle member",
+    title = "A Stronger Foundation for Creating and Managing Kubernetes Clusters",
+    url  = "https://kubernetes.io/blog/2017/01/stronger-foundation-for-creating-and-managing-kubernetes-clusters/",
+		date = "12.01.2017",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{kube-aws,
+    author = "Mike Danese and Tim Hockin",
+    title = "kube-aws project page on Github.com",
+    url  = "https://github.com/kubernetes-incubator/kube-aws",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{minikube,
+    author = "Minikube authors",
+    title = "minikube project page on Github.com",
+    url  = "https://github.com/kubernetes/minikube",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{online-kubeadm,
+    author = "Kubernetes Community",
+    title = "kubeadm page on Github.com",
+    url  = "https://github.com/kubernetes/kubeadm",
+    addendum = "(accessed: 16.05.2020)"
+}
 @online{online-eks,
     author = "Amazon",
     title = "Amazon EKS",
     url  = "https://aws.amazon.com/eks/",
     addendum = "(accessed: 16.05.2020)"
 }
+@online{online-eks-pricing,
+    author = "Amazon",
+    title = "Amazon EKS Kubernetes Pricing",
+    url  = "https://aws.amazon.com/eks/pricing/",
+    addendum = "(accessed: 18.05.2020)"
+}
 @online{online-eksctl-versions,
     author = "Amazon",
     title = "Amazon EKS Kubernetes versions",
     url  = "https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html",
     addendum = "(accessed: 01.05.2020)"
+}
+@online{terraform,
+    author = "Hashicorp",
+    title = "Terraform official website",
+    url  = "https://www.terraform.io/",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{terraform-vs,
+    author = "Hashicorp",
+    title = "Terraform official website",
+    url  = "https://www.terraform.io/intro/vs/cloudformation.html",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{k8s-thw,
+    author = "Kelsey Hightower",
+    title = "Kubernetes The Hard Way page on Github.com",
+    url  = "https://github.com/kelseyhightower/kubernetes-the-hard-way",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{az,
+    author = "Amazon",
+    title = "Regions, Availability Zones, and Local Zones",
+    url  = "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
+    addendum = "(accessed: 18.05.2020)"
 }
 @online{online-aks,
     author = "Microsoft",
@@ -250,6 +336,62 @@
     title = "Document history for Amazon EKS",
     url  = "https://docs.aws.amazon.com/eks/latest/userguide/doc-history.html",
     addendum = "(accessed: 16.05.2020)"
+}
+@online{what-is-eks,
+    author = "Amazon",
+    title = "What is Amazon EKS?",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{eks-sla,
+    author = "Amazon",
+    title = "Amazon EKS Service Level Agreement",
+    url  = "https://aws.amazon.com/eks/sla/",
+    addendum = "(accessed: 18.05.2020)"
+}
+@online{eks-clusters,
+    author = "Amazon",
+    title = "Amazon EKS clusters",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/clusters.html",
+    addendum = "(accessed: 19.05.2020)"
+}
+@online{eks-worker,
+    author = "Amazon",
+    title = "Worker nodes",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/worker.html",
+    addendum = "(accessed: 20.05.2020)"
+}
+@online{eks-worker-win,
+    author = "Amazon",
+    title = "Launching Amazon EKS Windows worker nodes",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/launch-windows-workers.html",
+    addendum = "(accessed: 20.05.2020)"
+}
+@online{eksctl,
+    author = "WeaveWorks",
+    title = "Official eksctl website",
+    url  = "https://eksctl.io/",
+    addendum = "(accessed: 20.05.2020)"
+}
+
+@online{aws-ami,
+    author = "Amazon",
+    title = "Amazon Machine Images (AMI)",
+    url  = "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/AMIs.html",
+    addendum = "(accessed: 20.05.2020)"
+}
+@online{eks-optimized-ami,
+    author = "Amazon",
+    title = "Amazon EKS-optimized Linux AMI",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/eks-optimized-ami.html",
+    addendum = "(accessed: 20.05.2020)"
+}
+@online{eks-cli-official,
+    author = "Bob Wise, General Manager, Amazon EKS",
+    title = "eksctl – the EKS CLI",
+    url  = "https://aws.amazon.com/blogs/opensource/eksctl-eks-cli/",
+		date = "23.07.2019",
+    addendum = "(accessed: 19.05.2020)"
 }
 
 @online{online-trans-mono-micro,

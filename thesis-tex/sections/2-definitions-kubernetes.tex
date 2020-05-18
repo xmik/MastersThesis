@@ -107,6 +107,7 @@ As aforementioned, there are also node components. They run on both: masters and
 Apart from master and node components, there are also \textbf{add-ons, extensions, and third party tools} which communicate with Kubernetes by the API server and which provide additional functionality. Examples of such services are: DNS, Vertical Pod Autoscaler, Cluster Autoscaler, Istio, Kubernetes Dashboard, kube-ops-view, node-problem-detector, etc\cite{book-cndwk}}.
 
 \subsubsection{The Kubernetes networking model}
+\label{k8s-net}
 Kubernetes states a few \textbf{networking requirements}\cite{k8s-net}:
 \begin{itemize}
 \item pods on a node must be able to communicate with all pods on all nodes without Network Address Translation (NAT).
