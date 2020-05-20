@@ -1,8 +1,8 @@
 \section{Available Kubernetes cluster deployment methods}
-\textit{Here multiple methods of a Kubernetes cluster deployment are be presented. Two chosen methods are described in a more detailed way. This is a theoretical chapter.}
+\textit{Here multiple methods of a Kubernetes cluster deployment are presented. Two chosen methods are described in a more detailed way. This is a theoretical chapter.}
 \\
 
-Kubernetes is \textbf{not trivial to deploy}. In order to deploy the whole cluster, there are at least two machines needed: one master and one node. On each of them several components must be installed. There are also requirements concerning networking to be met (described in section: \ref{k8s-net}). Apart from that, there is a bunch of non-functional requirements (described in section: \ref{Production deployment requirements}) to be satisfied.
+Kubernetes is \textbf{not trivial to deploy}. In order to deploy a usable cluster, there are at least two machines needed: one master and one node. On each of the machines several components must be installed. Apart from that, there are also requirements concerning networking to be met (described in section: \ref{k8s-net}) and a bunch of non-functional requirements (described in section: \ref{Production deployment requirements}) to be satisfied.
 
 Fortunately, Kubernetes is a popular tool and many methods of deploying it are already described in the literature. The \textbf{available methods may be divided into three categories}:
 \begin{itemize}
@@ -15,11 +15,20 @@ Furthermore, different categorization may be applied. For instance, the deployme
 \begin{itemize}
 \item using web interface of a particular cloud, e.g. AWS Management Console (supported by AWS),
 \item using command-line tools officially supported by a particular cloud, e.g. awscli or eksctl (supported by AWS),
-\item using command-line tools not officially supported by any cloud, but designed exactly to deploy a Kubernetes cluster, e.g. Kops,
-\item using command-line tools tools, generally designed for managing computer infrastructure, e.g. Terraform, SaltStack.
+\item using command-line tools designed exactly to deploy a Kubernetes cluster, but not limited to one particular cloud, e.g. Kops,
+\item using command-line tools tools, designed for managing computer infrastructure resources, e.g. Terraform, SaltStack.
 \end{itemize}
 
-Below, the methods categories are briefly explained and a few methods are described in more detail. The focus is on \textbf{the two particular methods, which are used in the practical part of this work}:
+There was an interesting study conducted by CNCF in 2019. A question was asked about \textbf{what tools are used in the respondents' organization or company to manage containers}. According to CNCF's Cloud Native Landscape, there are more than 109 such tools and 89\% of them are using different forms of Kubernetes. The \textbf{top 10 tools} are depicted on the following chart\cite{cncf-2019}. Based on this chart, it is observable that \textbf{the tool used the most often is Amazon Elastic Kubernetes Service (AWS EKS)} and the second most popular tool is Google Kubernetes Engine (GKE).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/cncf-2019-cont-tools.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{Top 10 tools used by organizations and companies to manage containers\cite{cncf-2019}}
+\end{figure}
+
+Further in this chapter, the methods categories (mentioned before) are briefly explained and a few methods are described in more detail. The focus is on \textbf{the two particular methods, which are used in the practical part of this work}:
 \begin{itemize}
 \item deploying on AWS, using AWS Managed Service (AWS EKS), using eksctl which is a AWS supported official tool,
 \item deploying on AWS, not using any Managed Service, using Kops which is a command-line tool, not officially supported by any cloud, but designed exactly to deploy a Kubernetes cluster.
@@ -47,9 +56,10 @@ Managed services \textbf{offer a ready to use cluster}. The \textbf{popular Mana
 
 Managed Services are \textbf{deeply integrated with other resources offered by a particular cloud}. For example: AWS EKS is claimed to integrate with AWS services like: Amazon CloudWatch, Auto Scaling Groups, AWS Identity and Access Management (IAM), Amazon Virtual Private Cloud (VPC), and AWS App Mesh\cite{online-eks}. A nice feature of AKS is integrated continuous integration and continuous delivery (CI/CD) experience\cite{online-aks}. Moreover, GKE is advertised as offered with "integrated Cloud Monitoring with infrastructure, application, and Kubernetes-specific views"\cite{online-gke}.
 
-\textbf{Managed Services are relatively new}. For example, the initial release of AWS EKS happened at 05.06.2018\cite{eks-history}. Thus, some literature may not acknowledge its existence, e.g. the book "Mastering Kubernetes"\cite{book-mastering-k8s}. Another effect of the Managed Services being so young is that, to the best of this work's author knowledge, there is no other study which compares the two chosen methods of Kubernetes cluster deployment. There was, however an interesting study conducted which compares three Managed Kubernetes Services (the three mentioned above: AWS EKS, AKS and GKE) from a performance perspective\cite{article-managed}.
+\textbf{Managed Services are relatively new}. For example, the initial release of AWS EKS happened at 05.06.2018\cite{eks-history}. Thus, some literature may not acknowledge its existence, e.g. the book "Mastering Kubernetes"\cite{book-mastering-k8s}. Another effect of the Managed Services being so young is that, to the best of this work's author knowledge, there is no other formal study which compares the two chosen methods of Kubernetes cluster deployment, from a perspective of satisfying production environment requirements. There was, however, an interesting study conducted which compares three Managed Kubernetes Services (the three mentioned above: AWS EKS, AKS and GKE) from a performance perspective\cite{article-managed}.
 
 \subsection{Command-line tools designed exactly to deploy a Kubernetes cluster}
+\label{cli-tools-to-k8s}
 \textit{In this section, several opensource command-line tools are discussed. These tools are not supported by any particular cloud provider, but they are designed exactly to fulfill one aim: to deploy a Kubernetes cluster.}
 \\
 
@@ -66,7 +76,7 @@ Searching through Github.com, there are several \textbf{command-line tools avail
 
 The most popular tool amongst the four above is: \textbf{Kops}. Kops stands for Kubernetes Operations and on its Github.com page it is advertised as "the easiest way to get a production grade Kubernetes cluster up and running"\cite{online-kops-gh}. It is a command-line tool which allows to create, destroy, upgrade and maintain production-grade, highly available, Kubernetes clusters. It supports multiple clouds: AWS (officially), GCE and OpenStack (in beta support) and VMware vSphere (in alpha)\cite{online-kops-gh}. Furthermore, it can be used from multiple operating systems: Linux, Mac and Windows\cite{online-kops-install}. Kops is one of the recommended ways to setup a Kubernetes cluster and it is a tool which can be used to a create a producttion environment\cite{book-devops-with-k8s}
 
-The second most popular tool is \textbf{Kubespray}. It also supports multiple clouds: AWS, GCE, Azure, OpenStack, vSphere, Packet (bare metal), Oracle Cloud Infrastructure (Experimental), and Baremetal\cite{online-ks}. Furthermore, it also supports Highly Available deployment. The main difference between Kubespray and Kops is that \textbf{Kubespray uses Ansible} (an opensource tool to provision infrastructure) while \textbf{Kops performs the provisioning and orchestration itself}. Kops also provides more features tightly integrated with specified clouds\cite{online-ks-comp}.
+The second most popular tool is \textbf{Kubespray}. It also supports multiple clouds: AWS, GCE, Azure, OpenStack, vSphere, Oracle Cloud Infrastructure (Experimental), and Baremetal\cite{online-ks}. Furthermore, it also supports Highly Available deployment. The main difference between Kubespray and Kops is that \textbf{Kubespray uses Ansible} (an opensource tool to provision infrastructure) while \textbf{Kops performs the provisioning and orchestration itself}. Kops also provides more features tightly integrated with specified clouds\cite{online-ks-comp}.
 
 There is also \textbf{kubeadm}. In contrast to Kops and Kubespray, kubeadm helps to get a minimum viable cluster "in a user friendly way". Furthermore, its scope is limited to the local filesystem\cite{online-kubeadm}. Kubernetes (and kubeadm) maintainers state that kubeadm is supposed to become a building block for all Kubernetes deployments. They also want to identify the common phases of a cluster deployment and make kubeadm an easy-to-use and configurable set of commands for each of those phases. An example of a common phase could be: certificate distribution\cite{kubeadm-vision-2017}.
 
@@ -146,19 +156,68 @@ After the cluster is created and after a connectivity with a Kubernetes cluster 
     \caption{A schema presenting the stages of working with AWS EKS}
 \end{figure}
 
-Much more information on how to deploy AWS EKS Kubernetes cluster can be found. The official websites of AWS EKS\cite{what-is-eks} and eksctl\cite{eksctl} are a great source of help.
+Much more information on how to deploy AWS EKS Kubernetes cluster can be found. The official websites of AWS EKS\cite{what-is-eks} and eksctl\cite{eksctl} are a great source of help. More examples of cluster configuration can be found on the official eksctl page on Github.com\cite{eks-gh}. A sample Kubernetes use cases scenarios, for example: creating a CI pipeline to deploy a sample Kubernetes service, can be found in the Internet\cite{eksworkshop}.
 
 
 \subsection{Deployment method: on AWS using Kops}
 \textit{Here is briefly described the second of the two methods, which are used in the empirical part of this work.}
 \\
 
-\subsection{AWS EKS vs AWS Fargate}
-\textit{There are two AWS services which allow to run containers: AWS EKS and AWS Fargate. This chapter explains the difference between them.}
+Kops was already introduced in the section: \ref{cli-tools-to-k8s}. Similarly to eksctl, Kops can also create a Highly Available Kubernetes cluster. However it demands more work than eksctl. The commands which allow to create a cluster on AWS is\cite{book-mastering-k8s}:
+\begin{lstlisting}[basicstyle=\small,caption={The commands of Kops CLI tool used to create a Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops create cluster --cloud=aws --zones=us-east-1c ${NAME}
+\end{lstlisting}
+But, before these commands can be run, one has to provide some minimal DNS configuration via Route53 (an AWS resource responsible for networking), set up a S3 bucket (another AWS resource, responsible for storage) to store the cluster configuration\cite{book-mastering-k8s} and also configure the AWS IAM user (an AWS resource responsible for access management) and create a SSH key pair\cite{online-kops-aws}. The instructions explaining how to set up the AWS resources are provided on the official Kops website\cite{online-kops-aws}.
+
+The configuration of Kops is kept in an S3 bucket. In order to change the configuration, one has to enter the following command\cite{online-kops-aws}:
+\begin{lstlisting}[basicstyle=\small,caption={A command of Kops CLI tool used to edit a Kubernetes cluster configuration},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops edit cluster ${NAME}
+\end{lstlisting}
+
+A configuration spec file is generated during the create phase and uploaded to a S3 bucket. The configuration can be also kept in YAML file. All the configuration options are available on a Kops Golang documentation website\cite{online-kops-yaml-config-golang}. A cluster can be created then in the following way\cite{online-kops-yaml-config}:
+\begin{lstlisting}[basicstyle=\small,caption={A command of Kops CLI tool used to create a Kubernetes cluster using a YAML configuration file},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops create -f $NAME.yaml
+\end{lstlisting}
+
+
+The stages of working with a Kubernetes cluster deployed on AWS with Kops are similar to the stages of working with eksctl, but there is the additional first stage. It is depicted on the below schema.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=12cm]{figures/kops-aws-workflow.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{A schema presenting the stages of working with a Kubernetes cluster deployed on AWS with Kops}
+\end{figure}
+
+The next stage, after instantiating a cluster is to connect to it through an endpoint. Such configuration is automatically generated and written to '~/.kube/config' (on Linux Operating System)\cite{online-kops-aws}. The same is true also for AWS EKS.
+
+Kops has been around a long time as an AWS-specific tool, but now it also supports other clouds\cite{book-cndwk}\cite{online-kops-gh}. Its main features such as: automated Kubernetes cluster deployment, highly available master or adding a variety of custom Kubernetes addons\cite{kops-addons} indicate that Kops is an attractive tool, worthy to at least try out.
+
+There are many Internet sources available to broaden one's knowledge about Kops: the official Kops website\cite{online-kops}, the Kops project website on Github.com\cite{online-kops-gh} and there are also some comparisons of Kops versus alternative tools available, e.g.: "A Multitude of Kubernetes Deployment Tools: Kubespray, kops, and kubeadm"\cite{online-kops-blog}.
+
+\subsection{Amazon services allowing to run containers}
+\textit{In order to exhaust the topic of the Amazon services which allow to run containers, this chapter was created. This chapter shortly characterizes each such AWS Service.}
 \\
+
+Below, all the AWS Services, used to manage containers, are listed:
+\begin{itemize}
+\item AWS ECS
+\item AWS ECR
+\item AWS Fargate
+\item AWS EKS
+\end{itemize}
+
+\textbf{AWS ECS} stands for Amazon Elastic Container Service. It is a service that provides \textbf{a highly secure, reliable, and scalable way to run containers}. Secure, because the containers are run in a custom VPC (Virtual Private Cloud). Thanks to that, custom firewall rules can be applied to the containers (by using AWS Security Groups). Furthermore, each of the containers uses IAM, which means that access to each container can be restricted and granular access permissions can be assigned. Running containers on ECS is reliable thanks to the SLA, which guarantees a Monthly Uptime Percentage of at least 99.99\%\cite{ecs}.
+
+\textbf{AWS ECR} is an abbreviation from Amazon Elastic Container Registry. It is not a service which strictly manages the containers, but it manages images. It is \textbf{a fully-managed Docker container registry}. AWS ECR eliminates the need to run such a registry on-premises or worry about scaling the underlying infrastructure. The images are hosted in a highly available and scalable architecture. Similarly to AWS ECS, AWS ECR also integrates with IAM\cite{ecr}.
+
+\textbf{AWS Fargate is a serverless service to run containers}. This service is responsible for allocating the right amount of compute, eliminating the need to choose instances and scale cluster capacity. It can work with both: AWS ECS and AWS EKS. AWS Fargate runs each task or pod in its own kernel, therefore the tasks and pods are provided with their own isolated compute environment. Without Fargate, the containers are run on EC2 instances, so the end user has to pay for both: an EC2 instance and for an ECS container\cite{fargate}. Running serverless Kubernetes Pods Using Amazon EKS and AWS Fargate is very new, a blog post informing about this possibility was created at 3rd of December 2019\cite{fargate-for-eks}.
+
+The last service on the list above, \textbf{AWS EKS}, was already described in this chapter.
 
 \subsection{Summary}
 
-According to the authors of "Cloud Native DevOps with Kubernetes"\cite{book-cndwk}, the best solution is to use \textbf{Managed Services}. The authors argue that, thanks to this method, one can get a fully working, secure, highly available, production-grade cluster in a few minutes and for a little price. Managed Services are certainly a good way to try Kubernetes out. Then, if one wants to do something non-standard or to experiment with the cluster, then one could choose \textbf{a custom or a hybrid solution}. The self-hosted, deployed on-premises way is recommended if the following qualities are of a great importance: price, low-network latency, regulatory requirements and total control over hardware\cite{book-mastering-k8s}.
+There are \textbf{many methods of deploying a Kubernetes cluster}. According to the authors of "Cloud Native DevOps with Kubernetes"\cite{book-cndwk}, the best solution is to use \textbf{Managed Services}. The authors argue that, thanks to this method, one can get a fully working, secure, highly available, production-grade cluster in a few minutes and for a little price. Managed Services are certainly a good way to try Kubernetes out. Then, if one wants to do something non-standard or to experiment with the cluster, then one could choose \textbf{a custom or a hybrid solution}. The self-hosted, deployed on-premises way is recommended if the following qualities are of a great importance: price, low-network latency, regulatory requirements and total control over hardware\cite{book-mastering-k8s}.
 
-Managed Services offer many features like: built-in autoscaling, security, high availability, having serverless options. However, they may be more expensive (for example, when using AWS EKS, one has to pay \$0.10 per hour for each Amazon EKS cluster\cite}online-eks-pricing}) and less customizable.
+Managed Services offer many features like: built-in autoscaling, security, high availability, having serverless options. However, they may be more expensive (for example, when using AWS EKS, one has to pay \$0.10 per hour for each Amazon EKS cluster\cite{online-eks-pricing}) and less customizable. Custom solutions allow the Kubernetes administrator to broaden their knowledge and \textbf{grasp the deep understanding} on what is going on under the Kubernetes hood (i.e. one can customize how the Kubernetes control plane is deployed or set up a custom network topology).
+
+There is \textbf{no one right answer} which fits all the use cases. It is always advised to do one's own research and to try and experiment with the existing methods.
