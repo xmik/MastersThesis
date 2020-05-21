@@ -220,7 +220,8 @@
     author = "Kubernetes Community",
     title = "Kubernetes 1.18: Fit & Finish",
     url  = "https://kubernetes.io/blog/2020/03/25/kubernetes-1-18-release-announcement/",
-    addendum = "(accessed: 22.04.2020)"
+		date = "25.03.2020",
+    addendum = "(accessed: 21.05.2020)"
 }
 @online{online-kops-gh,
     author = "Kops Authors",
@@ -238,7 +239,7 @@
     author = "Kops Authors",
     title = "Kops Releases & Versioning",
     url  = "https://kops.sigs.k8s.io/welcome/releases/",
-    addendum = "(accessed: 22.04.2020)"
+    addendum = "(accessed: 21.05.2020)"
 }
 @online{online-kops-install,
     author = "Kops Authors",
@@ -277,6 +278,83 @@
     url  = "https://github.com/kubernetes/kops/blob/master/docs/operations/addons.md",
     addendum = "(accessed: 20.05.2020)"
 }
+@online{kops-net,
+    author = "Kops Authors",
+    title = "Networking Overview",
+    url  = "https://kops.sigs.k8s.io/networking/",
+    addendum = "(accessed: 23.05.2020)"
+}
+@online{kops-net-topo,
+    author = "Kops Authors",
+    title = "Network Topologies in Kops",
+    url  = "https://kops.sigs.k8s.io/topology/",
+    addendum = "(accessed: 23.05.2020)"
+}
+@online{kops-net2,
+    author = "Kops Authors",
+    title = "Run kops in an existing VPC",
+    url  = "https://kops.sigs.k8s.io/run_in_existing_vpc/",
+    addendum = "(accessed: 24.05.2020)"
+}
+@online{eksctl-net,
+    author = "WeaveWorks",
+    title = "VPC Networking",
+    url  = "https://eksctl.io/usage/vpc-networking/",
+    addendum = "(accessed: 24.05.2020)"
+}
+@online{eks-net,
+    author = "Amazon",
+    title = "Cluster VPC considerations",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/network_reqs.html",
+    addendum = "(accessed: 24.05.2020)"
+}
+@online{eks-cluster-endpoint,
+    author = "Amazon",
+    title = "Amazon EKS cluster endpoint access control",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/cluster-endpoint.html",
+    addendum = "(accessed: 25.05.2020)"
+}
+
+@online{eks-example,
+    author = "WeaveWorks",
+    title = "Example of eksctl configuration",
+    url  = "https://github.com/weaveworks/eksctl/blob/master/examples/09-nat-gateways.yaml",
+    addendum = "(accessed: 25.05.2020)"
+}
+@online{gruntwork-howto,
+    author = "Gruntwork",
+    title = "How to deploy a production-grade Kubernetes cluster on AWS",
+    url  = "https://gruntwork.io/static/guides/kubernetes/how-to-deploy-production-grade-kubernetes-cluster-aws",
+    addendum = "(accessed: 25.05.2020)"
+}
+@online{gruntwork-howto-blog,
+    author = "Gruntwork",
+    title = "How to deploy a production-grade Kubernetes cluster on AWS",
+    url  = "https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec",
+    addendum = "(accessed: 25.05.2020)"
+}
+@online{learnk8s-ll,
+    author = "Daniele Polencic",
+    title = "Kubernetes Chaos Engineering: Lessons Learned — Part 1",
+    url  = "https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned",
+    addendum = "(accessed: 25.05.2020)"
+}
+
+
+@online{aws-vpc,
+    author = "Amazon",
+    title = "VPCs and subnets",
+    url  = "https://docs.aws.amazon.com/vpc/latest/userguide/VPC_Subnets.html",
+    addendum = "(accessed: 25.05.2020)"
+}
+@online{aws-bastion,
+    author = "Amazon",
+    title = "Linux Bastion Hosts on the AWS Cloud",
+    url  = "https://docs.aws.amazon.com/quickstart/latest/linux-bastion/overview.html",
+    addendum = "(accessed: 25.05.2020)"
+}
+
+
 @online{ecs,
     author = "Amazon",
     title = "Amazon Elastic Container Service",
@@ -358,6 +436,58 @@
     url  = "https://docs.aws.amazon.com/eks/latest/userguide/kubernetes-versions.html",
     addendum = "(accessed: 01.05.2020)"
 }
+@online{eks-ubu,
+    author = "Amazon",
+    title = "Ubuntu Amazon EKS-optimized AMIs",
+    url  = "https://docs.aws.amazon.com/eks/latest/userguide/eks-partner-amis.html",
+    addendum = "(accessed: 22.05.2020)"
+}
+@online{eks-ubu-ami-id,
+    author = "Canonical Ltd.",
+    title = "Ubuntu on Amazon Elastic Kubernetes Service (EKS)",
+    url  = "https://cloud-images.ubuntu.com/aws-eks/",
+    addendum = "(accessed: 22.05.2020)"
+}
+@online{al2,
+    author = "Amazon",
+    title = "Amazon Linux 2",
+    url  = "https://aws.amazon.com/amazon-linux-2/",
+    addendum = "(accessed: 22.05.2020)"
+}
+@online{al2-centos,
+    author = "Amazon",
+    title = "Amazon Linux",
+    url  = "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/amazon-linux-ami-basics.html",
+    addendum = "(accessed: 22.05.2020)"
+}
+@online{kubernetes-node-size,
+    author = "Daniel Weibel",
+    title = "Architecting Kubernetes clusters — choosing a worker node size",
+		date = "09.2019",
+    url  = "https://learnk8s.io/kubernetes-node-size",
+    addendum = "(accessed: 22.05.2020)"
+}
+@online{eks-hard-limits,
+    author = "Amazon",
+    title = "File containing hard limits set on EKS, limiting the number of pods allowed for an EC2 instance type",
+    url  = "https://github.com/awslabs/amazon-eks-ami/blob/master/files/eni-max-pods.txt",
+    addendum = "(accessed: 22.05.2020)"
+}
+
+@online{kubernetes-large,
+    author = "Kubernetes Community",
+    title = "Building large clusters",
+    url  = "https://kubernetes.io/docs/setup/best-practices/cluster-large/",
+    addendum = "(accessed: 22.05.2020)"
+}
+@online{k8s-alloc,
+    author = "Kubernetes Community",
+    title = "Node Allocatable",
+    url  = "https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable",
+    addendum = "(accessed: 22.05.2020)"
+}
+
+
 @online{terraform,
     author = "Hashicorp",
     title = "Terraform official website",
@@ -382,6 +512,33 @@
     url  = "https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html",
     addendum = "(accessed: 18.05.2020)"
 }
+@online{lz,
+    author = "Amazon",
+    title = "AWS Local Zones",
+    url  = "https://aws.amazon.com/about-aws/global-infrastructure/localzones/",
+    addendum = "(accessed: 21.05.2020)"
+}
+@online{lz-blog,
+    author = "Amazon",
+    title = "AWS adds the ability for customers to enable AWS Local Zones themselves",
+    url  = "https://aws.amazon.com/about-aws/whats-new/2020/03/aws-customers-enable-aws-local-zones-themselves/",
+		date = "09.03.2020",
+    addendum = "(accessed: 21.05.2020)"
+}
+@online{aws-region-map,
+    author = "Amazon",
+    title = "Regions, Availability Zones, and Local Zones",
+    url  = "https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Concepts.RegionsAndAvailabilityZones.html",
+    addendum = "(accessed: 21.05.2020)"
+}
+@online{ec2-pricing,
+    author = "Amazon",
+    title = "Amazon EC2 Pricing",
+    url  = "https://aws.amazon.com/ec2/pricing/on-demand/",
+    addendum = "(accessed: 21.05.2020)"
+}
+
+
 @online{online-aks,
     author = "Microsoft",
     title = "Azure Kubernetes Service (AKS)",

@@ -1,30 +1,335 @@
 % 4
-\section{Preparations for production deployment of Kubernetes cluster}
+\section{Preparations for production deployment of a Kubernetes cluster}
 \textit{This is a practical section. It includes planning and designing the production deployment, considering: capacity planning, choosing which requirements to satisfy and taking any other deployment and infrastructure related decisions.}
 ~\\
 
-\subsection{Version of Kubernetes}
-In order to compare two methods of Kubernetes deployment in a reasonable way, both methods should deploy the same Kubernetes version. Also, the version should be one of the latest released ones, for the sake of keeping this comparison up-to-date.
-
-At the time of writing this work, on 1st of May 2020, the latest released Kubernetes version was v1.18\footnote{\cite{online-k8s-blog-latest}}. The latest version supported by Kops is v1.16\cite{online-kops-versions}. And, the latest version supported by EKS is v1.16.8\cite{online-eksctl-versions}. Thus, the maximum version of Kubernetes of the two supported ones was chosen: v1.16.8.
-
-1.15 will be used because of the AMI
-
-Furthermore, using a specified version is important for the production environment and IaC. TODO some citation
-
 \subsection{AWS Region}
-All the work will be performed on AWS cloud. This cloud offers many data centers spread across multiple physical locations around the world. AWS calls these locations: Regions, Availability Zones, and Local Zones https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html.
+\textit{The first decision to take is to choose the AWS Region in which all the resources should be deployed.}
+\\
 
-which region to choose? europe for latency? ireland over london for pricin https://aws.amazon.com/ec2/pricing/on-demand/
-2 figures
+The Kubernetes cluster deployment constitutes the empirical work of this study. The deployment will target the AWS cloud. This cloud provides many data centers, spread across multiple physical locations around the world. AWS calls these locations: Regions, Availability Zones, and Local Zones. AWS offers many resources (for example: S3, EC2 or EKS). Some of them are global, whereas the others are tied to a Region, an Availability Zone, or a Local Zone\cite{az}.
 
-\subsection{Tools}
-* kubectl
-* aws cli 2
-* eksctl
-* kops
+While it matters not which Availability Zone will be chosen, \textbf{choosing a Region has some consequences}. For example, AMIs are tied to a Region. AMIs may be copied between Regions. It may happen, that some officially supported AMIs are available only in a limited number of Regions and choosing some other Region would incur more \textbf{time and money} needed to copy the image. There is a charge for data transfer between Regions\cite{az}.
 
-aws configure, use k8s-aws-dojo docker image, dojo out of scope of this work
+AWS Local Zones are a new type of AWS infrastructure deployment. Thanks to them, AWS resources can be put closer to large population, industry, and IT centers where no AWS Region exists today. AWS Local Zones help to run latency sensitive applications closer to end users. Even single-digit millisecond latency can be achieved. The use cases for such latency are for example: media & entertainment content creation, real-time gaming, reservoir simulations, electronic design automation, and machine learning\cite{lz}. AWS Local Zones are available since 9th March 2020 and there is currently one AWS Local Zone, available in Los Angeles, California\cite{lz-blog}. For this work, single-digit millisecond latency is not needed.
+
+In this work, AWS EC2 instances will be used (Elastic Compute Cloud resources). The following AWS CLI command was run to list all the available regions for the AWS account of the author of this work:
+\begin{lstlisting}[basicstyle=\small,caption={A command of AWS CLI tool used list all the available regions (for an AWS account)},captionpos=b,language=Bash,xleftmargin=1cm]
+$ aws ec2 describe-regions
+\end{lstlisting}
+
+The returned list of Regions was: "eu-north-1", "eu-west-3", "eu-west-2", "eu-west-1", "eu-central-1", "ap-south-1", "ap-northeast-2", "ap-northeast-1", "sa-east-1", "ca-central-1", "ap-southeast-1", "ap-southeast-2", "us-east-1", "us-east-2", "us-west-1", "us-west-2". Considering the geographical proximity, the Region should be in Europe. The Regions' names are mapped to geographical locations below (limited to Europe)\cite{aws-region-map}:
+\begin{itemize}
+\item "eu-north-1" - Europe (Stockholm)
+\item "eu-west-1" - Europe (Ireland)
+\item "eu-west-2" - Europe (London)
+\item "eu-west-3" - Europe (Paris)
+\item "eu-central-1" - Europe (Frankfurt)
+\item "eu-south-1" - Europe (Milan)
+\end{itemize}
+
+The next criterion of choosing the Region is \textbf{price}. The pricing for EC2 instances were compared for 5 AWS Regions (available for a particular AWS account, in Europe). A few EC2 instance types were considered, but from the General Purpose family of types. Only Linux/UNIX usage was taken into consideration. The comparison is presented in the table below. The data comes from the official AWS EC2 pricing website\cite{ec2-pricing}. The prices are noted \textbf{in USD per hour of an EC2 instance running}.
+
+\begin{table}[H]
+\begin{tabularx}{0.9\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | }
+ \hline
+  \textbf{Instance Type} & \textbf{London} & \textbf{Ireland} & \textbf{Frankfurt} & \textbf{Paris} & \textbf{Stockholm}  \\
+ \hline
+ t2.nano  & 0.0066 & 0.0063 & 0.0067 & 0.0066 & not given \\
+ \hline
+ t2.micro  & 0.0132  & 0.0126 & 0.0134 & 0.0132 & not given \\
+ \hline
+ t2.small  & 0.026 & 0.025 & 0.0268 & 0.0264 & not given \\
+ \hline
+ t2.medium  & 0.052 & 0.05 & 0.0536 & 0.0528 & not given \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an EC2 instance on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing website\cite{ec2-pricing}}
+\end{table}
+
+
+Thus, basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) - "eu-west-1"}.
+
+
+\subsection{Version of Kubernetes}
+\textit{In this section, it is decided which Kubernetes version to use.}
+\\
+
+\subsubsection{Why it is important to choose a particular version}
+In order to compare two methods of Kubernetes deployment in a reasonable way, \textbf{both methods should deploy the same Kubernetes version}. Also, the version should be one of the latest released ones, for the sake of keeping this comparison up-to-date. Furthermore, using a specified version is important for the production environment, because:
+\begin{itemize}
+\item the environment should be easy to recreate,
+\item the experiment (the empirical work of this study: deploying a Kubernetes cluster) should be possible to be repeated,
+\item using specified versions helps to incorporate Infrastructure as Code and DevOps best practices and to automate the deployments.
+\end{itemize}
+
+\subsubsection{Which version was chosen}
+At the time of writing this work, \textbf{on 21st of May 2020}, the latest released Kubernetes version was 1.18\cite{online-k8s-blog-latest}. The latest Kops version is 1.16.0 and Kubernetes versions supported by Kops are: 1.16, 1.15, 1.14, 1.13, 1.12\cite{online-kops-versions}. When it comes to EKS, the following Kubernetes versions are currently available for new EKS clusters: 1.16.8, 1.15.11, 1.14.9, 1.13.12. However, Kubernetes version 1.13 is deprecated on EKS. EKS documentation recommends that unless a specific Kubernetes version is required, \textbf{the latest supported version should be chosen}\cite{online-eksctl-versions}. \textbf{The maximum version of Kubernetes, supported by the two deployment methods, was: v1.16.8}.
+
+However, one has to consider the AWS AMIs with Kubernetes installed. There are some EKS-optimized Linux AMIs - built for this exact purpose - to be deployed in a Kubernetes cluster. They are built on top of \textbf{Amazon Linux 2}\cite{eks-optimized-ami}. Besides the official Amazon EKS-optimized AMIs, Canonical (the commercial support provider for Ubuntu) has partnered with Amazon EKS to create worker node AMIs built on top of \textbf{Ubuntu}\cite{eks-ubu}. Judging from the official Canonical website, which provides the EKS Ubuntu AMIs IDs, the latest supported Kubernetes version is 1.15. There is an AMI available for the chosen AWS Region "eu-west-1" and the AMI's ID is: ami-0ceab0713d94f9276\cite{eks-ubu-ami-id}.
+
+Amazon Linux 2 is a Linux Server Operating System, provided by Amazon. Among the features it provides are: optimized performance (to help ease integration with AWS Services), long term support, bleeding edge software updates support, on-premises use, systemd support, etc.\cite{al2}. However, Amazon Linux 2 is a RPM-based Linux distribution (which can be judged based on information that many applications developed on CentOS (and similar distributions) run on Amazon Linux)\cite{al2-centos}. RPM-based Linux distributions include: CentOS, Fedora, Red Hat Linux, etc. Since the author of this work has little experience with RPM-based Linux distributions, \textbf{the AWS EKS AMIs with Ubuntu were preferred}. This decision should not impact the aim of this work but it should result in less time spent on troubleshooting.
+
+Considering all the information presented in this section, the \textbf{version of Kubernetes chosen was: 1.15.11}.
+
+
+\subsection{Capacity planning}
+\textit{Here the needed capacity is discussed. The aim is to have a minimal working cluster that could be representative for a production environment.}
+\\
+
+The important thing is, that the to-be-deployed Kubernetes cluster, should have the minimal amount of capacity, but still it should be representative for a production environment. Here \textbf{chicken-counting} (0, 1, many) comes to the rescue. Applying the chicken-counting technique means that if a production site has 250 web servers, 2 should be enough to represent it\cite{book-cicd}. Since a Kubernetes cluster consists of a master node and worker nodes, then it was decided that \textbf{a representative cluster would be made of one master node and two worker nodes}.
+
+The capacity of a cluster means the sum of CPU and memory of all the cluster worker nodes. Multiple ways are possible to achieve the desired target capacity. Example given: if a cluster with a total capacity of 8 CPU cores and 32 GB of RAM is needed, then it can be achieved by, for example, having two nodes (each with 4 CPU and 16 GB RAM) or having four nodes (each with 2 CPU and 8 GB RAM)\cite{kubernetes-node-size}. Now there are two questions:
+\begin{itemize}
+\item it is better to have a few bigger nodes or many smaller nodes?
+\item what is the minimal capacity needed for a production cluster?
+\end{itemize}
+
+The table below summarizes the advantages and disadvantages of having a few bigger nodes. For more information about the pros and cons presented in the table \ref{tab:pros-cons-large-nodes}, a reader is referred to an online source: "Architecting Kubernetes clusters — choosing a worker node size"\cite{kubernetes-node-size}.
+
+\begin{table}[H]
+\begin{tabularx}{1\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | }
+ \hline
+  \textbf{Advantages} & \textbf{Disadvantages}  \\
+ \hline
+ Less management overhead (less number of machines to manage)  & Large number of pods per node (each pod introduces some overhead, if there are too many pods, the system may slow down)   \\
+ \hline
+ Resource-hungry applications allowed  & Large scaling increments  \\
+ \hline
+  Potential lower costs per node (the price increase for a more powerful may not be linear)  & Limited replication (each replica of a pod may be requested to be deployed on a different node. If a HA application requires 5 replicas, but there are only 2 nodes in a cluster, then the effective degree of replication is reduced to 2)  \\
+ \hline
+  Large numbers of nodes can be a challenge for the Kubernetes control plane (there are many network communication paths and also also more load on the etcd database) & The impact of one failed node is big   \\
+ \hline
+  Better resources utilization &   \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:pros-cons-large-nodes}Comparison advantages and disadvantages of having a few bigger nodes in a Kubernetes cluster instead of having many smaller nodes\cite{kubernetes-node-size}}
+\end{table}
+
+However, in the Internet there are contradictory information about the limited replication. The online source cited above\cite{kubernetes-node-size} states that there can be maximally as many replicas as worker nodes in a cluster, while another source - a blog post\cite{learnk8s-ll} claims that there can be more pod replicas than nodes. This information was not verified in practice in this work. Perhaps the replicas limit depends on Kubernetes version - but this is just a speculation of this work's author.
+
+It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node\cite{kubernetes-node-size}\cite{kubernetes-large}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as AWS EKS is concerned, there are some hard limits for number of pods allowed for a particular EC2 instance type. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4\cite{kubernetes-node-size}\cite{eks-hard-limits}.
+
+\textbf{There was no official statement found stating the minimal capacity of a Kubernetes cluster}. Thus, the EC2 instance type for a Kubernetes worker nodes should depend on the resources needed by the pods. (Some pods will be deployed in order to test whether the cluster is healthy). Some overhead must be also considered, because the amount of compute resources that are available for pods, \textbf{the allocatable}, is smaller than the capacity of the whole node\cite{k8s-alloc}.
+
+\subsection{Tools and development environment}
+\label{tools}
+\textit{This section can be treated as a checklist of what tools should be gathered before deploying a Kubernetes cluster. It also characterizes a development environment.}
+\\
+
+Let's start with a list of essential tools needed:
+\begin{itemize}
+\item kubectl
+\item aws cli 2
+\item eksctl
+\item kops
+\item helm
+\item bats-core
+\end{itemize}
+
+Now, each of these tools will be briefly introduced. TODO
+
+When it comes to \textbf{development environment} - the Ubuntu 18.04 workstation was used. In order to facilitate repetition of the empirical work of this study, all the deployment was performed from a Docker container. Thus, the local development environment was just obliged to: have Docker installed, Internet access and AWS credentials configured. The Docker container used, was created from a Docker image: TODO, ... Dojo, Dojofile contents, , dojo out of scope of this work, how the container was run, etc... Thanks to such a solution, it should be easy to run the deployment from a local workstation (e.g. from a local laptop) and also from a CI server.
+
+TODOooo
+
+
+\subsection{Selected requirements of a production deployment and acceptance criteria needed to satisfy them}
+\textit{Here a set of production deployment requirements is presented. In order to satisfy them and to plan the deployment, acceptance criteria are stated for each of the requirements.}
+\\
+
+\textbf{There are numerous requirements for a production deployment of a Kubernetes cluster}. Some of them were gathered throughout the available literature and presented in the section: \ref{Production deployment requirements}. It is common knowledge that companies, which deploy Kubernetes and similar systems, obey some set of best practices, dedicated to these companies only. Thus, the requirements presented in this work do not exhaust the topic.
+
+Below, there is a list of the selected production deployment requirements. In the empirical part of this study, the requirements were  attempted to be satisfied.
+\begin{itemize}
+\item A healthy cluster
+\item Automated operations
+\item Central Logging
+\item Central Monitoring
+\item Central Audit
+\item Backup
+\item High Availability
+\item Autoscaling
+\item Security
+\item Live Cluster Upgrades
+\end{itemize}
+
+The set entails \textbf{10 requirements}. Each of them was already described theoretically, but further in this chapter, each requirement is explained from a practical point of view. The \textbf{acceptance criteria} needed to satisfy each of the requirements are presented. Basing on this, a plan of a Kubernetes cluster deployment is created. The work done is described in the next chapter, together with any problems encountered and troubleshooting sessions.
+
+\subsubsection{A healthy cluster}
+\label{A healthy cluster}
+* kubectl get nodes, kubectl version --short,
+* deploy some test service and test it; use helm - maybe apache chart + use the idea from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
+* use bats for all the tests
+
+% "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
+
+
+\subsubsection{Automated operations}
+
+Setting up a package manager for reusable Kubernetes deployments is recommended\cite{gruntwork-howto-blog}. In this work: Helm is used and it was already described in the section: \rel{tools}.
+
+* Automation and Infrastructure as Code - eksctl YAML config, kops YAML config, cloudformation? terraform?
+* tasks file - one command to run one operation
+* helm and bats also help automation
+* additionally (if there is time): try AWS CI Server (or some other CI Server)
+* write again that iac facilitates the repetition of future evalutaions, repeating this experiment
+
+\subsubsection{Central Logging}
+
+* try AWS CloudWatch Logs
+* additionally (if there is time): deploy Graylog (or Fluentd or Logstash, etc) on AWS
+
+\subsubsection{Central Monitoring}
+
+* try AWS CloudWatch Alarms and dashboards
+* try kubernetes dashboard
+* additionally (if there is time): deploy Grafana + influxdb on AWS
+
+\subsubsection{Central Audit}
+
+* try AWS CloudTrail
+
+\subsubsection{Backup}
+
+* backup etcd with the test service deployed and try to restore in a new k8s cluster
+
+\subsubsection{High Availability}
+
+* it is probably already implemented, so just write about it
+* additionally do: "How to move from single master to multi-master in an AWS kops kubernetes cluster" https://blenderfox.com/2018/01/23/how-to-move-from-single-master-to-multi-master-in-an-aws-kops-kubernetes-cluster/
+* NAT Gateway
+
+\subsubsection{Autoscaling}
+
+* increase the number of pod replicas, make autoscaling work
+
+\subsubsection{Security}
+
+% private networking
+
+First, let's handle the networking. In order to stay secure, it was decided that in the deployments for this work, \textbf{the private network topology was chosen}. This should be set for both deployment methods.
+
+VPC stands for Virtual Private Cloud and it is an AWS resource, providing the networking services. When a VPC is created, it means that a virtual private network is created and assigned to a particular AWS account. AWS resources can be launched into that VPC. Each VPC has a CIDR block assigned. The VPC cannot span more than one AWS Region. The VPC can be divided into subnetworks (or subnets). One subnet cannot span more than one Availability Zone. Subnets can be either public or private. If a subnet's traffic is routed to an internet gateway, the subnet is known as a public subnet. Otherwise, a subnet is private\cite{aws-vpc}. This means that public subnets have access to the Internet.
+
+There are \textbf{two network topologies supported by Kops: public and private}. When the public topology is chosen, then all masters and workers of a Kubernetes cluster will be launched in a public subnet in the VPC. Respectively: when using the private topology, all the machines will be launched in a private subnet in the VPC\cite{kops-net-topo}. This is settable as a CLI flag\cite{kops-net}:
+\begin{lstlisting}[basicstyle=\small,caption={CLI flag used by kops to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
+--topology private
+\end{lstlisting}
+
+When using eksctl, this is also possible: the initial nodegroup (worker nodes) can be isolated from the public Internet by the following CLI flag\cite{eksctl-net}:
+\begin{lstlisting}[basicstyle=\small,caption={CLI flag used by eksctl to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
+--node-private-networking
+\end{lstlisting}
+or by setting in the YAML configuration file\cite{eks-example}:
+\begin{lstlisting}[basicstyle=\small,caption={YAML configuration used by Kops to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
+nodeGroups:
+  - name: ng-1
+    instanceType: m5.xlarge
+    desiredCapacity: 2
+    privateNetworking: true # if only 'Private' subnets are given, this must be enabled
+\end{lstlisting}
+
+% HA NAT Gateway
+
+When the private network topology is chosen, kops creates one NAT Gateway (NGW) per AZ\cite{kops-net2}. Such a \textbf{NGW is then highly available} - which is an important production deployment requirement. There is also a possibility to set it with eksctl with\cite{eksctl-net}:
+\begin{lstlisting}[basicstyle=\small,caption={YAML configuration used by eksctl to set NAT Gateway as Highly Available},captionpos=b,language=Bash,xleftmargin=1cm]
+vpc:
+  nat:
+    gateway: HighlyAvailable # other options: Disable, Single (default)
+\end{lstlisting}
+
+The NAT Gateway is needed, because the worker nodes must have access to the Internet, in order to function properly. If the worker nodes are deployed in a private subnet, then the private subnet will access the Internet through a NAT Gateway\cite{eks-net}.
+
+% endpoint access
+
+The next thing is to consider \textbf{whether the API Server is accessible from within a VPC only or from the public Internet}. For the production deployment, access from within a VPC only is recommended. \textbf{In order to allow access from a remote computer, through the Internet, a bastion host or a VPN server is needed}\cite{gruntwork-howto}. It is essential to understand that NAT Gateway is needed in order to allow Internet access from an AWS EC2 machine, while bastion host allows to access that machine from outside. The functionality of a bastion host is to provide secure access to Linux instances located in the private and public subnets\cite{aws-bastion}.
+
+When a new EKS cluster is created, Amazon provides an endpoint for the managed Kubernetes API server. Thanks to that, one can communicate with the cluster (for example using a Kubernetes management tool: kubectl). As a default configuration, this API server endpoint is public to the internet, and also access to the API server is secured using a combination of AWS IAM (Identity and Access Management) and RBAC (native Kubernetes Role Based Access Control). Private access to the API server can be enabled. Thanks to that all communication between the worker nodes and the API server stays within a VPC\cite{eks-cluster-endpoint}.
+
+When private endpoint is enabled, AWS EKS creates a Route 53 private hosted zone, but this zone does not appear in AWS Route 53 resources. What is essential is that the Route53 resource is assigned to a VPC and such a VPC must have 'enableDnsHostnames' and 'enableDnsSupport' set to 'true', and also the DHCP options set for the VPC must include 'AmazonProvidedDNS' in its domain name servers list. Apart from this, there is also a requirement that an IAM Role or User (used to manage the AWS EKS cluster) must be given 'route53:AssociateVPCWithHostedZone' permissions\cite{eks-cluster-endpoint}.
+
+Enabling private endpoint is settable with eksctl in YAML file\cite{eksctl-net}:
+\begin{lstlisting}[basicstyle=\small,caption={YAML configuration used by eksctl to set EKS cluster endpoints},captionpos=b,language=Bash,xleftmargin=1cm]
+vpc:
+  clusterEndpoints:
+    publicAccess:  <true|false>
+    privateAccess: <true|false>
+\end{lstlisting}
+However, if only private access is allowed, then eksctl cannot create the cluster. Thus, at cluster creation, both: public and private access will be enabled. Then, the public access can be disabled\cite{eksctl-net}.
+
+
+services, ingress, public access, ALB - https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec
+
+a Defense in Depth strategy - https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec
+
+The table below summarizes what configuration must be set when using eksctl and kops to ensure a secure, production ready networking:
+
+\begin{table}[H]
+\begin{tabularx}{0.9\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | }
+ \hline
+  Setting & Using eksctl & Using kops  \\
+ \hline
+ Private network topology  & 0.0066 & 0.0063 \\
+ \hline
+ HA NAT Gateway  & 0.0132  & Set by default  \\
+ \hline
+ Network mode  & 0.026 & 0.025  \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an EC2 instance on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing website\cite{ec2-pricing}}
+\end{table}
+
+
+There are \textbf{three networking modes supported by Kops: kubenet, cni and external}. Kubenet is the default mode, but it is not recommended for production clusters, because of its limitations. One of the limitations is, that kubenet disallows having more than 50 nodes per cluster. Another limitation is that if a cluster uses the private network topology, then it cannot use kubenet\cite{kops-net}.
+
+dns
+ssh access
+endpoint access
+pod networking
+VPC security: security groups, nacl
+
+* separate k8s ns and also "You should also setup each environment with its own EKS cluster, instead of relying on Kubernetes Namespaces." - maybe?? \cite{gruntwork-howto-blog}
+
+In order to stay secure, it was decided that \textbf{the private network topology and the cni networking mode} should be chosen. But, there are many CNI providers supported by Kops, for example: AWS VPC, Calico, Flannel, Weave\cite{kops-net-topo}.
+
+* private network in cluster.yaml for eks (--node-private-networking); "in most common Kubernetes deployments, nodes in the cluster are not part of the public internet." https://kubernetes.io/docs/concepts/services-networking/ingress/; eksctl create cluster --authenticator-role-arn string
+* api server endpoint how?
+* HTTPS api server; https://kubernetes.io/docs/reference/access-authn-authz/controlling-access/
+* using public AMIs is more secure than using self-created?
+* rbac in action - add some k8s user and restrict the access for a user, check that this is obeyed
+* iam in action (as above, but with AWS role)
+* custom network?
+* built-in security features of managed services and of kops; "Security in Amazon EKS"
+* security scans?
+* security checklists?
+* https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster/
+* bastion host?
+* ssh login to a node?
+
+\subsubsection{Live Cluster Upgrades}
+
+* TODO
+
+https://learnk8s.io/troubleshooting-deployments
+https://learnk8s.io/kubernetes-long-lived-connections
+https://blog.pipetail.io/posts/2020-05-04-most-common-mistakes-k8s/
+%%%%%%%%%%%%%%%%%%%
+
 aws cli 2 problems on alpine linux (see k8s-aws-dojo)
 why aws cli 2? better security; AWS CLI version 2 uses an internal Python script that's compiled to use a minimum of TLS 1.2 when the service it's talking to supports it. No further steps are needed to enforce this minimum. https://docs.aws.amazon.com/cli/latest/userguide/cli-security-enforcing-tls.html#enforcing-tls-v2
  use latest aws cli 2 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-troubleshooting.html
@@ -44,11 +349,8 @@ $ echo $(eksctl create cluster --version invalid 2>&1) | rev | sed 's/ //g' | cu
 * autoscaleir https://github.com/weaveworks/eksctl/blob/master/examples/eks-quickstart-app-dev.yaml http://aws.amazon.com/ec2/autoscaling
 * change control plane config - need a custom ami? https://github.com/awslabs/amazon-eks-ami
 
-\subsection{Chosen requirements of production deployment}
-\textbf{There are numerous requirements for a production deployment of a Kubernetes cluster}. Some of them were gathered throughout available literature and presented in the section: \ref{Production deployment requirements}. It is common knowledge that companies, which deploy Kubernetes and similar systems, obey some set of best practices, dedicated to these companies only. Thus, the requirements presented in this work do not exhaust the topic.
 
 trobuleshooting? - chapter 5
-1. which version of k8s, helm, eksctl, kops...
 2. helm architecture (2 vs 3: no tiller, 3-way merge considers also live state, Release Names are now scoped to the Namespace, cli commands renamed e.g. helm fetch -> helm pull) HELM_VERSION=3.2.0
 3. eksctl or aws cli or aws management console?  https://docs.aws.amazon.com/eks/latest/userguide/create-cluster.html
 https://aws.amazon.com/blogs/opensource/eksctl-eks-cli/ "eksctl is now officially our command line for EKS"
@@ -78,10 +380,21 @@ metadata:
   version: "1.16"
 ```
 in cluster.yaml works fine. The only information how to set it i found on: https://github.com/weaveworks/eksctl/issues/1984#issuecomment-608583084 (missing documentation on the whole cluster.yaml file)
-9. eks - which AWS AMI to choose?
-https://docs.aws.amazon.com/eks/latest/userguide/eks-linux-ami-versions.html
-https://github.com/awslabs/amazon-eks-ami
-ubuntu https://docs.aws.amazon.com/eks/latest/userguide/eks-partner-amis.html
+
+* kops vs eksctl addons: https://github.com/kubernetes/kops/blob/master/docs/operations/addons.md
+networking how it works
+
+* fargate for eks??
+
+
+* is vpc and subnets auto created?
+* is iam?
+* how to setup ingress and LB? https://docs.aws.amazon.com/eks/latest/userguide/load-balancing-and-ingress.html
+
+
+https://github.com/thestacks-io/eks-cluster
+https://github.com/slalom/eks-iac
+https://medium.com/risertech/production-eks-with-terraform-5ad9e76db425
 
 t2.nano ami was ok for the default os (amazon linux 2) but is not ok for ubuntu: https://cloud-images.ubuntu.com/aws-eks/amazon-eks-ubuntu-nodegroup.yaml
 ```
@@ -114,48 +427,8 @@ This website however suggests that the ami is not available for k8s 1.16: https:
 
 ---
 
-But Why Run Kubernetes on AWS? https://www.weave.works/technologies/kubernetes-on-aws/
-
-pricing? what resources does eks use? nat gateway? when? how?
-
-MAYBE TODO:
-Furthermore, the author if this work decided to satisfy only a few of the production deployment requirements. The reason - TODO.
-
-\begin{itemize}
-\item Passing tests, a healthy cluster - kubectl get nodes, kubectl version --short, deploy some service and test it; "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
-\item Automation and Infrastructure as Code - eksctl mystery, cloudformation?
-\item Central Logging
-\item Central Monitoring
-\item Backup
-\item HA - maybe
-\item Autoscaling - maybe
-\item Security - private network in cluster.yaml for eks (--node-private-networking); "in most common Kubernetes deployments, nodes in the cluster are not part of the public internet." https://kubernetes.io/docs/concepts/services-networking/ingress/; eksctl create cluster --authenticator-role-arn string
-\item Live Cluster Upgrades - rather not
-\item Audit - rather not
-\end{itemize}
-
-\subsubsection{Designing automated tests}
-bats, bats-core
-
-\subsection{Capacity planning}
-Virtualization and chicken-counting (0, 1, many) are your friends here. Virtu-
-alization makes it easy to create an environment that represents the important
-aspects of your production environment, while being able to run on a single
-physical machine. Chicken-counting means that if your production site has
-250 web servers, 2 should be enough to represent the significant process
-boundaries. book-cicd, p. 254
-
 \subsection{Other decisions and configuration}
 
 \subsection{Expected cost}
 
-ideas for the future:
-* tests - https://kubernetes.io/docs/setup/best-practices/node-conformance/
-
-
-troubleshooting k8s -mastering k8s p. 58
-
-* needed hardware Hardware resource - devops, puppet, ..., p. 539
-* this is not enterprise depl, but production depl
-* iac facilitates the repetition of future evalutaions, repeating this experiment
-* the scope of this comparison is limited to the ..
+* pricing? what resources does eks use? nat gateway? when? how?
