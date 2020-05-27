@@ -1,5 +1,79 @@
 \section{Production deployment of Kubernetes cluster, using various methods}
-\textit{This is a practical chapter and it was written together with creating a source code. Main steps of Kubernetes cluster deployment will be enumerated. There will be also encountered problems listed and potential solutions presented.}
+\textit{This is a practical chapter and it was written together with performing the empirical work and writing the source code. Main steps of Kubernetes cluster deployment will be enumerated. Also, encountered problems will be listed and potential solutions will be presented.}
+\\
+
+\subsection{Using Kops to deploy on AWS cloud with no prerequisite work done}
+\textit{In this subsection first experiment with Kops is described.}
+\\
+
+Although the aim of this work is to create a production Kubernetes cluster, it is always welcome, when there is a possibility to start working with a program easily. It is nice to have a simple working proof of concept. Thus, it was decided to start with Kops without performing any prerequisite steps. The following commands were invoked:
+\begin{lstlisting}[basicstyle=\small,caption={Commands used to create a cluster with kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+$ export KOPS_STATE_STORE=s3://dummy-k8s-kops-state-store
+$ export NAME=dummy-k8s-kops.k8s.local
+$ kops create cluster \
+--master-zones=eu-west-1a \
+--zones=eu-west-1a \
+--node-count=1 \
+--node-size=t2.nano \
+--master-size=t2.nano \
+${NAME}
+\end{lstlisting}
+
+AWS instance types were chosen (using the CLI flags: \textit{--node-size} and \textit{--master-size}) and also the number of Kubernetes worker nodes was set (using the CLI flag: \textit{--node-count}), so that, if the cluster had been created, its cost would have been under control. \textbf{As expected and what is aligned with the Kops documentation\cite{online-kops-aws}, the above commands failed}, because there was no dummy-k8s-kops-state-store S3 bucket created. The command failed with the following output:
+\begin{lstlisting}[basicstyle=\small,caption={Output of the commands used to create a cluster with Kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+error reading cluster configuration "dummy-k8s-kops.k8s.local":
+error reading s3://dummy-k8s-kops-state-store/dummy-k8s-kops.k8s.local/config:
+Could not retrieve location for AWS bucket dummy-k8s-kops-state-store
+\end{lstlisting}
+
+The Kops documentation\cite{online-kops-aws} informs that the following goals should be first accomplished, before deploying a Kubernetes cluster:
+\begin{itemize}
+\item AWS CLI tools should be installed
+\item AWS credentials should be set
+\item AWS IAM user and its permissions should be set
+\item DNS should be configured
+\item An S3 bucket should be created for storing a cluster state
+\item AWS Region and Availability Zones should be chosen
+\end{itemize}
+
+Further in this chapter, after all the prerequisites will have been met, Kops will be used to create a production Kubernetes cluster.
+
+\subsection{Using eksctl to deploy on AWS EKS service with no prerequisite work done}
+\textit{In this subsection first experiment with eksctl is described.}
+\\
+
+In order to be consistent, the same first experiment was performed using eksctl. First a YAML configuration file was created and then the eksctl CLI command was invoked:
+\begin{lstlisting}[basicstyle=\small,caption={Commands used to create a cluster with eksctl, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+$ cat cluster.yaml
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: cluster-eks
+  region: eu-west-1
+
+nodeGroups:
+  - name: ng-1
+    labels: { role: worker, cluster: cluster-eks }
+    instanceType: t2.nano
+    desiredCapacity: 1
+    ssh:
+      allow: true
+$ eksctl create cluster -f cluster.yaml
+\end{lstlisting}
+
+These commands resulted in a successful creation of a cluster in "eu-west-1" AWS region with one worker node. Apart from that, the configuration file needed to access the remote cluster (remote, because deployed on AWS) was automatically created and written to: \textit{~/.kube/config}. In order to verify that the worker nodes were running, the following command was run:
+\begin{lstlisting}[basicstyle=\small,caption={Command used to list Kubernetes worker nodes to verify that one such node was running},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get nodes
+NAME                                           STATUS   ROLES    AGE    VERSION
+ip-192-168-176-90.eu-west-1.compute.internal   Ready    <none>   3m8s   v1.16.8
+\end{lstlisting}
+
+This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. The cluster was then deleted with the following command:
+\begin{lstlisting}[basicstyle=\small,caption={Command used to delete Kubernetes cluster with eksctl},captionpos=b,language=Bash,xleftmargin=1cm]
+$ eksctl delete cluster -f cluster.yaml --wait
+\end{lstlisting}
+The \textit{--wait} CLI flag was applied. Without it, a delete operation would have been only requested but not waited for. In some cases it happens that the deletion fails, and, without this flag, the errors would not have been propagated back as the CLI command output. Then, one would be forced to delete the AWS resources manually\cite{eksctl-creating-clusters}.
 
 \subsection{Using eksctl to deploy on AWS EKS service}
 \subsection{Using Kops to deploy on AWS cloud}
