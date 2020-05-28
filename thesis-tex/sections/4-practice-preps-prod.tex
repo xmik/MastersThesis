@@ -1,6 +1,7 @@
 % 4
 \section{Preparations for production deployment of a Kubernetes cluster}
-\textit{This is a practical section. It includes planning and designing the production deployment, considering: capacity planning, choosing which requirements to satisfy and taking any other deployment and infrastructure related decisions.}
+\label{prep-prod}
+\textit{This is a practical section. It includes planning and designing the production deployment, considering: capacity planning, choosing which requirements to satisfy and taking any other deployment and infrastructure related decisions. No AWS resources were created here, but AWS CLI was used to get some information.}
 ~\\
 
 \subsection{AWS Region}
@@ -14,7 +15,7 @@ While it matters not which Availability Zone will be chosen, \textbf{choosing a 
 AWS Local Zones are a new type of AWS infrastructure deployment. Thanks to them, AWS resources can be put closer to large population, industry, and IT centers where no AWS Region exists today. AWS Local Zones help to run latency sensitive applications closer to end users. Even single-digit millisecond latency can be achieved. The use cases for such latency are for example: media & entertainment content creation, real-time gaming, reservoir simulations, electronic design automation, and machine learning\cite{lz}. AWS Local Zones are available since 9th March 2020 and there is currently one AWS Local Zone, available in Los Angeles, California\cite{lz-blog}. For this work, single-digit millisecond latency is not needed.
 
 In this work, AWS EC2 instances will be used (Elastic Compute Cloud resources). The following AWS CLI command was run to list all the available regions for the AWS account of the author of this work:
-\begin{lstlisting}[basicstyle=\small,caption={A command of AWS CLI tool used list all the available regions (for an AWS account)},captionpos=b,language=Bash,xleftmargin=1cm]
+\begin{lstlisting}[basicstyle=\small,caption={A command of AWS CLI tool used to list all the available regions (for an AWS account)},captionpos=b,language=Bash,xleftmargin=1cm]
 $ aws ec2 describe-regions
 \end{lstlisting}
 
@@ -54,8 +55,11 @@ The next criterion of choosing the Region is \textbf{price}. The pricing for EC2
 \end{table}
 
 
-Thus, basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) - "eu-west-1"}.
-
+Thus, basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) - "eu-west-1"}. Then, the next thing to decide upon was choosing availability zones. All the AZs available in the chosen region can be listed with the following command\cite{online-kops-aws}:
+\begin{lstlisting}[basicstyle=\small,caption={A command of AWS CLI tool used to list all the available AZs in the chosen AWS Region)},captionpos=b,language=Bash,xleftmargin=1cm]
+$ aws ec2 describe-availability-zones --region eu-west-1
+\end{lstlisting}
+The command output listed the following AZs: "eu-west-1a", "eu-west-1b", "eu-west-1c".
 
 \subsection{Version of Kubernetes}
 \textit{In this section, it is decided which Kubernetes version to use.}
@@ -70,9 +74,15 @@ In order to compare two methods of Kubernetes deployment in a reasonable way, \t
 \end{itemize}
 
 \subsubsection{Which version was chosen}
-At the time of writing this work, \textbf{on 21st of May 2020}, the latest released Kubernetes version was 1.18\cite{online-k8s-blog-latest}. The latest Kops version is 1.16.0 and Kubernetes versions supported by Kops are: 1.16, 1.15, 1.14, 1.13, 1.12\cite{online-kops-versions}. When it comes to EKS, the following Kubernetes versions are currently available for new EKS clusters: 1.16.8, 1.15.11, 1.14.9, 1.13.12. However, Kubernetes version 1.13 is deprecated on EKS. EKS documentation recommends that unless a specific Kubernetes version is required, \textbf{the latest supported version should be chosen}\cite{online-eksctl-versions}. \textbf{The maximum version of Kubernetes, supported by the two deployment methods, was: v1.16.8}.
+At the time of writing this work, \textbf{in May 2020}, the latest released versions of the needed software are:
+\begin{itemize}
+\item Kubernetes version 1.18\cite{online-k8s-blog-latest},
+\item Kops version 1.16.2, Kubernetes versions supported by Kops are: 1.16, 1.15, 1.14, 1.13, 1.12\cite{online-kops-versions}\cite{kops-releases},
+\item Kubernetes versions supported by EKS: 1.16.8, 1.15.11, 1.14.9, 1.13.12. However, Kubernetes version 1.13 is deprecated\cite{online-eks-versions}. There are also particular EKS Platform versions for each supported Kubernetes version. For example, for Kubernetes 1.16.8 there is one EKS Platform version: eks.1\cite{online-eks-platform-versions}.
+\item Eksctl version is 0.20.0\cite{online-eksctl-versions}
+\end{itemize}
 
-However, one has to consider the AWS AMIs with Kubernetes installed. There are some EKS-optimized Linux AMIs - built for this exact purpose - to be deployed in a Kubernetes cluster. They are built on top of \textbf{Amazon Linux 2}\cite{eks-optimized-ami}. Besides the official Amazon EKS-optimized AMIs, Canonical (the commercial support provider for Ubuntu) has partnered with Amazon EKS to create worker node AMIs built on top of \textbf{Ubuntu}\cite{eks-ubu}. Judging from the official Canonical website, which provides the EKS Ubuntu AMIs IDs, the latest supported Kubernetes version is 1.15. There is an AMI available for the chosen AWS Region "eu-west-1" and the AMI's ID is: ami-0ceab0713d94f9276\cite{eks-ubu-ami-id}.
+EKS documentation recommends that unless a specific Kubernetes version is required, the latest supported version should be chosen\cite{online-eks-versions}. Basing on the above information, \textbf{the maximum version of Kubernetes, supported by the two deployment methods, was: v1.16.8}. However, one has to consider the AWS AMIs with Kubernetes installed. There are some EKS-optimized Linux AMIs - built for this exact purpose - to be deployed in a Kubernetes cluster. They are built on top of \textbf{Amazon Linux 2}\cite{eks-optimized-ami}. Besides the official Amazon EKS-optimized AMIs, Canonical (the commercial support provider for Ubuntu) has partnered with Amazon EKS to create worker node AMIs built on top of \textbf{Ubuntu}\cite{eks-ubu}. Judging from the official Canonical website, which provides the EKS Ubuntu AMIs IDs, the latest supported Kubernetes version is 1.15. There is an AMI available for the chosen AWS Region "eu-west-1" and the AMI's ID is: ami-0ceab0713d94f9276\cite{eks-ubu-ami-id}.
 
 Amazon Linux 2 is a Linux Server Operating System, provided by Amazon. Among the features it provides are: optimized performance (to help ease integration with AWS Services), long term support, bleeding edge software updates support, on-premises use, systemd support, etc.\cite{al2}. However, Amazon Linux 2 is a RPM-based Linux distribution (which can be judged based on information that many applications developed on CentOS (and similar distributions) run on Amazon Linux)\cite{al2-centos}. RPM-based Linux distributions include: CentOS, Fedora, Red Hat Linux, etc. Since the author of this work has little experience with RPM-based Linux distributions, \textbf{the AWS EKS AMIs with Ubuntu were preferred}. This decision should not impact the aim of this work but it should result in less time spent on troubleshooting.
 
@@ -127,6 +137,8 @@ It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 10
 
 Let's start with a list of essential tools needed:
 \begin{itemize}
+\item Linux
+\item bash
 \item kubectl
 \item aws cli 2
 \item eksctl
@@ -143,7 +155,7 @@ TODOooo
 
 
 \subsection{Selected requirements of a production deployment and acceptance criteria needed to satisfy them}
-\textit{Here a set of production deployment requirements is presented. In order to satisfy them and to plan the deployment, acceptance criteria are stated for each of the requirements.}
+\textit{Here a set of production deployment requirements is presented. Each of them is shortly described. Acceptance criteria, needed to satisfy the requirements are provided. This section helps to plan the deployment.}
 \\
 
 \textbf{There are numerous requirements for a production deployment of a Kubernetes cluster}. Some of them were gathered throughout the available literature and presented in the section: \ref{Production deployment requirements}. It is common knowledge that companies, which deploy Kubernetes and similar systems, obey some set of best practices, dedicated to these companies only. Thus, the requirements presented in this work do not exhaust the topic.
@@ -164,11 +176,30 @@ Below, there is a list of the selected production deployment requirements. In th
 
 The set entails \textbf{10 requirements}. Each of them was already described theoretically, but further in this chapter, each requirement is explained from a practical point of view. The \textbf{acceptance criteria} needed to satisfy each of the requirements are presented. Basing on this, a plan of a Kubernetes cluster deployment is created. The work done is described in the next chapter, together with any problems encountered and troubleshooting sessions.
 
-\subsubsection{A healthy cluster}
+\subsubsection{A healthy and usable cluster}
 \label{A healthy cluster}
+
+% health checks
+Unless any of the Kubernetes control plane components is healthy, it will need to be fixed. It should not be a problem with a managed Kubernetes services, but for self hosted clusters, this should be checked. It should be noted that, since the \textbf{health checks} ought to be run frequently, they shouldn't do anything too expensive. To monitor the health of a Kubernetes cluster, \textbf{the following could be checked: number of nodes, node health status, number of pods per node and overall, resource usage/allocation per node, and overall}\cite{book-cndwk}.
+
+% api endpoint reachable under a domain name
+When all the cluster health checks are passed, then the cluster is healthy. But, the cluster should be also usable for end users. End users will want to deploy applications on top of the cluster. Thus, they have to have the possibility to reach the cluster endpoint, which in practice means, that they have to \textbf{be able to reach the Kubernetes API Server endpoint}. Such an endpoint may be an IP address or a domain name. Since the cluster will be deployed in a production environment, a domain name is preferred. Furthermore, many sources claim that a top-level domain or a subdomain is required to create a Kubernetes cluster with Kops. Alternatively, gossip-based DNS can be used instead, and then, the cluster domain name would have to end with \textit{.k8s.local} and the API server would be available under the AWS load balancer address\cite{kops-howto-aws}\cite{online-kops-aws}\cite{kops-howto-k8s}\cite{kops-gossip}.
+
+% test app can be deployed
+TODO: deploy some test app and test it
+
+To summarize, in order for a cluster to be healthy and usable, the following acceptance criteria must be met:
+\begin{itemize}
+\item the cluster should have health checks passed,
+\item the Kubernetes API Server endpoint should be reachable for the end users under a domain name,
+\item it should be tested that an application can be deployed on top of a Kubernetes cluster.
+\end{itemize}
+
 * kubectl get nodes, kubectl version --short,
 * deploy some test service and test it; use helm - maybe apache chart + use the idea from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
 * use bats for all the tests
+* kops validate cluster
+
 
 % "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
 
@@ -213,12 +244,19 @@ Setting up a package manager for reusable Kubernetes deployments is recommended\
 * increase the number of pod replicas, make autoscaling work
 
 \subsubsection{Security}
+\textit{Security is handled by applying private networking, AWS Security groups, proper authentication and authorization.}
+\\
+
+First, let's handle the networking. In order to have a clear understanding of how the networking will be set up, a few terms have to be explained. \textbf{VPC stands for Virtual Private Cloud} and it is an AWS resource, providing the networking services. When a VPC is created, it means that a virtual private network is created and assigned to a particular AWS account. AWS resources can be launched into that VPC. Each VPC has a CIDR block assigned. The VPC cannot span more than one AWS Region. The VPC can be divided into subnetworks (or subnets). One subnet cannot span more than one Availability Zone. \textbf{Subnets can be either public or private}. If a subnet's traffic is routed to an internet gateway (which is an AWS resource), the subnet is known as a public subnet. Otherwise, a subnet is private\cite{aws-vpc}. This means that public subnets have access to the Internet.
+
+In order to stay secure, access to the Kubernetes cluster should be limited. This can be achieved in multiple ways.
+
+%%% aaa
+
+it was decided that in the deployments for this work, \textbf{the private network topology was chosen}. This should be set for both deployment methods.
+
 
 % private networking
-
-First, let's handle the networking. In order to stay secure, it was decided that in the deployments for this work, \textbf{the private network topology was chosen}. This should be set for both deployment methods.
-
-VPC stands for Virtual Private Cloud and it is an AWS resource, providing the networking services. When a VPC is created, it means that a virtual private network is created and assigned to a particular AWS account. AWS resources can be launched into that VPC. Each VPC has a CIDR block assigned. The VPC cannot span more than one AWS Region. The VPC can be divided into subnetworks (or subnets). One subnet cannot span more than one Availability Zone. Subnets can be either public or private. If a subnet's traffic is routed to an internet gateway, the subnet is known as a public subnet. Otherwise, a subnet is private\cite{aws-vpc}. This means that public subnets have access to the Internet.
 
 There are \textbf{two network topologies supported by Kops: public and private}. When the public topology is chosen, then all masters and workers of a Kubernetes cluster will be launched in a public subnet in the VPC. Respectively: when using the private topology, all the machines will be launched in a private subnet in the VPC\cite{kops-net-topo}. This is settable as a CLI flag\cite{kops-net}:
 \begin{lstlisting}[basicstyle=\small,caption={CLI flag used by kops to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -268,6 +306,8 @@ However, if only private access is allowed, then eksctl cannot create the cluste
 
 
 services, ingress, public access, ALB - https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec
+
+https://kops.sigs.k8s.io/node_authorization/
 
 a Defense in Depth strategy - https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec
 

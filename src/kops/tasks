@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# any environment variable containing non-numeric characters should be unset,
+# because it impedes the "kops create cluster" command
+unset OS_PASSWORD
+
+export K8S_EXP_REGION="eu-west-1"
+# there will be 1 s3 bucket to keep k8s clusters config, for many clusters
+# (for many environments)
+export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
+
+# TODO: this should be set outside of this file
+export K8S_EXP_ENVIRONMENT="testing"
+
+export K8S_EXP_CLUSTER_NAME="${K8S_EXP_ENVIRONMENT}.${K8S_EXP_KOPS_S3_BUCKET}"
+
+command="$1"
+case "${command}" in
+    _create)
+    # ssh key? vpc? ip public?
+        # list aws s3 buckets
+        if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_KOPS_S3_BUCKET}; then
+          echo "S3 Bucket already exists"
+        else
+          echo "Creating S3 Bucket: ${K8S_EXP_KOPS_S3_BUCKET}"
+          set -x
+          aws s3api create-bucket --bucket ${K8S_EXP_KOPS_S3_BUCKET} --region ${K8S_EXP_REGION} --create-bucket-configuration LocationConstraint=${K8S_EXP_REGION}
+          # enable s3 bucket versioning.
+          # strongly recommended in: https://aws.amazon.com/blogs/compute/kubernetes-clusters-aws-kops/
+          # https://kops.sigs.k8s.io/getting_started/aws
+          aws s3api put-bucket-versioning --bucket ${K8S_EXP_KOPS_S3_BUCKET} --versioning-configuration Status=Enabled
+          # enable s3 default encryption (AES-256, SSE-S3)
+          # https://kops.sigs.k8s.io/getting_started/aws
+          aws s3api put-bucket-encryption --bucket ${K8S_EXP_KOPS_S3_BUCKET} --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+          set +x
+        fi
+        set -x
+        # generate a cluster configuration
+        kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
+        --master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
+        --zones=eu-west-1a --node-count=1 --node-size=t2.nano \
+        ${K8S_EXP_CLUSTER_NAME}
+        # deploy the cluster
+        kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+        # wait for the deployment to finish
+        while [ 1 ]; do
+          kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" && break || sleep 30
+        done;
+        ;;
+    _test)
+        set -x
+        cd tests
+        bats tests.bats
+        kops validate cluster
+        ;;
+    _delete)
+        set -x
+        kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+        ;;
+    *)
+        echo "Invalid command: '${command}'"
+        exit 1
+        ;;
+esac

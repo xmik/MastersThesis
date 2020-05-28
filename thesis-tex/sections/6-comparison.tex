@@ -1,6 +1,13 @@
 \section{Comparison of the used methods}
 \textit{In this chapter, several comparison criteria will be used in order to compare the two chosen methods of a Kubernetes cluster deployment. The chapter will end with a summary deciding which method was better in relation to which comparison criterion.}
+
+\subsection{Additional steps needed to create a Kubernetes cluster}
+prerequisites; poc easiness
+
 \subsection{Cost}
+
+* kops, s3 bucket for cluster store, versioning and encryption enabled,  The objects are encrypted using server-side encryption with either Amazon S3-managed keys (SSE-S3) or customer master keys (CMKs) stored in AWS Key Management Service (AWS KMS). https://docs.aws.amazon.com/AmazonS3/latest/dev/bucket-encryption.html; "There are no new charges for using default encryption for S3 buckets. Requests to configure the default encryption feature incur standard Amazon S3 request charges. " AES-256 (SSE-S3) https://docs.amazonaws.cn/en_us/AmazonS3/latest/user-guide/default-bucket-encryption.html; s3 data transfer pricing; maybe storage classes
+
 \subsection{Problems count}
 \subsection{Production requirements which could not be satisfied}
 \subsection{Resources which could not be automated}
