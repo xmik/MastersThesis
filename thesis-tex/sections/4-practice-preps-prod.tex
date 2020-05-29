@@ -77,9 +77,9 @@ In order to compare two methods of Kubernetes deployment in a reasonable way, \t
 At the time of writing this work, \textbf{in May 2020}, the latest released versions of the needed software are:
 \begin{itemize}
 \item Kubernetes version 1.18\cite{online-k8s-blog-latest},
-\item Kops version 1.16.2, Kubernetes versions supported by Kops are: 1.16, 1.15, 1.14, 1.13, 1.12\cite{online-kops-versions}\cite{kops-releases},
+\item Kops version 1.16.2, Kubernetes versions supported by Kops are: 1.16.9, 1.15.11, 1.14.10, 1.13.12, 1.12.10\cite{online-kops-versions}\cite{kops-releases}\cite{online-kops-versions2},
 \item Kubernetes versions supported by EKS: 1.16.8, 1.15.11, 1.14.9, 1.13.12. However, Kubernetes version 1.13 is deprecated\cite{online-eks-versions}. There are also particular EKS Platform versions for each supported Kubernetes version. For example, for Kubernetes 1.16.8 there is one EKS Platform version: eks.1\cite{online-eks-platform-versions}.
-\item Eksctl version is 0.20.0\cite{online-eksctl-versions}
+\item Eksctl version 0.20.0\cite{online-eksctl-versions}
 \end{itemize}
 
 EKS documentation recommends that unless a specific Kubernetes version is required, the latest supported version should be chosen\cite{online-eks-versions}. Basing on the above information, \textbf{the maximum version of Kubernetes, supported by the two deployment methods, was: v1.16.8}. However, one has to consider the AWS AMIs with Kubernetes installed. There are some EKS-optimized Linux AMIs - built for this exact purpose - to be deployed in a Kubernetes cluster. They are built on top of \textbf{Amazon Linux 2}\cite{eks-optimized-ami}. Besides the official Amazon EKS-optimized AMIs, Canonical (the commercial support provider for Ubuntu) has partnered with Amazon EKS to create worker node AMIs built on top of \textbf{Ubuntu}\cite{eks-ubu}. Judging from the official Canonical website, which provides the EKS Ubuntu AMIs IDs, the latest supported Kubernetes version is 1.15. There is an AMI available for the chosen AWS Region "eu-west-1" and the AMI's ID is: ami-0ceab0713d94f9276\cite{eks-ubu-ami-id}.
@@ -89,46 +89,6 @@ Amazon Linux 2 is a Linux Server Operating System, provided by Amazon. Among the
 Considering all the information presented in this section, the \textbf{version of Kubernetes chosen was: 1.15.11}.
 
 
-\subsection{Capacity planning}
-\textit{Here the needed capacity is discussed. The aim is to have a minimal working cluster that could be representative for a production environment.}
-\\
-
-The important thing is, that the to-be-deployed Kubernetes cluster, should have the minimal amount of capacity, but still it should be representative for a production environment. Here \textbf{chicken-counting} (0, 1, many) comes to the rescue. Applying the chicken-counting technique means that if a production site has 250 web servers, 2 should be enough to represent it\cite{book-cicd}. Since a Kubernetes cluster consists of a master node and worker nodes, then it was decided that \textbf{a representative cluster would be made of one master node and two worker nodes}.
-
-The capacity of a cluster means the sum of CPU and memory of all the cluster worker nodes. Multiple ways are possible to achieve the desired target capacity. Example given: if a cluster with a total capacity of 8 CPU cores and 32 GB of RAM is needed, then it can be achieved by, for example, having two nodes (each with 4 CPU and 16 GB RAM) or having four nodes (each with 2 CPU and 8 GB RAM)\cite{kubernetes-node-size}. Now there are two questions:
-\begin{itemize}
-\item it is better to have a few bigger nodes or many smaller nodes?
-\item what is the minimal capacity needed for a production cluster?
-\end{itemize}
-
-The table below summarizes the advantages and disadvantages of having a few bigger nodes. For more information about the pros and cons presented in the table \ref{tab:pros-cons-large-nodes}, a reader is referred to an online source: "Architecting Kubernetes clusters — choosing a worker node size"\cite{kubernetes-node-size}.
-
-\begin{table}[H]
-\begin{tabularx}{1\textwidth} {
-  | >{\centering\arraybackslash}X
-  | >{\centering\arraybackslash}X | }
- \hline
-  \textbf{Advantages} & \textbf{Disadvantages}  \\
- \hline
- Less management overhead (less number of machines to manage)  & Large number of pods per node (each pod introduces some overhead, if there are too many pods, the system may slow down)   \\
- \hline
- Resource-hungry applications allowed  & Large scaling increments  \\
- \hline
-  Potential lower costs per node (the price increase for a more powerful may not be linear)  & Limited replication (each replica of a pod may be requested to be deployed on a different node. If a HA application requires 5 replicas, but there are only 2 nodes in a cluster, then the effective degree of replication is reduced to 2)  \\
- \hline
-  Large numbers of nodes can be a challenge for the Kubernetes control plane (there are many network communication paths and also also more load on the etcd database) & The impact of one failed node is big   \\
- \hline
-  Better resources utilization &   \\
- \hline
-\end{tabularx}
-\caption{\label{tab:pros-cons-large-nodes}Comparison advantages and disadvantages of having a few bigger nodes in a Kubernetes cluster instead of having many smaller nodes\cite{kubernetes-node-size}}
-\end{table}
-
-However, in the Internet there are contradictory information about the limited replication. The online source cited above\cite{kubernetes-node-size} states that there can be maximally as many replicas as worker nodes in a cluster, while another source - a blog post\cite{learnk8s-ll} claims that there can be more pod replicas than nodes. This information was not verified in practice in this work. Perhaps the replicas limit depends on Kubernetes version - but this is just a speculation of this work's author.
-
-It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node\cite{kubernetes-node-size}\cite{kubernetes-large}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as AWS EKS is concerned, there are some hard limits for number of pods allowed for a particular EC2 instance type. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4\cite{kubernetes-node-size}\cite{eks-hard-limits}.
-
-\textbf{There was no official statement found stating the minimal capacity of a Kubernetes cluster}. Thus, the EC2 instance type for a Kubernetes worker nodes should depend on the resources needed by the pods. (Some pods will be deployed in order to test whether the cluster is healthy). Some overhead must be also considered, because the amount of compute resources that are available for pods, \textbf{the allocatable}, is smaller than the capacity of the whole node\cite{k8s-alloc}.
 
 \subsection{Tools and development environment}
 \label{tools}
@@ -233,9 +193,51 @@ Setting up a package manager for reusable Kubernetes deployments is recommended\
 
 * backup etcd with the test service deployed and try to restore in a new k8s cluster
 
-\subsubsection{High Availability}
 
-* it is probably already implemented, so just write about it
+\subsubsection{Capacity planning and High Availability}
+\textit{Here the needed capacity is discussed. The aim is to have a minimal working cluster that could be representative for a production environment. Number of machines and IT resources (CPU, Memory) is considered.}
+\\
+
+The important thing is, that the to-be-deployed Kubernetes cluster, should have the minimal amount of capacity, but still it should be representative for a production environment. Here \textbf{chicken-counting} (0, 1, many) comes to the rescue. Applying the chicken-counting technique means that if a production site has 250 web servers, 2 should be enough to represent it\cite{book-cicd}. Since a Kubernetes cluster consists of a master node and worker nodes, then it was decided that \textbf{a representative cluster would be made of two worker nodes}. When it comes to number of master nodes needed, one is enough for the minimal deployment. But in order to achieve high availability at least two master nodes are needed and they should span multiple AZs\cite{article-aws-architecting}. However, having an odd number is recommended for master nodes to avoid issues with consesus/quorum. Thus, \textbf{at least three master nodes are needed}\cite{online-ha-k8s-blog}.
+
+The capacity of a cluster means the sum of CPU and memory of all the cluster worker nodes. Multiple ways are possible to achieve the desired target capacity. Example given: if a cluster with a total capacity of 8 CPU cores and 32 GB of RAM is needed, then it can be achieved by, for example, having two nodes (each with 4 CPU and 16 GB RAM) or having four nodes (each with 2 CPU and 8 GB RAM)\cite{kubernetes-node-size}. Now there are two questions:
+\begin{itemize}
+\item it is better to have a few bigger nodes or many smaller nodes?
+\item what is the minimal capacity needed for a production cluster?
+\end{itemize}
+
+The table below summarizes the advantages and disadvantages of having a few bigger nodes. For more information about the pros and cons presented in the table \ref{tab:pros-cons-large-nodes}, a reader is referred to an online source: "Architecting Kubernetes clusters — choosing a worker node size"\cite{kubernetes-node-size}.
+
+\begin{table}[H]
+\begin{tabularx}{1\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | }
+ \hline
+  \textbf{Advantages} & \textbf{Disadvantages}  \\
+ \hline
+ Less management overhead (less number of machines to manage)  & Large number of pods per node (each pod introduces some overhead, if there are too many pods, the system may slow down)   \\
+ \hline
+ Resource-hungry applications allowed  & Large scaling increments  \\
+ \hline
+  Potential lower costs per node (the price increase for a more powerful may not be linear)  & Limited replication (each replica of a pod may be requested to be deployed on a different node. If a HA application requires 5 replicas, but there are only 2 nodes in a cluster, then the effective degree of replication is reduced to 2)  \\
+ \hline
+  Large numbers of nodes can be a challenge for the Kubernetes control plane (there are many network communication paths and also also more load on the etcd database) & The impact of one failed node is big   \\
+ \hline
+  Better resources utilization &   \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:pros-cons-large-nodes}Comparison advantages and disadvantages of having a few bigger nodes in a Kubernetes cluster instead of having many smaller nodes\cite{kubernetes-node-size}}
+\end{table}
+
+However, in the Internet there are contradictory information about the limited replication. The online source cited above\cite{kubernetes-node-size} states that there can be maximally as many replicas as worker nodes in a cluster, while another source - a blog post\cite{learnk8s-ll} claims that there can be more pod replicas than nodes. This information was not verified in practice in this work. Perhaps the replicas limit depends on Kubernetes version - but this is just a speculation of this work's author.
+
+It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node\cite{kubernetes-node-size}\cite{kubernetes-large}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as AWS EKS is concerned, there are some hard limits for number of pods allowed for a particular EC2 instance type. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4\cite{kubernetes-node-size}\cite{eks-hard-limits}.
+
+\textbf{There was no official statement found stating the minimal capacity of a Kubernetes cluster}. Thus, in the empirical part, the work will be started from using the smallest (and cheapest EC2 instance type). Should there be any problems, instance types with more resources will be used. Generally, the EC2 resources type should depend on the total quantity of resources needed by pods. (Some pods will be deployed in order to test whether the cluster is healthy). Some overhead must be also considered, because the amount of compute resources that are available for pods, \textbf{the allocatable}, is smaller than the capacity of the whole node\cite{k8s-alloc}.
+
+To summarize: the production cluster should have at least three master nodes and two worker nodes. The experiments will start from the smallest (and cheapest EC2 instance type) available.
+
+* it is probably already implemented, so just write about it (eksctl)
 * additionally do: "How to move from single master to multi-master in an AWS kops kubernetes cluster" https://blenderfox.com/2018/01/23/how-to-move-from-single-master-to-multi-master-in-an-aws-kops-kubernetes-cluster/
 * NAT Gateway
 

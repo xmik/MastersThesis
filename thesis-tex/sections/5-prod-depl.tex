@@ -1,26 +1,26 @@
-\section{Deployment of a Kubernetes cluster, using various methods}
-\textit{This is a practical chapter and it was written together with performing the empirical work and writing the source code. Main steps of Kubernetes cluster deployment will be enumerated. Also, encountered problems will be listed and potential solutions will be presented.}
+\section{Deployment of a Kubernetes cluster, using two selected methods}
+\textit{This is a practical chapter and it was written together with performing the empirical work and writing the source code. Main steps of Kubernetes cluster deployment will be described. Also, encountered problems will be listed and potential solutions will be presented.}
 \\
 
-\subsection{Experimental deployment using Kops}
-\textit{In this subsection first experiment with Kops is described. This was an attempt of deploying a Kubernetes cluster on AWS cloud with no prerequisite work done}
+\subsection{Experimental deployments using Kops}
+\textit{In this subsection first experiments of deploying a Kubernetes cluster with Kops on AWS are described.}
 \\
 
-Although the aim of this work is to create a production Kubernetes cluster, it is always welcome, when there is a possibility to start working with a program easily. It is nice to have a simple working proof of concept. Thus, it was decided to start with Kops without performing any prerequisite steps. The following commands were invoked:
-\begin{lstlisting}[basicstyle=\small,caption={Commands used to create a cluster with kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+\subsubsection{Deployment without prerequisite steps done}
+
+Although the aim of this work is to create a production Kubernetes cluster, it is always welcome, when there is a possibility to start working with a program easily. It is nice to have a simple working proof of concept (POC). Thus, it was decided to start with Kops without performing any prerequisite steps. The following commands were invoked:
+\begin{lstlisting}[basicstyle=\tiny,caption={Commands used to create a cluster with kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
 $ export KOPS_STATE_STORE=s3://dummy-k8s-kops-state-store
 $ export NAME=dummy-k8s-kops.k8s.local
-$ kops create cluster \
---master-zones=eu-west-1a \
---zones=eu-west-1a \
---node-count=1 \
---node-size=t2.nano \
---master-size=t2.nano \
+$ kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
+--master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
+--zones=eu-west-1a --node-count=1 --node-size=t2.nano \
 ${NAME}
 \end{lstlisting}
 
-AWS instance types were chosen (using the CLI flags: \textit{--node-size} and \textit{--master-size}) and also the number of Kubernetes worker nodes was set (using the CLI flag: \textit{--node-count}), so that, if the cluster had been created, its cost would have been under control. \textbf{As expected and what is aligned with the Kops documentation\cite{online-kops-aws}, the above commands failed}, because there was no dummy-k8s-kops-state-store S3 bucket created. The command failed with the following output:
-\begin{lstlisting}[basicstyle=\small,caption={Output of the commands used to create a cluster with Kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+
+The command \textit{kops create cluster} instructs kops how to create a cluster. The flag \textit{--master-count=1} says that there will be one master node created, \textit{--master-size=t2.nano} sets the EC2 instance type and \textit{--master-zones=eu-west-1a} configures the AZs in which master nodes will be deployed. Similar flags are used to configure worker nodes. The \textit{--state} flag sets which S3 bucket to use.  \textbf{As expected and what is aligned with the Kops documentation\cite{online-kops-aws}, the above commands failed}, because the S3 bucket was not created. The command failed with the following output:
+\begin{lstlisting}[basicstyle=\tiny,caption={Output of the commands used to create a cluster with Kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
 error reading cluster configuration "dummy-k8s-kops.k8s.local":
 error reading s3://dummy-k8s-kops-state-store/dummy-k8s-kops.k8s.local/config:
 Could not retrieve location for AWS bucket dummy-k8s-kops-state-store
@@ -38,12 +38,90 @@ The Kops documentation\cite{online-kops-aws} informs that the following goals sh
 
 Further in this chapter, after all the prerequisites will have been met, Kops will be used to create a production Kubernetes cluster.
 
-\subsection{Experimental deployment using eksctl}
-\textit{In this subsection first experiment with eksctl is described. This was an attempt of deploying a Kubernetes cluster on AWS cloud with no prerequisite work done}
+\subsubsection{Deployment with prerequisite steps done - first working cluster}
+
+First, all the prerequisites were done and they are described here. In order to make things simpler, an AWS user with administrator permissions was used. SSH keypair was already set. Then, it was decided to use the gossip-based DNS. Then, an S3 bucket was created to keep the Kops cluster configuration. Both versioning and server side encryption of the S3 bucket were enabled. Versioning was strongly recommended, because thanks to it, one may revert or recover a previous cluster state store. S3 bucket encryption is not required, but may be needed for compliance reasons\cite{online-kops-aws}. \textbf{Setting the S3 bucket} was done by the following commands:
+\begin{lstlisting}[basicstyle=\tiny,caption={Commands used to set an AWS S3 bucket for Kops},captionpos=b,language=Bash,xleftmargin=1cm]
+$ export K8S_EXP_REGION="eu-west-1"
+$ export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
+$ export K8S_EXP_ENVIRONMENT="testing"
+$ export K8S_EXP_CLUSTER_NAME="${K8S_EXP_ENVIRONMENT}.${K8S_EXP_KOPS_S3_BUCKET}"
+$ aws s3api create-bucket --bucket ${K8S_EXP_KOPS_S3_BUCKET} --region ${K8S_EXP_REGION} \
+--create-bucket-configuration LocationConstraint=${K8S_EXP_REGION}
+$ aws s3api put-bucket-versioning --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
+--versioning-configuration Status=Enabled
+$ aws s3api put-bucket-encryption --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
+--server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+\end{lstlisting}
+
+Then, \textbf{the command below was used to make Kops create the cluster configuration and put it in the S3 bucket}. The command is presented below together with its output:
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to make Kops create the cluster configuration and put it in the S3 bucket},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
+--master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
+--zones=eu-west-1a --node-count=1 --node-size=t2.nano ${K8S_EXP_CLUSTER_NAME}
+
+error building tasks: error remapping manifest addons/kops-controller.addons.k8s.io/k8s-1.16.yaml: \
+error parsing yaml: error converting YAML to JSON: yaml: line 56: did not find expected alphabetic or numeric character
+\end{lstlisting}
+
+Running this command resulted in \textbf{a not successful exit status (1)}. The reason for this was that the development environment had a non-numeric environment variable set. It was a password and the variable value contained asterisks (\textit{****}). After the variable was unset (with the bash command: \textit{unset}), the \textit{kops create cluster} succeeded. The output of this command presented the list of actions which Kops will perform on the AWS account, e.g. creating EBS volumes for Etcd, configuring IAM, creating keypairs for Kubernetes services, configuring network and setting EC2 instances. Details of the to-be-created resources were also provided, for example, the command output informed that the EC2 image will be: \textit{kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17}. Apart from printing the output, Kops created a directory named the same as the cluster name (\textit{testing.k8s-kops-for-masters-thesis.k8s.local}) in the S3 bucket. Among the files automatically created by Kops, there is a configuration file named: \textit{config} and it contains the cluster settings. \textbf{The cluster configuration can be edited from command line} with the command presented below. Running this command starts a vim session.
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to edit a Kubernetes cluster managed by Kops},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops edit cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+\end{lstlisting}
+After editing the configuration, \textbf{the cluster can be created or updated} (if it was created earlier) with the next command. This command deploys a cluster on AWS and prints a helpful output. Part of the output is also attached below:
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to deploy a Kubernetes cluster with Kops},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+
+# some output lines omitted
+Cluster is starting.  It should be ready in a few minutes.
+
+Suggestions:
+ * validate cluster: kops validate cluster
+ * list nodes: kubectl get nodes --show-labels
+ * ssh to the master: ssh -i ~/.ssh/id_rsa admin@api.testing.k8s-kops-for-masters-thesis.k8s.local
+ * the admin user is specific to Debian. If not using Debian please use the appropriate user based on your OS.
+ * read about installing addons at: https://github.com/kubernetes/kops/blob/master/docs/operations/addons.md.
+\end{lstlisting}
+
+Unfortunately, the commands listed as suggestions above did not work. They resulted in:
+\begin{lstlisting}[basicstyle=\tiny,caption={Commands run in attempt to connect with a cluster created by Kops together with returned output},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+Validating cluster testing.k8s-kops-for-masters-thesis.k8s.local
+unexpected error during validation: error listing nodes: \
+Get https://api-testing-k8s-kops-for--l9puut-394396927.eu-west-1.elb.amazonaws.com/api/v1/nodes: EOF
+
+$ ssh -i ~/.ssh/id_rsa admin@api.testing.k8s-kops-for-masters-thesis.k8s.local
+ssh: Could not resolve hostname api.testing.k8s-kops-for-masters-thesis.k8s.local: \
+Name does not resolve
+\end{lstlisting}
+
+It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.micro}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}.
+
+It is also worth mentioning that the kubeconfig (\textit{~/.kube/config}), a Kubernetes configuration file needed to connect to a cluster, was generated automatically. Another thing to notice is that the command, which deploys a Kubernetes cluster, returned immediately, without waiting for the cluster to be ready. In the next deployments, some waiting mechanism must be applied, so that the cluster creation and verification can be automated. Below, there is a command used to request information about the cluster:
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to request information about a running Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl cluster-info
+Kubernetes master is running at https://api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com
+KubeDNS is running at https://api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+\end{lstlisting}
+
+
+After the first cluster was successfully deployed, \textbf{the cluster was deleted}. There were no problems with deleting the cluster. It took several minutes, but the following command succeeded and all the AWS resources (except for the manually created S3 bucket) were deleted:
+
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to delete a Kubernetes cluster created with Kops},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+\end{lstlisting}
+
+The steps described in this section proved that it is possible to deploy a Kubernetes cluster on AWS with kops. It was a POC. The next cluster will attempt to satisfy the production deployment requirements.
+
+
+\subsection{Experimental deployments using eksctl}
+\textit{In this subsection first experiments of deploying a Kubernetes cluster with eksctl on AWS are described.}
 \\
 
-In order to be consistent, the same first experiment was performed using eksctl. First a YAML configuration file was created and then the eksctl CLI command was invoked:
-\begin{lstlisting}[basicstyle=\small,caption={Commands used to create a cluster with eksctl, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+In order to be consistent, the similar first experiment was performed using eksctl. It was decided to store the configuration locally in a YAML configuration file. The alternative was to set many command line flags. Below, \textbf{the configuration file and then the eksctl CLI command used to create a cluster are presented}:
+\begin{lstlisting}[basicstyle=\tiny,caption={Commands used to create a cluster with eksctl, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
 $ cat cluster.yaml
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
@@ -62,8 +140,8 @@ nodeGroups:
 $ eksctl create cluster -f cluster.yaml
 \end{lstlisting}
 
-These commands resulted in a successful creation of a cluster in "eu-west-1" AWS region with one worker node. Apart from that, the configuration file needed to access the remote cluster (remote, because deployed on AWS) was automatically created and written to: \textit{~/.kube/config}. In order to verify that the worker nodes were running, the following command was run:
-\begin{lstlisting}[basicstyle=\small,caption={Command used to list Kubernetes worker nodes to verify that one such node was running},captionpos=b,language=Bash,xleftmargin=1cm]
+This resulted in a successful creation of a cluster in "eu-west-1" AWS region with one worker node. Apart from that, the configuration file needed to access the remote cluster (remote, because deployed on AWS) was automatically created and written to: \textit{~/.kube/config} (same as done with kops). In order to \textbf{verify that the worker nodes were running}, the following command was run:
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to list Kubernetes worker nodes to verify that one such node was running},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl get nodes
 NAME                                           STATUS   ROLES    AGE    VERSION
 ip-192-168-176-90.eu-west-1.compute.internal   Ready    <none>   3m8s   v1.16.8
@@ -72,100 +150,229 @@ ip-192-168-176-90.eu-west-1.compute.internal   Ready    <none>   3m8s   v1.16.8
 This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. Besides, it was also easy to set up the YAML configuration file, basing on the eksctl documentation\cite{eksctl-creating-clusters}.
 
 
-The cluster was then deleted with the following command:
-\begin{lstlisting}[basicstyle=\small,caption={Command used to delete Kubernetes cluster with eksctl},captionpos=b,language=Bash,xleftmargin=1cm]
+\textbf{The cluster was then deleted} with the following command:
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to delete Kubernetes cluster with eksctl},captionpos=b,language=Bash,xleftmargin=1cm]
 $ eksctl delete cluster -f cluster.yaml --wait
 \end{lstlisting}
+
 The \textit{--wait} CLI flag was applied. Without it, a delete operation would have been only requested but not waited for. In some cases it happens that the deletion fails, and, without this flag, the errors would not have been propagated back as the CLI command output. Then, one would be forced to delete the AWS resources manually\cite{eksctl-creating-clusters}.
+
+%%%% TODO!!!
+\subsection{TODOOO}
+
+---
+$ kops get cluster --full -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+
+//
+//   WARNING: Do not use a '--full' cluster specification to define a Kubernetes installation.
+//   You may experience unexpected behavior and other bugs.  Use only the required elements
+//   and any modifications that you require.
+//
+//   Use the following command to retrieve only the required elements:
+//   $ kops get cluster -o yaml
+//
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: "2020-05-29T08:57:35Z"
+  name: testing.k8s-kops-for-masters-thesis.k8s.local
+spec:
+  api:
+    loadBalancer:
+      crossZoneLoadBalancing: false
+      type: Public
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  clusterDNSDomain: cluster.local
+  configBase: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local
+  configStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local
+  docker:
+    ipMasq: false
+    ipTables: false
+    logDriver: json-file
+    logLevel: warn
+    logOpt:
+    - max-size=10m
+    - max-file=5
+    storage: overlay2,overlay,aufs
+    version: 18.09.9
+  etcdClusters:
+  - backups:
+      backupStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/backups/etcd/main
+    cpuRequest: 200m
+    enableEtcdTLS: true
+    enableTLSAuth: true
+    etcdMembers:
+    - instanceGroup: master-eu-west-1a
+      name: a
+    manager: {}
+    memoryRequest: 100Mi
+    name: main
+    provider: Manager
+    version: 3.3.10
+  - backups:
+      backupStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/backups/etcd/events
+    cpuRequest: 100m
+    enableEtcdTLS: true
+    enableTLSAuth: true
+    etcdMembers:
+    - instanceGroup: master-eu-west-1a
+      name: a
+    manager: {}
+    memoryRequest: 100Mi
+    name: events
+    provider: Manager
+    version: 3.3.10
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  keyStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/pki
+  kubeAPIServer:
+    allowPrivileged: true
+    anonymousAuth: false
+    apiServerCount: 1
+    authorizationMode: RBAC
+    bindAddress: 0.0.0.0
+    cloudProvider: aws
+    enableAdmissionPlugins:
+    - NamespaceLifecycle
+    - LimitRanger
+    - ServiceAccount
+    - PersistentVolumeLabel
+    - DefaultStorageClass
+    - DefaultTolerationSeconds
+    - MutatingAdmissionWebhook
+    - ValidatingAdmissionWebhook
+    - NodeRestriction
+    - ResourceQuota
+    etcdServers:
+    - http://127.0.0.1:4001
+    etcdServersOverrides:
+    - /events#http://127.0.0.1:4002
+    image: k8s.gcr.io/kube-apiserver:v1.16.9
+    insecureBindAddress: 127.0.0.1
+    insecurePort: 8080
+    kubeletPreferredAddressTypes:
+    - InternalIP
+    - Hostname
+    - ExternalIP
+    logLevel: 2
+    requestheaderAllowedNames:
+    - aggregator
+    requestheaderExtraHeaderPrefixes:
+    - X-Remote-Extra-
+    requestheaderGroupHeaders:
+    - X-Remote-Group
+    requestheaderUsernameHeaders:
+    - X-Remote-User
+    securePort: 443
+    serviceClusterIPRange: 100.64.0.0/13
+    storageBackend: etcd3
+  kubeControllerManager:
+    allocateNodeCIDRs: true
+    attachDetachReconcileSyncPeriod: 1m0s
+    cloudProvider: aws
+    clusterCIDR: 100.96.0.0/11
+    clusterName: testing.k8s-kops-for-masters-thesis.k8s.local
+    configureCloudRoutes: true
+    image: k8s.gcr.io/kube-controller-manager:v1.16.9
+    leaderElection:
+      leaderElect: true
+    logLevel: 2
+    useServiceAccountCredentials: true
+  kubeDNS:
+    cacheMaxConcurrent: 150
+    cacheMaxSize: 1000
+    cpuRequest: 100m
+    domain: cluster.local
+    memoryLimit: 170Mi
+    memoryRequest: 70Mi
+    replicas: 2
+    serverIP: 100.64.0.10
+  kubeProxy:
+    clusterCIDR: 100.96.0.0/11
+    cpuRequest: 100m
+    hostnameOverride: '@aws'
+    image: k8s.gcr.io/kube-proxy:v1.16.9
+    logLevel: 2
+  kubeScheduler:
+    image: k8s.gcr.io/kube-scheduler:v1.16.9
+    leaderElection:
+      leaderElect: true
+    logLevel: 2
+  kubelet:
+    anonymousAuth: false
+    cgroupRoot: /
+    cloudProvider: aws
+    clusterDNS: 100.64.0.10
+    clusterDomain: cluster.local
+    enableDebuggingHandlers: true
+    evictionHard: memory.available<100Mi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<10%,imagefs.inodesFree<5%
+    hostnameOverride: '@aws'
+    kubeconfigPath: /var/lib/kubelet/kubeconfig
+    logLevel: 2
+    networkPluginMTU: 9001
+    networkPluginName: kubenet
+    nonMasqueradeCIDR: 100.64.0.0/10
+    podInfraContainerImage: k8s.gcr.io/pause-amd64:3.0
+    podManifestPath: /etc/kubernetes/manifests
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  kubernetesVersion: 1.16.9
+  masterInternalName: api.internal.testing.k8s-kops-for-masters-thesis.k8s.local
+  masterKubelet:
+    anonymousAuth: false
+    cgroupRoot: /
+    cloudProvider: aws
+    clusterDNS: 100.64.0.10
+    clusterDomain: cluster.local
+    enableDebuggingHandlers: true
+    evictionHard: memory.available<100Mi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<10%,imagefs.inodesFree<5%
+    hostnameOverride: '@aws'
+    kubeconfigPath: /var/lib/kubelet/kubeconfig
+    logLevel: 2
+    networkPluginMTU: 9001
+    networkPluginName: kubenet
+    nonMasqueradeCIDR: 100.64.0.0/10
+    podInfraContainerImage: k8s.gcr.io/pause-amd64:3.0
+    podManifestPath: /etc/kubernetes/manifests
+    registerSchedulable: false
+  masterPublicName: api.testing.k8s-kops-for-masters-thesis.k8s.local
+  networkCIDR: 172.20.0.0/16
+  networking:
+    kubenet: {}
+  nonMasqueradeCIDR: 100.64.0.0/10
+  secretStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/secrets
+  serviceClusterIPRange: 100.64.0.0/13
+  sshAccess:
+  - 0.0.0.0/0
+  subnets:
+  - cidr: 172.20.32.0/19
+    name: eu-west-1a
+    type: Public
+    zone: eu-west-1a
+  topology:
+    dns:
+      type: Public
+    masters: public
+    nodes: public
+
+----
+
+
 
 \subsection{Production deployment using Kops}
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using Kops. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
 \\
 
-\subsubsection{First working cluster}
-
-First, all the prerequisites were done. In order to make things simpler, an AWS user with administrator permissions was used. SSH keypair was already set. Then, it was decided to use the gossip-based DNS. Then, an S3 bucket was created to keep the Kops cluster configuration. Both versioning and server side encryption of the S3 bucket were enabled. Versioning was strongly recommended, because thanks to it, one may revert or recover a previous cluster state store. S3 bucket encryption is not required, but may be needed for compliance reasons\cite{online-kops-aws}. Setting the S3 bucket was done by the following commands:
-\begin{lstlisting}[basicstyle=\tiny,caption={Commands used to set an AWS S3 bucket for Kops},captionpos=b,language=Bash,xleftmargin=1cm]
-$ export K8S_EXP_REGION="eu-west-1"
-$ export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
-$ export K8S_EXP_ENVIRONMENT="testing"
-$ export K8S_EXP_CLUSTER_NAME="${K8S_EXP_ENVIRONMENT}.${K8S_EXP_KOPS_S3_BUCKET}"
-$ aws s3api create-bucket --bucket ${K8S_EXP_KOPS_S3_BUCKET} --region ${K8S_EXP_REGION} \
---create-bucket-configuration LocationConstraint=${K8S_EXP_REGION}
-$ aws s3api put-bucket-versioning --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
---versioning-configuration Status=Enabled
-$ aws s3api put-bucket-encryption --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
---server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-\end{lstlisting}
-
-Then, this command was used to make Kops create the cluster configuration and put it in the S3 bucket:
-\begin{lstlisting}[basicstyle=\small,caption={Command used to make Kops create the cluster configuration and put it in the S3 bucket},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
---master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
---zones=eu-west-1a --node-count=1 --node-size=t2.nano \
-${K8S_EXP_CLUSTER_NAME}
-\end{lstlisting}
-
-It resulted in a not successful exit status (1) and returned the following output:
-\begin{lstlisting}[basicstyle=\tiny,caption={Output from command used to make Kops create the cluster configuration and put it in the S3 bucket},captionpos=b,language=Bash,xleftmargin=1cm]
-error building tasks: error remapping manifest addons/kops-controller.addons.k8s.io/k8s-1.16.yaml: \
-error parsing yaml: error converting YAML to JSON: yaml: line 56: did not find expected alphabetic or numeric character
-\end{lstlisting}
-The reason for this was that the development environment had a non-numeric environment variable set. It was a password and the variable value contained asterisks (\textit{****}). After the variable was unset (with the bash command: \textit{unset}), the \textit{kops create cluster} succeeded. The output of this command presented the list of actions which Kops will perform on the AWS account, e.g. creating EBS volumes for Etcd, configuring IAM, creating keypairs for Kubernetes services, configuring network and setting EC2 instances. Details of the to-be-created resources were also provided, for example, the command output informed that the EC2 image will be: \textit{kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17}. Apart from printing the output, Kops created a directory named the same as the cluster name (\textit{testing.k8s-kops-for-masters-thesis.k8s.local}) in the S3 bucket. Among the files automatically created by Kops, there is a configuration file named: \textit{config} and it contains the cluster settings. It can be changed from command line with the following command:
-\begin{lstlisting}[basicstyle=\small,caption={Command used to edit a Kubernetes cluster managed by Kops},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops edit cluster ${K8S_EXP_CLUSTER_NAME} \
---state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
-\end{lstlisting}
-Running this command starts a vim session. After editing the configuration, the cluster can be created or updated (if it was created earlier) with the following command:
-\begin{lstlisting}[basicstyle=\small,caption={Command used to edit a Kubernetes cluster managed by Kops},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops update cluster ${K8S_EXP_CLUSTER_NAME} \
---state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
-\end{lstlisting}
-
-The above command deploys a cluster on AWS and prints a helpful output, which ends with:
-\begin{lstlisting}[basicstyle=\small,caption={Output from the command: kops update cluster},captionpos=b,language=Bash,xleftmargin=1cm]
-Cluster is starting.  It should be ready in a few minutes.
-
-Suggestions:
- * validate cluster: kops validate cluster
- * list nodes: kubectl get nodes --show-labels
- * ssh to the master: ssh -i ~/.ssh/id_rsa admin@api.testing.k8s-kops-for-masters-thesis.k8s.local
- * the admin user is specific to Debian. If not using Debian please use the appropriate user based on your OS.
- * read about installing addons at: https://github.com/kubernetes/kops/blob/master/docs/operations/addons.md.
-\end{lstlisting}
-
-Unfortunately, the commands listed as suggestions above did not work. They resulted in:
-\begin{lstlisting}[basicstyle=\tiny,caption={Running commands to connect with a cluster created by Kops together with returned output},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
-Validating cluster testing.k8s-kops-for-masters-thesis.k8s.local
-unexpected error during validation: error listing nodes: \
-Get https://api-testing-k8s-kops-for--l9puut-394396927.eu-west-1.elb.amazonaws.com/api/v1/nodes: EOF
-
-$ ssh -i \
-"kubernetes.testing.k8s-kops-for-masters-thesis.k8s.local-62:32:29:2c:81:d1:4f:85:f7:0a:57:3c:db:22:bd:85.pem" \
-root@ec2-3-250-94-31.eu-west-1.compute.amazonaws.com
-Warning: Identity file \
-kubernetes.testing.k8s-kops-for-masters-thesis.k8s.local-62:32:29:2c:81:d1:4f:85:f7:0a:57:3c:db:22:bd:85.pem \
-not accessible: No such file or directory.
-^C
-
-$ ssh -i ~/.ssh/id_rsa admin@api.testing.k8s-kops-for-masters-thesis.k8s.local
-ssh: Could not resolve hostname api.testing.k8s-kops-for-masters-thesis.k8s.local: \
-Name does not resolve
-\end{lstlisting}
-
-There was however no problem in deleting the cluster. It took several minutes, but this command succeeded and all the AWS resources (except for the manually created S3 bucket) were deleted:
-
-\begin{lstlisting}[basicstyle=\small,caption={Command used to delete a Kubernetes cluster created with Kops},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
-\end{lstlisting}
-
-
 \subsubsection{Cluster which satisfies all the production deployment requirements TODO}
 
 
 labels https://github.com/kubernetes/kops/blob/master/docs/manifests_and_customizing_via_api.md https://github.com/kubernetes/kops/blob/master/docs/labels.md
-ci yaml config
+ci yaml config; must wait for creation
 
 \subsection{Production deployment using eksctl}
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using eksctl. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}

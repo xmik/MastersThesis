@@ -164,8 +164,9 @@ Much more information on how to deploy AWS EKS Kubernetes cluster can be found. 
 \\
 
 Kops was already introduced in the section: \ref{cli-tools-to-k8s}. Similarly to eksctl, Kops can also create a Highly Available Kubernetes cluster. However it demands more work than eksctl. The commands which allow to create a cluster on AWS is\cite{book-mastering-k8s}:
-\begin{lstlisting}[basicstyle=\small,caption={The commands of Kops CLI tool used to create a Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops create cluster --cloud=aws --zones=us-east-1c ${NAME}
+\begin{lstlisting}[basicstyle=\small,caption={The commands of Kops CLI tool used to create a Kubernetes cluster configuration and then to deploy the cluster},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops create cluster ${CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --cloud=aws --zones=us-east-1c
+$ kops update cluster ${CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
 \end{lstlisting}
 But, before these commands can be run, one has to provide some minimal DNS configuration via Route53 (an AWS resource responsible for networking), set up a S3 bucket (another AWS resource, responsible for storage) to store the cluster configuration\cite{book-mastering-k8s} and also configure the AWS IAM user (an AWS resource responsible for access management) and create a SSH key pair\cite{online-kops-aws}. The instructions explaining how to set up the AWS resources are provided on the official Kops website\cite{online-kops-aws}.
 
