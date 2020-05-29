@@ -2,6 +2,7 @@ kind: ConfigMap
 apiVersion: v1
 metadata:
   name: www-contents
+  namespace: testing
 data:
   index.html: |
     <html>

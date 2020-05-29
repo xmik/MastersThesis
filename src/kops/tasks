@@ -37,8 +37,9 @@ case "${command}" in
         set -x
         # generate a cluster configuration
         kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
-        --master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
-        --zones=eu-west-1a --node-count=1 --node-size=t2.nano \
+        --kubernetes-version=1.16.9 \
+        --master-zones=eu-west-1a --master-count=1 --master-size=t2.micro \
+        --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
         ${K8S_EXP_CLUSTER_NAME}
         # deploy the cluster
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
@@ -49,9 +50,9 @@ case "${command}" in
         ;;
     _test)
         set -x
+        time kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
         cd tests
-        bats tests.bats
-        kops validate cluster
+        time bats tests.bats
         ;;
     _delete)
         set -x

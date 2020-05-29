@@ -1,5 +1,5 @@
-# This script tries each second to run command_to_succeed. If this command
-# succeeds in less than timeout seconds, then command_actual is run.
+# This script tries each second to run wait_cmd. If this command
+# succeeds in less than timeout seconds, then test_cmd is run.
 #
 # Intentionally do not start this with: #!/bin/bash, because we may use
 # cosmintitei/bash-curl:latest docker image which does not have: /bin/bash, but
@@ -13,18 +13,18 @@
 # and we need a docker image with this framework installed.
 # Will be solved by: https://aitraders.tpondemand.com/entity/11145
 
-command_to_succeed=$1
+# wait_cmd command must succeed first
+wait_cmd=$1
 timeout=$2
-command_actual=$3
+# after wait_cmd succeeds, test_cmd will be invoked
+test_cmd=$3
 
-echo "Running AIT tests"
-
-if [[ -z "${command_to_succeed}" ]]; then
-  echo "command_to_succeed not set, exit 1"
+if [[ -z "${wait_cmd}" ]]; then
+  echo "wait_cmd not set, exit 1"
   exit 1
 fi
-if [[ -z "${command_actual}" ]]; then
-  echo "command_actual not set, exit 1"
+if [[ -z "${test_cmd}" ]]; then
+  echo "test_cmd not set, exit 1"
   exit 1
 fi
 if [[ -z "${timeout}" ]]; then
@@ -32,28 +32,28 @@ if [[ -z "${timeout}" ]]; then
   exit 1
 fi
 
-echo "Ewa tests: command_to_succeed: ${command_to_succeed}"
-echo "Ewa tests: timeout: ${timeout}"
-echo "Ewa tests: command_actual: ${command_actual}"
+echo "K8S_EXP tests: wait_cmd: ${wait_cmd}"
+echo "K8S_EXP tests: timeout: ${timeout}"
+echo "K8S_EXP tests: test_cmd: ${test_cmd}"
 
 i=0
 while [ "$i" -le "$timeout" ]; do
-  echo "Ewa tests: trial ${i}"
+  echo "K8S_EXP tests: trial ${i}"
   # do not use /bin/bash here, see comments above
-  bash -c "${command_to_succeed}"
+  bash -c "${wait_cmd} >/dev/null"
   if [[ $? == 0 ]]; then
-    echo "Ewa tests: command_to_succeed suceeded, running command_actual"
+    echo "K8S_EXP tests: wait_cmd suceeded, running test_cmd"
     # do not use /bin/bash here, see comments above
-    bash -c "${command_actual}"
+    bash -c "${test_cmd} >/dev/null"
     if [[ $? == 0 ]]; then
-      echo "Ewa tests: command_actual suceeded"
+      echo "K8S_EXP tests: test_cmd suceeded"
       exit 0;
     fi
-    echo "Ewa tests: command_actual failed"
+    echo "K8S_EXP tests: test_cmd failed"
     exit 1;
   else
     if [[ "${i}" == ${timeout} ]]; then
-      echo "Ewa tests: That was last trial, return 1"
+      echo "K8S_EXP tests: That was last trial, return 1"
       exit 1
     fi
     sleep 1

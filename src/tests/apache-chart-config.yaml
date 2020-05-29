@@ -1,4 +1,6 @@
 htdocsConfigMap: www-contents
-ingress.enabled: true
-ingress.hostname: my-test-website.com
-ingress.hosts[0].name	: my-test-website.com
+service:
+  type: LoadBalancer
+ingress:
+  enabled: true
+  #hostname: my-dummy-hostname.com
