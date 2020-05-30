@@ -95,7 +95,7 @@ ssh: Could not resolve hostname api.testing.k8s-kops-for-masters-thesis.k8s.loca
 Name does not resolve
 \end{lstlisting}
 
-It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.micro}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}.
+It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.micro}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources\cite{online-ha-k8s-blog}\cite{online-perfect-k8s-blog}\cite{online-kops-sa}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to kops creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publically reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
 
 It is also worth mentioning that the kubeconfig (\textit{~/.kube/config}), a Kubernetes configuration file needed to connect to a cluster, was generated automatically. Another thing to notice is that the command, which deploys a Kubernetes cluster, returned immediately, without waiting for the cluster to be ready. In the next deployments, some waiting mechanism must be applied, so that the cluster creation and verification can be automated. Below, there is a command used to request information about the cluster:
 \begin{lstlisting}[basicstyle=\tiny,caption={Command used to request information about a running Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -106,8 +106,12 @@ KubeDNS is running at https://api-testing-k8s-kops-for--l9puut-1371087518.eu-wes
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 \end{lstlisting}
 
+After the first cluster was successfully deployed, the following command was used in order export the cluster configuration into YAML file. It will be needed for production deployment.
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to export a Kubernetes cluster configuration},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+\end{lstlisting}
 
-After the first cluster was successfully deployed, \textbf{the cluster was deleted}. There were no problems with deleting the cluster. It took several minutes, but the following command succeeded and all the AWS resources (except for the manually created S3 bucket) were deleted:
+Then, \textbf{the cluster was deleted}. There were no problems with deleting the cluster. It took several minutes, but the following command succeeded and all the AWS resources (except for the manually created S3 bucket) were deleted:
 
 \begin{lstlisting}[basicstyle=\tiny,caption={Command used to delete a Kubernetes cluster created with Kops},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
@@ -368,7 +372,12 @@ spec:
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using Kops. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
 \\
 
-\subsubsection{Cluster which satisfies all the production deployment requirements TODO}
+
+
+% "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
+
+* https://www.tobiassturm.de/2017/04/20/how-to-use-aws-cloudwatch-logs-with-kubernetes-kops
+* yaml - https://kops.sigs.k8s.io/operations/cluster_template/
 
 
 labels https://github.com/kubernetes/kops/blob/master/docs/manifests_and_customizing_via_api.md https://github.com/kubernetes/kops/blob/master/docs/labels.md

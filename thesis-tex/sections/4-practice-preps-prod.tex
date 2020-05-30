@@ -95,24 +95,23 @@ Considering all the information presented in this section, the \textbf{version o
 \textit{This section can be treated as a checklist of what tools should be gathered before deploying a Kubernetes cluster. It also characterizes a development environment.}
 \\
 
-Let's start with a list of essential tools needed:
+The following tools were selected and deemed essential:
 \begin{itemize}
 \item Linux
-\item bash
+\item Bash
 \item kubectl
-\item aws cli 2
+\item AWS CLI 2
 \item eksctl
 \item kops
 \item helm
 \item bats-core
 \end{itemize}
 
-Now, each of these tools will be briefly introduced. TODO
+When it comes to \textbf{development environment - the Ubuntu 18.04 workstation} was used. In order to facilitate repetition of the empirical work, all the deployment was performed in a Docker container. Thus, the local development environment was just obliged to: have Docker installed, Internet access and AWS credentials configured.
 
-When it comes to \textbf{development environment} - the Ubuntu 18.04 workstation was used. In order to facilitate repetition of the empirical work of this study, all the deployment was performed from a Docker container. Thus, the local development environment was just obliged to: have Docker installed, Internet access and AWS credentials configured. The Docker container used, was created from a Docker image: TODO, ... Dojo, Dojofile contents, , dojo out of scope of this work, how the container was run, etc... Thanks to such a solution, it should be easy to run the deployment from a local workstation (e.g. from a local laptop) and also from a CI server.
+The \textbf{Docker container} used, was created from a Docker image: \textit{kudulab/k8s-aws-dojo}\cite{gh-k8s-aws-dojo}. This Docker image already has all the needed tools installed. In order to run this Docker container, Dojo was used. Dojo is a CLI program, designed to provide portable development environments\cite{gh-dojo}. Thanks to using Dojo and Docker, one can ensure that the same development environment is present on their laptop and also on a CI server.
 
-TODOooo
-
+Bash is a shell language, available on Linux distributions like Ubuntu or Debian. kubectl is a CLI program needed to access and manage a Kubernetes cluster\cite{kubectl}. AWS CLI allows to communicate directly with AWS. eksctl is a CLI program that facilitates Kubernetes deployment on AWS EKS\cite{eksctl}. kops is also a CLI program that facilitates Kubernetes deployment on AWS (but does not use AWS EKS)\cite{online-kops}. Helm is a package manager for applications which are deployed on top of Kubernetes\cite{helm}. Bats-core is a CLI program, used to run tests using Bash shell\cite{bats-core}.
 
 \subsection{Selected requirements of a production deployment and acceptance criteria needed to satisfy them}
 \textit{Here a set of production deployment requirements is presented. Each of them is shortly described. Acceptance criteria, needed to satisfy the requirements are provided. This section helps to plan the deployment.}
@@ -120,7 +119,7 @@ TODOooo
 
 \textbf{There are numerous requirements for a production deployment of a Kubernetes cluster}. Some of them were gathered throughout the available literature and presented in the section: \ref{Production deployment requirements}. It is common knowledge that companies, which deploy Kubernetes and similar systems, obey some set of best practices, dedicated to these companies only. Thus, the requirements presented in this work do not exhaust the topic.
 
-Below, there is a list of the selected production deployment requirements. In the empirical part of this study, the requirements were  attempted to be satisfied.
+Below, there is a list of the selected production deployment requirements. The most important one were selected (but it was a subjective opinion of the author of this work). In the empirical part of this study, the requirements were  attempted to be satisfied.
 \begin{itemize}
 \item A healthy cluster
 \item Automated operations
@@ -131,10 +130,9 @@ Below, there is a list of the selected production deployment requirements. In th
 \item High Availability
 \item Autoscaling
 \item Security
-\item Live Cluster Upgrades
 \end{itemize}
 
-The set entails \textbf{10 requirements}. Each of them was already described theoretically, but further in this chapter, each requirement is explained from a practical point of view. The \textbf{acceptance criteria} needed to satisfy each of the requirements are presented. Basing on this, a plan of a Kubernetes cluster deployment is created. The work done is described in the next chapter, together with any problems encountered and troubleshooting sessions.
+The set entails \textbf{9 requirements}. Each of them was already described theoretically, but further in this chapter, each requirement is explained from a practical point of view. The \textbf{acceptance criteria} needed to satisfy each of the requirements are presented. Basing on this, a plan of a Kubernetes cluster deployment is created. The work done is described in the next chapter, together with any problems encountered and troubleshooting sessions.
 
 \subsubsection{A healthy and usable cluster}
 \label{A healthy cluster}
@@ -146,52 +144,56 @@ Unless any of the Kubernetes control plane components is healthy, it will need t
 When all the cluster health checks are passed, then the cluster is healthy. But, the cluster should be also usable for end users. End users will want to deploy applications on top of the cluster. Thus, they have to have the possibility to reach the cluster endpoint, which in practice means, that they have to \textbf{be able to reach the Kubernetes API Server endpoint}. Such an endpoint may be an IP address or a domain name. Since the cluster will be deployed in a production environment, a domain name is preferred. Furthermore, many sources claim that a top-level domain or a subdomain is required to create a Kubernetes cluster with Kops. Alternatively, gossip-based DNS can be used instead, and then, the cluster domain name would have to end with \textit{.k8s.local} and the API server would be available under the AWS load balancer address\cite{kops-howto-aws}\cite{online-kops-aws}\cite{kops-howto-k8s}\cite{kops-gossip}.
 
 % test app can be deployed
-TODO: deploy some test app and test it
+In order to verify that an application can be deployed on top of a Kubernetes cluster, a simple Apache server will be deployed. A Helm Chart will be used\cite{helm-apache}. Then, Bats tests will be run to check that the Apache server works (more precisely: that the Apache endpoint is reachable from a remote machine).
 
 To summarize, in order for a cluster to be healthy and usable, the following acceptance criteria must be met:
 \begin{itemize}
-\item the cluster should have health checks passed,
-\item the Kubernetes API Server endpoint should be reachable for the end users under a domain name,
-\item it should be tested that an application can be deployed on top of a Kubernetes cluster.
+\item the cluster should be tested with Bats (i.e particular number of worker nodes should be deployed, particular Kubernetes version should be used),
+\item the Kubernetes API Server endpoint should be reachable for the end users under a domain name (i.e. an end user can connect with the cluster using \textit{kubectl}),
+\item it should be tested that an application can be deployed on top of a Kubernetes cluster (i.e. an Apache server will be deployed and tested).
 \end{itemize}
 
-* kubectl get nodes, kubectl version --short,
-* deploy some test service and test it; use helm - maybe apache chart + use the idea from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
-* use bats for all the tests
-* kops validate cluster
+\subsubsection{Automated Operations}
 
+In order to be able to perform automated operations, \textbf{a Kubernetes cluster configuration and commands needed to manage the cluster should be stored in a version control system}. This is the goal of Infrastructure as Code. Such a solution will also allow cluster changes to be applied through reviewable commits and in turn it will allow to avoid possible collisions from simultaneous changes being made. Moreover, a history of the version controlled source code may act as an audit trail\cite{online-kops-ci}. Both: eksctl and kops support cluster configuration through YAML files. In this work, all the code needed to create a Kubernetes cluster will be stored in \textbf{a Git repository}.
 
-% "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
+Furthermore, to automate the operations, a Bash script will be used. It should be possible to use this script in order to: create, test and delete a cluster. It is essential to obey the Infrastructure as Code policy, because it facilitates repeating the operations and the whole experiment of a cluster deployment. Although, in this work no CI server is going to be used, it should be easy to use the Bash script in a potential CI pipeline.
 
+Moreover, it should be also possible to differentiate between two deployment environments: testing and production. The testing environment should be very similar to the production environment. But, there may be more tests run in the testing environment and more resources used in the production environment.
 
-\subsubsection{Automated operations}
+It is recommended to set up a package manager for reusable deployments which happen on top of Kubernetes\cite{gruntwork-howto-blog}. In this work Helm is used and it was already described in the section: \rel{tools}. Applications deployments which happen on top of Kubernetes are already facilitated thanks to many resources available by Kubernetes API, such as: Deployment\cite{k8s-resources-depl} or DaeonSet\cite{k8s-resources-ds}, etc.
 
-Setting up a package manager for reusable Kubernetes deployments is recommended\cite{gruntwork-howto-blog}. In this work: Helm is used and it was already described in the section: \rel{tools}.
+To summarize, in order to satisfy the Automated Operations requirement, the following measures will be applied:
+\begin{itemize}
+\item all the code and configuration needed to deploy a cluster will be stored in a Git repository,
+\item cluster will be configure with YAML file,
+\item a Bash script will be used to create, test and delete a cluster,
+\item Helm will be used to automate a test application deployment,
+\item two deployment environments will be used: testing and production.
+\end{itemize}
 
-* Automation and Infrastructure as Code - eksctl YAML config, kops YAML config, cloudformation? terraform?
-* tasks file - one command to run one operation
-* helm and bats also help automation
-* additionally (if there is time): try AWS CI Server (or some other CI Server)
-* write again that iac facilitates the repetition of future evalutaions, repeating this experiment
 
 \subsubsection{Central Logging}
 
-* try AWS CloudWatch Logs
-* additionally (if there is time): deploy Graylog (or Fluentd or Logstash, etc) on AWS
+The plan here is to simply \textbf{use AWS CloudWatch service}. It should be easy to enable when using eksctl. It is not enabled by default due to data ingestion and storage costs\cite{eksctl-cw}. There should be also a possibility to enable logging to AWS CloudWatch when using kops.
 
 \subsubsection{Central Monitoring}
 
-* try AWS CloudWatch Alarms and dashboards
-* try kubernetes dashboard
-* additionally (if there is time): deploy Grafana + influxdb on AWS
+To satisfy the Central Monitoring requirement, it is planned to use \textbf{AWS CloudWatch Alarms and dashboards}. The potential alarms could warn the Kubernetes cluster administrator that for example:
+\begin{itemize}
+\item the AWS resources cost more than 20 GBP,
+\item there is too much CPU usage (in percentage units).
+\end{itemize}
+
+Furthermore, a Kubernetes dashboard will be deployed. Thanks to that, it should be easily visible, which pod utilizes what amount of CPU or Memory resources. Kubernetes dashboard was already described in the section: \ref{k8s-other-services}.
 
 \subsubsection{Central Audit}
 
-* try AWS CloudTrail
+This requirement will be simply met by utilizing \textbf{the AWS CloudTrail service}. This service should show us, which user is responsible for what changes made to the AWS resources used. Besides, AWS CloudTrail can be also used to detect unusual activity in the AWS accounts\cite{online-ct}.
 
 \subsubsection{Backup}
 
-* backup etcd with the test service deployed and try to restore in a new k8s cluster
+In order to implement and test backup, \textbf{Velero will be used}. First Velero will be used to create a backup. Then a disaster will be simulated: a whole Kubernetes namespace will be deleted with all the resources deployed inside. The last phase will be the backup restore phaze. It is expected that the namespaces and all the resources will be restored\cite{eksworkshop-backup}.
 
 
 \subsubsection{Capacity planning and High Availability}
@@ -243,7 +245,8 @@ To summarize: the production cluster should have at least three master nodes and
 
 \subsubsection{Autoscaling}
 
-* increase the number of pod replicas, make autoscaling work
+The idea here is to test whether a cluster, which consists of master nodes and worker nodes, will be able to, by itself, create and delete another worker node. This decision, whether to scale in or out, should be taken according to how many resources there are available for pods. The demand for more resources will be artificially created by increasing the value of \textit{replicaCount} in the Apache Helm Chart\cite{helm-apache}.
+
 
 \subsubsection{Security}
 \textit{Security is handled by applying private networking, AWS Security groups, proper authentication and authorization.}
@@ -468,8 +471,6 @@ Error: unable to determine AMI to use: unable to determine AMI for region eu-wes
 This website however suggests that the ami is not available for k8s 1.16: https://cloud-images.ubuntu.com/aws-eks/
 
 ---
-
-\subsection{Other decisions and configuration}
 
 \subsection{Expected cost}
 

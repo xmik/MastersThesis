@@ -104,6 +104,7 @@ As aforementioned, there are also node components. They run on both: masters and
 \textbf{Container Runtime} is the software which is responsible for operating containers. Several container runtimes are supported: Docker, containerd, CRI-O, and any implementation of the Kubernetes CRI (Container Runtime Interface). It is a design policy of Kubernetes that is ought to be decoupled from a specific container runtime. Under some circumstates it should be possible to switch from one container runtime to another or to use multiple of them at once. Originally, Kubernetes was designed to manage only Docker containers\cite{book-mastering-k8s}\cite{k8s-components}.
 
 \subsubsection{Other services}
+\label{k8s-other-services}
 Apart from master and node components, there are also \textbf{add-ons, extensions, and third party tools} which communicate with Kubernetes by the API server and which provide additional functionality. Examples of such services are: DNS, Vertical Pod Autoscaler, Cluster Autoscaler, Istio, Kubernetes Dashboard, kube-ops-view, node-problem-detector, etc\cite{book-cndwk}}.
 
 \subsubsection{The Kubernetes networking model}
