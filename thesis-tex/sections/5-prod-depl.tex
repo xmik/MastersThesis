@@ -119,7 +119,7 @@ $ kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOP
 
 The steps described in this section proved that it is possible to deploy a Kubernetes cluster on AWS with kops. It was a POC. The next cluster will attempt to satisfy the production deployment requirements.
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experimental deployments using eksctl}
 \textit{In this subsection first experiments of deploying a Kubernetes cluster with eksctl on AWS are described.}
 \\
@@ -161,227 +161,182 @@ $ eksctl delete cluster -f cluster.yaml --wait
 
 The \textit{--wait} CLI flag was applied. Without it, a delete operation would have been only requested but not waited for. In some cases it happens that the deletion fails, and, without this flag, the errors would not have been propagated back as the CLI command output. Then, one would be forced to delete the AWS resources manually\cite{eksctl-creating-clusters}.
 
-%%%% TODO!!!
-\subsection{TODOOO}
-
----
-$ kops get cluster --full -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
-
-//
-//   WARNING: Do not use a '--full' cluster specification to define a Kubernetes installation.
-//   You may experience unexpected behavior and other bugs.  Use only the required elements
-//   and any modifications that you require.
-//
-//   Use the following command to retrieve only the required elements:
-//   $ kops get cluster -o yaml
-//
-
-apiVersion: kops.k8s.io/v1alpha2
-kind: Cluster
-metadata:
-  creationTimestamp: "2020-05-29T08:57:35Z"
-  name: testing.k8s-kops-for-masters-thesis.k8s.local
-spec:
-  api:
-    loadBalancer:
-      crossZoneLoadBalancing: false
-      type: Public
-  authorization:
-    rbac: {}
-  channel: stable
-  cloudProvider: aws
-  clusterDNSDomain: cluster.local
-  configBase: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local
-  configStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local
-  docker:
-    ipMasq: false
-    ipTables: false
-    logDriver: json-file
-    logLevel: warn
-    logOpt:
-    - max-size=10m
-    - max-file=5
-    storage: overlay2,overlay,aufs
-    version: 18.09.9
-  etcdClusters:
-  - backups:
-      backupStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/backups/etcd/main
-    cpuRequest: 200m
-    enableEtcdTLS: true
-    enableTLSAuth: true
-    etcdMembers:
-    - instanceGroup: master-eu-west-1a
-      name: a
-    manager: {}
-    memoryRequest: 100Mi
-    name: main
-    provider: Manager
-    version: 3.3.10
-  - backups:
-      backupStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/backups/etcd/events
-    cpuRequest: 100m
-    enableEtcdTLS: true
-    enableTLSAuth: true
-    etcdMembers:
-    - instanceGroup: master-eu-west-1a
-      name: a
-    manager: {}
-    memoryRequest: 100Mi
-    name: events
-    provider: Manager
-    version: 3.3.10
-  iam:
-    allowContainerRegistry: true
-    legacy: false
-  keyStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/pki
-  kubeAPIServer:
-    allowPrivileged: true
-    anonymousAuth: false
-    apiServerCount: 1
-    authorizationMode: RBAC
-    bindAddress: 0.0.0.0
-    cloudProvider: aws
-    enableAdmissionPlugins:
-    - NamespaceLifecycle
-    - LimitRanger
-    - ServiceAccount
-    - PersistentVolumeLabel
-    - DefaultStorageClass
-    - DefaultTolerationSeconds
-    - MutatingAdmissionWebhook
-    - ValidatingAdmissionWebhook
-    - NodeRestriction
-    - ResourceQuota
-    etcdServers:
-    - http://127.0.0.1:4001
-    etcdServersOverrides:
-    - /events#http://127.0.0.1:4002
-    image: k8s.gcr.io/kube-apiserver:v1.16.9
-    insecureBindAddress: 127.0.0.1
-    insecurePort: 8080
-    kubeletPreferredAddressTypes:
-    - InternalIP
-    - Hostname
-    - ExternalIP
-    logLevel: 2
-    requestheaderAllowedNames:
-    - aggregator
-    requestheaderExtraHeaderPrefixes:
-    - X-Remote-Extra-
-    requestheaderGroupHeaders:
-    - X-Remote-Group
-    requestheaderUsernameHeaders:
-    - X-Remote-User
-    securePort: 443
-    serviceClusterIPRange: 100.64.0.0/13
-    storageBackend: etcd3
-  kubeControllerManager:
-    allocateNodeCIDRs: true
-    attachDetachReconcileSyncPeriod: 1m0s
-    cloudProvider: aws
-    clusterCIDR: 100.96.0.0/11
-    clusterName: testing.k8s-kops-for-masters-thesis.k8s.local
-    configureCloudRoutes: true
-    image: k8s.gcr.io/kube-controller-manager:v1.16.9
-    leaderElection:
-      leaderElect: true
-    logLevel: 2
-    useServiceAccountCredentials: true
-  kubeDNS:
-    cacheMaxConcurrent: 150
-    cacheMaxSize: 1000
-    cpuRequest: 100m
-    domain: cluster.local
-    memoryLimit: 170Mi
-    memoryRequest: 70Mi
-    replicas: 2
-    serverIP: 100.64.0.10
-  kubeProxy:
-    clusterCIDR: 100.96.0.0/11
-    cpuRequest: 100m
-    hostnameOverride: '@aws'
-    image: k8s.gcr.io/kube-proxy:v1.16.9
-    logLevel: 2
-  kubeScheduler:
-    image: k8s.gcr.io/kube-scheduler:v1.16.9
-    leaderElection:
-      leaderElect: true
-    logLevel: 2
-  kubelet:
-    anonymousAuth: false
-    cgroupRoot: /
-    cloudProvider: aws
-    clusterDNS: 100.64.0.10
-    clusterDomain: cluster.local
-    enableDebuggingHandlers: true
-    evictionHard: memory.available<100Mi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<10%,imagefs.inodesFree<5%
-    hostnameOverride: '@aws'
-    kubeconfigPath: /var/lib/kubelet/kubeconfig
-    logLevel: 2
-    networkPluginMTU: 9001
-    networkPluginName: kubenet
-    nonMasqueradeCIDR: 100.64.0.0/10
-    podInfraContainerImage: k8s.gcr.io/pause-amd64:3.0
-    podManifestPath: /etc/kubernetes/manifests
-  kubernetesApiAccess:
-  - 0.0.0.0/0
-  kubernetesVersion: 1.16.9
-  masterInternalName: api.internal.testing.k8s-kops-for-masters-thesis.k8s.local
-  masterKubelet:
-    anonymousAuth: false
-    cgroupRoot: /
-    cloudProvider: aws
-    clusterDNS: 100.64.0.10
-    clusterDomain: cluster.local
-    enableDebuggingHandlers: true
-    evictionHard: memory.available<100Mi,nodefs.available<10%,nodefs.inodesFree<5%,imagefs.available<10%,imagefs.inodesFree<5%
-    hostnameOverride: '@aws'
-    kubeconfigPath: /var/lib/kubelet/kubeconfig
-    logLevel: 2
-    networkPluginMTU: 9001
-    networkPluginName: kubenet
-    nonMasqueradeCIDR: 100.64.0.0/10
-    podInfraContainerImage: k8s.gcr.io/pause-amd64:3.0
-    podManifestPath: /etc/kubernetes/manifests
-    registerSchedulable: false
-  masterPublicName: api.testing.k8s-kops-for-masters-thesis.k8s.local
-  networkCIDR: 172.20.0.0/16
-  networking:
-    kubenet: {}
-  nonMasqueradeCIDR: 100.64.0.0/10
-  secretStore: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local/secrets
-  serviceClusterIPRange: 100.64.0.0/13
-  sshAccess:
-  - 0.0.0.0/0
-  subnets:
-  - cidr: 172.20.32.0/19
-    name: eu-west-1a
-    type: Public
-    zone: eu-west-1a
-  topology:
-    dns:
-      type: Public
-    masters: public
-    nodes: public
-
-----
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Production deployment using Kops}
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using Kops. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
 \\
 
+\subsubsection{Generating the YAML configuration file}
+In contrast to the experimental deployment, here the cluster was configured with a YAML file. What is more, the YAML file was a Go (golang) template file\cite{online-kops-ct}, thanks to what it was easy to set the environment. (Two environments were supported: testing and production). Creating the YAML file is not recommended to be done by hand. Rather, one should first run \textit{kops create cluster} command (which creates a cluster configureation in a S3 bucket state store) and then export the configuration from the state store with: \textit{kops get -o yaml}. There are plans to change it. Using YAML instead of CLI has another advantage: more options can be set\cite{online-kops-manifest} and addons can be deployed\cite{online-kops-addons}.
 
+First, a S3 bucket was created in the same way as in the experimental deployment. Then, the cluster kops YAML configuration file was generated with:
+\begin{lstlisting}[basicstyle=\tiny,caption={Commands used to generate a cluster configuration with kops},captionpos=b,language=Bash,xleftmargin=1cm]
+$ my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
+kops create cluster --state="s3://${K8S_EXP_KOPS_S3_BUCKET}" \
+--kubernetes-version=1.16.9 \
+--master-zones="eu-west-1a,eu-west-1b,eu-west-1c" --master-count=3 --master-size=t2.micro \
+--zones=eu-west-1a --node-count=1 --node-size=t2.micro \
+--ssh-access=${my_ip}/32 \
+${K8S_EXP_CLUSTER_NAME}
+\end{lstlisting}
+
+The following options were set:
+\begin{itemize}
+\item \textit{$--state="s3://\${K8S\_EXP\_KOPS\_S3\_BUCKET}"$} to set a S3 bucket name
+\item \textit{--kubernetes-version=1.16.9} to choose a particular Kubernetes version
+\item \textit{--master-zones="eu-west-1a,eu-west-1b,eu-west-1c"} to choose AZs for master instances (to ensure HA)
+\item \textit{--master-count=3} to deploy 3 master nodes
+\item \textit{--master-size=t2.micro} to choose EC2 instance type for master nodes
+\item \textit{--zones="eu-west-1a"} to choose AZs for node instances
+\item \textit{--node-count=1} to deploy 1 worker node
+\item \textit{--node-size=t2.micro} to choose EC2 instance type for worker nodes
+\item \textit{--ssh-access=\${my\_ip}/32} to apply more security
+\end{itemize}
+
+Then, the configuration was exported to local filesystem, as a configuration template:
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used export kops configuration from S3 to a local file},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.tmpl.yaml
+\end{lstlisting}
+
+Afterwards, that configuration template file was edited, so that \textit{kubernetesApiAccess} and \textit{sshAccess} were set in order to ensure more security - only one IP was allowed to communicate with the Kubernetes cluster. Then, in that file, all the occurrences of the word: "testing" were replaced with: "{{.environment}}". Thanks to that, it is now possible to decide on the environment at the moment of cluster deployment. As the third edit done to that file: \textit{cloudLabels} were specified, so that it is easier to identify which AWS resources belong to this Kubernetes deployment\cite{online-kops-labels}. The next edit was needed to add IAM permissions, so that Kubernetes logs may go to AWS CloudWatch. The following code was added to the \textit{cluster.tmpl.yaml} file:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+additionalPolicies:
+  node: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
+          "Resource": ["*"]
+        }
+      ]
+  master: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
+          "Resource": ["*"]
+        }
+      ]
+\end{lstlisting}
+
+Then, the template configuration file was compiled into two configuration files, one for each environment:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=testing --template cluster.tmpl.yaml --format-yaml > cluster-testing.yaml
+$ kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=production --template cluster.tmpl.yaml --format-yaml > cluster-production.yaml
+\end{lstlisting}
+Most of this work is implemented in the Bash script and can be run as:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ ./tasks _gen_config
+# then perform the twinkering described above (set IAM permissions, labels and security settings)
+$ ./tasks _up_remote_config
+\end{lstlisting}
+
+In result, two YAML configuration files were created: for testing and for production environments. The procedure was semi-automated, it should be easy to change the YAML file.
+
+\subsubsection{Creating the cluster}
+\label{kops-creating-the-cluster}
+All the work described in this section, needed to deploy a Kubernetes cluster is fully automated. In the future it may be used in a CI pipeline. This step can be executed with one command:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ ./kops/tasks _create
+\end{lstlisting}
+
+The rest of this section describes what this one command provides. This command provides several things. First, it updates the cluster configuration in S3 bucket, based on the local YAML configuration file. Then, it creates AWS resources needed for Kubernetes cluster (EC2 instances, VPC, etc.). Then, it was decided that this command should return only after the Kubernetes cluster is ready. Thus, a simple Bash loop was implemented, which verifies if a cluster is ready, every 1 second. The code for these commands is presented below:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+# wait for the deployment to finish
+while [ 1 ]; do
+  kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" && break || sleep 30
+done;
+\end{lstlisting}
+
+So far, all the necessary work was performed in order to have a working cluster. The next thing is to deploy logging. The following code was needed to attain this goal:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ aws logs create-log-group --log-group-name k8s-kops-${K8S_EXP_ENVIRONMENT}
+$ helm install "kube2iam" --namespace="default" --wait --atomic --set rbac.create=true stable/kube2iam
+$ helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com
+$ helm install "fluentd-cloudwatch" --namespace="default" --wait --atomic --set awsRegion=${K8S_EXP_REGION},rbac.create=true,logGroupName=k8s-kops-${K8S_EXP_ENVIRONMENT} incubator/fluentd-cloudwatch
+\end{lstlisting}
+
+An AWS CloudWatch LogGroup was created first. Then, two Helm charts were deployed. The kube2iam chart handles the permissions of Kubernetes pods and the fluentd-cloudwatch chart is responsible for transporting the logs from Kubernetes services to AWS CloudWatch. As a result, the log messages may be viewed on AWS Management Console. This is illustrated on the following images:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/kops-testing-cw-logs.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{AWS CloudWatch with logs from a Kubernetes cluster}}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/kops-testing-cw-logs2.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{AWS CloudWatch with logs from a Kubernetes cluster}}
+\end{figure}
+
+An example log message looks like this:
+\begin{lstlisting}[basicstyle=\tiny,caption={An example Kubernetes log message, presented on AWS CloudWatch},captionpos=b,language=Bash,xleftmargin=1cm]
+{
+    "log": "2020-06-01 19:46:12 +0000 [info]: gem 'fluent-plugin-multi-format-parser' version '1.0.0'\n",
+    "stream": "stdout",
+    "docker": {
+        "container_id": "4bc2700f4fc88530b4e03b2ed794c1f1b366be6931d8500a8ccf21503d2c5b97"
+    },
+    "kubernetes": {
+        "container_name": "fluentd-cloudwatch",
+        "namespace_name": "default",
+        "pod_name": "fluentd-cloudwatch-xkk58",
+        "container_image": "fluent/fluentd-kubernetes-daemonset:v1.7.3-debian-cloudwatch-1.0",
+        "container_image_id": "docker-pullable://fluent/fluentd-kubernetes-daemonset@sha256:9b8b2f99ea884853205150364eceaac9fff5ea97fc3300cc0080f48c3eac8b8a",
+        "pod_id": "9fc38bd1-ff7b-4d29-9593-15796a7e5f94",
+        "host": "ip-172-20-33-140.eu-west-1.compute.internal",
+        "labels": {
+            "app": "fluentd-cloudwatch",
+            "controller-revision-hash": "68f7dc7cc",
+            "pod-template-generation": "1",
+            "release": "fluentd-cloudwatch"
+        },
+        "master_url": "https://100.64.0.1:443/api",
+        "namespace_id": "4044bfd2-e836-43a1-bda1-71da0e985b9a"
+    }
+}
+\end{lstlisting}
+
+\subsubsection{Testing a cluster}
+\subsubsection{Deleting a cluster}
+
+\subsubsection{Troubleshooting}
+
+\textbf{The first problem} was, that the command responsible for creating a cluster did not wait until the cluster was ready. It returned as soon as the AWS resources were scheduled for creation. This was a problem, because if one wanted to create, test and then delete a Kubernetes cluster in a CI pipeline, then the tests would never work. And the pipeline would always fail. The solution for this problem was already described in the section \ref{kops-creating-the-cluster}.
+
+\textbf{The second problem} was how to configure logging to AWS CloudWatch. The documentation of the Helm chart: kube2iam\cite{kube2iam} provided an example command of how to deploy the chart: \textit{helm install stable/kube2iam --name my-release}. But this resulted in errors, which are presented below, thanks to debugging the kube2iam pod.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get pod
+NAME                       READY   STATUS             RESTARTS   AGE
+kube2iam-2c8vv             0/1     CrashLoopBackOff   9          17m
+$ kubectl logs kube2iam-2c8vv
+E0601 10:35:53.142224       1 reflector.go:199] github.com/jtblin/kube2iam/vendor/k8s.io/client-go/tools/cache/reflector.go:94: Failed to list *v1.Pod: pods is forbidden: User "system:serviceaccount:default:default" cannot list resource "pods" in API group "" at the cluster scope
+E0601 10:35:53.142621       1 reflector.go:199] github.com/jtblin/kube2iam/vendor/k8s.io/client-go/tools/cache/reflector.go:94: Failed to list *v1.Namespace: namespaces is forbidden: User "system:serviceaccount:default:default" cannot list resource "namespaces" in API group "" at the cluster scope
+\end{lstlisting}
+
+These errors went away, when the chart was deployed with additional settings set: \textit{helm upgrade "kube2iam" --namespace="default" --wait --atomic --set rbac.create=true stable/kube2iam}.
+
+\textbf{The third problem} concerned the lack of permissions of the fluentd-cloudwatch pod. It manifested in the following way:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl logs fluentd-cloudwatch-xkk58
+2020-06-01 11:03:14 +0000 [warn]: #0 [out_cloudwatch_logs_host_logs] failed to flush the buffer. retry_time=8 next_retry_seconds=2020-06-01 11:05:22 +0000 chunk="5a703b5e45c9592f24399f9b73acaf43" error_class=Aws::CloudWatchLogs::Errors::AccessDeniedException error="User: arn:aws:sts::976184668068:assumed-role/nodes.testing.k8s-kops-for-masters-thesis.k8s.local/i-04a926040234f36d6 is not authorized to perform: logs:DescribeLogGroups on resource: arn:aws:logs:eu-west-1:976184668068:log-group::log-stream:"
+\end{lstlisting}
+This problem was also already dealt with in the section \ref{kops-creating-the-cluster}. The solution was to add IAM permissions in the YAML template configuration file. The solution was inspired by a Tobias Sturm's blog post\cite{kops-logs-cw-tobias}.
+
+
+* deploy some test service and test it; use helm - maybe apache chart + use the idea from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
 
 % "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
 
-* https://www.tobiassturm.de/2017/04/20/how-to-use-aws-cloudwatch-logs-with-kubernetes-kops
-* yaml - https://kops.sigs.k8s.io/operations/cluster_template/
 
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+\end{lstlisting}
 
 labels https://github.com/kubernetes/kops/blob/master/docs/manifests_and_customizing_via_api.md https://github.com/kubernetes/kops/blob/master/docs/labels.md
-ci yaml config; must wait for creation
 
 \subsection{Production deployment using eksctl}
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using eksctl. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}

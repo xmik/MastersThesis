@@ -2,16 +2,35 @@ apiVersion: kops.k8s.io/v1alpha2
 kind: Cluster
 metadata:
   creationTimestamp: "2020-06-01T08:54:41Z"
-  name: {{.environment}}.k8s-kops-for-masters-thesis.k8s.local
+  name: testing.k8s-kops-for-masters-thesis.k8s.local
 spec:
+  additionalPolicies:
+    master: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
+          "Resource": ["*"]
+        }
+      ]
+    node: |
+      [
+        {
+          "Effect": "Allow",
+          "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
+          "Resource": ["*"]
+        }
+      ]
   api:
     loadBalancer:
       type: Public
   authorization:
     rbac: {}
   channel: stable
+  cloudLabels:
+    deployment: kops-testing
   cloudProvider: aws
-  configBase: s3://k8s-kops-for-masters-thesis.k8s.local/{{.environment}}.k8s-kops-for-masters-thesis.k8s.local
+  configBase: s3://k8s-kops-for-masters-thesis.k8s.local/testing.k8s-kops-for-masters-thesis.k8s.local
   etcdClusters:
   - cpuRequest: 200m
     etcdMembers:
@@ -28,37 +47,18 @@ spec:
   iam:
     allowContainerRegistry: true
     legacy: false
-  additionalPolicies:
-    node: |
-        [
-          {
-            "Effect": "Allow",
-            "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
-            "Resource": ["*"]
-          }
-        ]
-    master: |
-        [
-          {
-            "Effect": "Allow",
-            "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
-            "Resource": ["*"]
-          }
-        ]
   kubelet:
     anonymousAuth: false
+  kubernetesApiAccess:
+  - 31.183.242.155/32
   kubernetesVersion: 1.16.9
-  masterPublicName: api.{{.environment}}.k8s-kops-for-masters-thesis.k8s.local
+  masterPublicName: api.testing.k8s-kops-for-masters-thesis.k8s.local
   networkCIDR: 172.20.0.0/16
   networking:
     kubenet: {}
   nonMasqueradeCIDR: 100.64.0.0/10
   sshAccess:
   - 31.183.242.155/32
-  kubernetesApiAccess:
-  - 31.183.242.155/32
-  cloudLabels:
-    deployment: kops-{{.environment}}
   subnets:
   - cidr: 172.20.32.0/19
     name: eu-west-1a
@@ -69,15 +69,13 @@ spec:
       type: Public
     masters: public
     nodes: public
-
 ---
-
 apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
   creationTimestamp: "2020-06-01T08:54:41Z"
   labels:
-    kops.k8s.io/cluster: {{.environment}}.k8s-kops-for-masters-thesis.k8s.local
+    kops.k8s.io/cluster: testing.k8s-kops-for-masters-thesis.k8s.local
   name: master-eu-west-1a
 spec:
   image: kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17
@@ -89,15 +87,13 @@ spec:
   role: Master
   subnets:
   - eu-west-1a
-
 ---
-
 apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
   creationTimestamp: "2020-06-01T08:54:41Z"
   labels:
-    kops.k8s.io/cluster: {{.environment}}.k8s-kops-for-masters-thesis.k8s.local
+    kops.k8s.io/cluster: testing.k8s-kops-for-masters-thesis.k8s.local
   name: nodes
 spec:
   image: kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # any environment variable containing non-numeric characters should be unset,
 # because it impedes the "kops create cluster" command
 unset OS_PASSWORD
@@ -9,16 +11,16 @@ export K8S_EXP_REGION="eu-west-1"
 # (for many environments)
 export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
 
-# TODO: this should be set outside of this file
-export K8S_EXP_ENVIRONMENT="testing"
+if [[ "${K8S_EXP_ENVIRONMENT}" != "testing" ]] && [[ "${K8S_EXP_ENVIRONMENT}" != "production" ]]; then
+  echo "Error: K8S_EXP_ENVIRONMENT should be set to testing or production"
+  exit 1
+fi
 
 export K8S_EXP_CLUSTER_NAME="${K8S_EXP_ENVIRONMENT}.${K8S_EXP_KOPS_S3_BUCKET}"
 
 command="$1"
 case "${command}" in
-    _create)
-    # ssh key? vpc? ip public?
-        # list aws s3 buckets
+    _gen_config)
         if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_KOPS_S3_BUCKET}; then
           echo "S3 Bucket already exists"
         else
@@ -35,18 +37,44 @@ case "${command}" in
           set +x
         fi
         set -x
+        # copy the old config
+        if [[ -f cluster.tmpl.yaml ]]; then
+          mv cluster.tmpl.yaml cluster-old.tmpl.yaml
+        fi
         # generate a cluster configuration
+        my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
         kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
         --kubernetes-version=1.16.9 \
         --master-zones=eu-west-1a --master-count=1 --master-size=t2.micro \
         --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
+        --ssh-access=${my_ip}/32 \
         ${K8S_EXP_CLUSTER_NAME}
+        # export the configuration to a YAML file
+        kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.tmpl.yaml
+        echo "Generated config to cluster.tmpl.yaml. You can now edit it to set kubernetesApiAccess"
+        # now run the task: _up_remote_config
+        ;;
+    _up_remote_config)
+        # this task updates the running cluster
+        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=testing --template cluster.tmpl.yaml --format-yaml > cluster-testing.yaml
+        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=production --template cluster.tmpl.yaml --format-yaml > cluster-production.yaml
+        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+        ;;
+    _create)
         # deploy the cluster
+        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         # wait for the deployment to finish
         while [ 1 ]; do
           kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" && break || sleep 30
         done;
+
+        # enable logging to AWS CloudWatch
+        # https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/create-log-group.html
+        aws logs create-log-group --log-group-name k8s-kops-${K8S_EXP_ENVIRONMENT}
+        helm install "kube2iam" --namespace="default" --wait --atomic --set rbac.create=true stable/kube2iam
+        helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com
+        helm install "fluentd-cloudwatch" --namespace="default" --wait --atomic --set awsRegion=${K8S_EXP_REGION},rbac.create=true,logGroupName=k8s-kops-${K8S_EXP_ENVIRONMENT} incubator/fluentd-cloudwatch
         ;;
     _test)
         set -x
@@ -57,6 +85,7 @@ case "${command}" in
     _delete)
         set -x
         kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+        aws logs delete-log-group --log-group-name k8s-kops-${K8S_EXP_ENVIRONMENT}
         ;;
     *)
         echo "Invalid command: '${command}'"
