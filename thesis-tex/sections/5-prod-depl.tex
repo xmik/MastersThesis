@@ -302,6 +302,33 @@ An example log message looks like this:
 \end{lstlisting}
 
 \subsubsection{Testing a cluster}
+All the tests can be invoked with a single command:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ ./kops/tasks _test
+\end{lstlisting}
+
+This one command runs the following:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+$ cd tests
+$ bats tests.bats
+\end{lstlisting}
+
+The \textit{kops validate cluster} command is provided by the kops CLI. It checks that all k8s master and worker nodes are running and have "Ready" status, that all the components are healthy and that all pods in the kube-system namespace are running and healthy\cite{online-kops-valid}. The next command runs the Bats-core tests. They test the version of Kubernetes, number of worker nodes and also they deploy a test Helm chart with Apache Server. All the tests and the deployment (and later deletion) of the Apache Helm chart are automated and intended to be idempotent. Thanks to such a test, it is verified that such a Kubernetes cluster is ready to use for the end users.
+
+The test Apache Server serves a very simple website, which all code is just one index.html file with the following contents:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+<html>
+<head>
+<title>Hello world</title>
+</head>
+<body>
+<p>Welcome to my Master Thesis website!</p>
+</body>
+</html>
+\end{lstlisting}
+Thus, there is a test that runs: \textit{curl} command and expects that the output contains "Welcome to my Master Thesis website!". Such a test is possible thanks to an ingress resource provided by the Apache Helm Chart. When this ingress is deployed on a Kubernetes cluster on AWS, an Elastic Load Balancer (ELB) is created. ELB is an AWS resource. The ELB provides us with the endpoint that can be used with \textit{curl}.
+
 \subsubsection{Deleting a cluster}
 
 \subsubsection{Troubleshooting}
@@ -325,10 +352,12 @@ These errors went away, when the chart was deployed with additional settings set
 $ kubectl logs fluentd-cloudwatch-xkk58
 2020-06-01 11:03:14 +0000 [warn]: #0 [out_cloudwatch_logs_host_logs] failed to flush the buffer. retry_time=8 next_retry_seconds=2020-06-01 11:05:22 +0000 chunk="5a703b5e45c9592f24399f9b73acaf43" error_class=Aws::CloudWatchLogs::Errors::AccessDeniedException error="User: arn:aws:sts::976184668068:assumed-role/nodes.testing.k8s-kops-for-masters-thesis.k8s.local/i-04a926040234f36d6 is not authorized to perform: logs:DescribeLogGroups on resource: arn:aws:logs:eu-west-1:976184668068:log-group::log-stream:"
 \end{lstlisting}
-This problem was also already dealt with in the section \ref{kops-creating-the-cluster}. The solution was to add IAM permissions in the YAML template configuration file. The solution was inspired by a Tobias Sturm's blog post\cite{kops-logs-cw-tobias}.
+This problem was also already dealt with in the section \ref{kops-creating-the-cluster}. The solution was to add IAM permissions in the YAML template configuration file. The solution was inspired by a Tobias Sturm's blog post\cite{kops-logs-cw-tobias} and by the kops documentation\cite{online-kops-iam}.
+
+\textbf{The fourth problem} was with testing the Apache Server. The essential thing to know is that it takes some time (around 5 minutes) for the ELB to be usable by end users and thus the tests may fail in the meantime. The solution was to implement such a command that verifies the Apache Server endpoint many times, but has a maximum number of trials.
 
 
-* deploy some test service and test it; use helm - maybe apache chart + use the idea from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
+* autoscaling from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
 
 % "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
 
