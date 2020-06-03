@@ -251,6 +251,27 @@ while [ 1 ]; do
 done;
 \end{lstlisting}
 
+Thanks to the custom cloud label: \textit{deployment}, it is now possible to list all the AWS EC2 instances, which have this tag (cloud label) set.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}"
+[
+    [
+        {
+            "PublicIP": "34.242.4.10",
+            "Name": "master-eu-west-1a.masters.testing.k8s-kops-for-masters-thesis.k8s.local",
+            "Status": "running"
+        }
+    ],
+    [
+        {
+            "PublicIP": "34.247.37.124",
+            "Name": "nodes.testing.k8s-kops-for-masters-thesis.k8s.local",
+            "Status": "running"
+        }
+    ]
+]
+\end{lstlisting}
+
 So far, all the necessary work was performed in order to have a working cluster. The next thing is to deploy logging. The following code was needed to attain this goal:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ aws logs create-log-group --log-group-name k8s-kops-${K8S_EXP_ENVIRONMENT}
@@ -467,6 +488,83 @@ NAME                                          DESIRED   CURRENT   READY   AGE
 replicaset.apps/nginx-deployment-7cd5ddccc7   2         2         2       8s
 \end{lstlisting}
 
+
+Then, autoscaling was tested. The autoscaler Kubernetes resources were deployed with:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+kops$ ./tasks _enable_as
+\end{lstlisting}
+which basically just deployed the resources configured at autoscaler git repository\cite{as-github}. Some modifications were also applied to the cluster YAML configuration, namely: under \textit{additionalPolicies} of node configuration, the following code was added:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+{
+  "Effect": "Allow",
+  "Action": [
+    "autoscaling:DescribeAutoScalingGroups",
+    "autoscaling:DescribeAutoScalingInstances",
+    "autoscaling:DescribeLaunchConfigurations",
+    "autoscaling:SetDesiredCapacity",
+    "autoscaling:TerminateInstanceInAutoScalingGroup",
+    "autoscaling:DescribeTags"
+  ],
+  "Resource": "*"
+}
+\end{lstlisting}
+Also, additional labels for InstanceGroup of worker nodes were set and maximum number of worker nodes were set to 2. This went smoothly thanks to a blog post\cite{as-blog}. The modified configuration is presented below:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+spec:
+  cloudLabels:
+    service: k8s_node
+    k8s.io/cluster-autoscaler/enabled: ""
+    k8s.io/cluster-autoscaler/testing.k8s-kops-for-masters-thesis.k8s.local: ""
+  minSize: 1
+  maxSize: 2
+\end{lstlisting}
+
+In order to test the autoscaling, a test application was deployed with:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+tests$ ./deploy-test-service.sh
+\end{lstlisting}
+After the above command ended with success, it was verified that 1 pod replica was deployed. Since, the task here was to make the autoscaler decide to scale out - to add another node, the test application deployment was scaled, so that 200 pod replicas were deployed.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+kops$ kubectl get -n testing deployment
+NAME             READY   UP-TO-DATE   AVAILABLE   AGE
+apache-testing   1/1     1            1           9m48s
+kops$ kubectl scale -n testing deployment apache-testing --replicas=200
+deployment.apps/apache-testing scaled
+kops$ kubectl get -n testing deployment
+NAME             READY    UP-TO-DATE   AVAILABLE   AGE
+apache-testing   12/200   200          12        13m
+\end{lstlisting}
+This triggered the creation of another node and in a short while, there were two nodes in the cluster:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+kops$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}"
+[
+    [
+        {
+            "PublicIP": "34.242.4.10",
+            "Name": "master-eu-west-1a.masters.testing.k8s-kops-for-masters-thesis.k8s.local",
+            "Status": "running"
+        }
+    ],
+    [
+        {
+            "PublicIP": "34.247.37.124",
+            "Name": "nodes.testing.k8s-kops-for-masters-thesis.k8s.local",
+            "Status": "running"
+        }
+    ],
+    [
+        {
+            "PublicIP": "3.249.123.18",
+            "Name": "nodes.testing.k8s-kops-for-masters-thesis.k8s.local",
+            "Status": "running"
+        }
+    ]
+]
+\end{lstlisting}
+Afterwards, the pod replicas were scaled back to 1 and then, autoscaler terminated one of the worker nodes. Soon, one of the EC2 instances was in the status: terminated. This proved that autoscaler works for a Kubernetes cluster deployed with kops.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \subsubsection{Testing a cluster}
 All the tests can be invoked with a single command:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -494,6 +592,17 @@ The test Apache Server serves a very simple website, which all code is just one 
 </html>
 \end{lstlisting}
 Thus, there is a test that runs: \textit{curl} command and expects that the output contains "Welcome to my Master Thesis website!". Such a test is possible thanks to an ingress resource provided by the Apache Helm Chart. When this ingress is deployed on a Kubernetes cluster on AWS, an Elastic Load Balancer (ELB) is created. ELB is an AWS resource. The ELB provides us with the endpoint that can be used with \textit{curl}.
+
+
+
+
+
+
+
+
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+\end{lstlisting}
+
 %%%
 
 \subsubsection{Deleting a cluster}
@@ -579,16 +688,18 @@ Warning  FailedScheduling  70s (x5 over 6m46s)  default-scheduler  0/2 nodes are
 
 The problem was that the Velero pod was in status: Pending. The Kubernetes documentation on pods troubleshooting suggests, that when a pod is in status: Pending, then there may be not enough resources in the cluster\cite{k8s-deb}. That was the problem in this case. The solution was to use bigger AWS instance types for node: \textit{t2.medium} instead of: \textit{t2.micro}.
 
+A \textbf{problem considering autoscaler deployment} was observed. The Kubernetes resources provided by the official git repository on Github.com had a minor mistake. The autoscaler pod was in error state and it returned the following error:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl describe -n kube-system pod/cluster-autoscaler-8b46dddf5-8xkns
+Warning  Failed     26s                kubelet, ip-172-20-62-245.eu-west-1.compute.internal  Error: failed to start container "cluster-autoscaler": Error response from daemon: OCI runtime create failed: container_linux.go:346: starting container process caused "process_linux.go:449: container init caused \"rootfs_linux.go:58: mounting \\\"/etc/ssl/certs/ca-bundle.crt\\\" to rootfs \\\"/var/lib/docker/overlay2/0f99e6ea6c9a9f8dedf87b977b72ecff7b56e0e6e439fcd8f9275bda3dbcabe6/merged\\\" at \\\"/var/lib/docker/overlay2/0f99e6ea6c9a9f8dedf87b977b72ecff7b56e0e6e439fcd8f9275bda3dbcabe6/merged/etc/ssl/certs/ca-certificates.crt\\\" caused \\\"not a directory\\\"\"": unknown: Are you trying to mount a directory onto a file (or vice-versa)? Check if the specified host path exists and is the expected type
+Warning  BackOff    12s (x2 over 42s)  kubelet, ip-172-20-62-245.eu-west-1.compute.internal  Back-off restarting failed container
+\end{lstlisting}
 
-* autoscaling from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
-
-% "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
+Fortunately, this problem was handled by a public issue and the solution was also provided there\cite{as-github-issue}. The solution was to replace a path: \textit{/etc/ssl/certs/ca-certificates.crt} with \textbf{/etc/ssl/certs/ca-bundle.crt}.
 
 
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 \end{lstlisting}
-
-labels https://github.com/kubernetes/kops/blob/master/docs/manifests_and_customizing_via_api.md https://github.com/kubernetes/kops/blob/master/docs/labels.md
 
 \subsection{Production deployment using eksctl}
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using eksctl. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
