@@ -60,6 +60,13 @@ case "${command}" in
         kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=production --template cluster.tmpl.yaml --format-yaml > cluster-production.yaml
         kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         ;;
+    _install_velero_cli)
+        wget -O /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/v1.4.0/velero-v1.4.0-linux-amd64.tar.gz
+        cd /tmp
+        tar -xvf velero.tar.gz
+        chmod +x velero/velero
+        sudo mv velero/velero /usr/local/bin/velero
+        ;;
     _create)
         # deploy the cluster; --force is needed if "kops create cluster" was not run before
         kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
@@ -82,8 +89,6 @@ case "${command}" in
         # kubectl apply -f k8s-dashboard.yaml
         #         dashboard_secret=$(kops get secrets kube --type secret -oplaintext --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}")
         # echo "Kubernetes Dashboard secret is: ${dashboard_secret}"
-
-
       #  aws put-metric-alarm --alarm-name
         ;;
     _test)

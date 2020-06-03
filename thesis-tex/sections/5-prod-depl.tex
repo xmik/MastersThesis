@@ -365,7 +365,107 @@ When it comes to \textbf{Central Audit} requirement, no manual steps were needed
     \caption{TODO}}
 \end{figure}
 
+The next operation is to backup a cluster namespace. Velero was chosen as an application to facilitate backup. In order to install Velero CLI, one can run:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ ./kops/tasks _install_velero_cli
+\end{lstlisting}
 
+The above command installed Velero client. A Velero Server must be also deployed on a Kubernetes cluster. Before it is done, AWS IAM user must be created and proper permissions must be assigned to it. The instructions how to deal with AWS IAM for Velero were available at Github\cite{velero-aws-plugin}. In order to be able to repeat the steps easily, all the instructions were saved to a Bash script as: \textit{src/velero/generate-velero-credentials.sh}. Running it should result in generating two credentials and exporting them as two Bash environment variable: \textit{$VELERO\_ACCESS\_KEY\_ID$} and \textit{$VELERO\_SECRET\_ACCESS\_KEY$}. Then, a file \textit{src/velero/credentials-velero} of such contents was created:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+[default]
+aws_access_key_id=<REPLACE-ME-WITH-SECRET>
+aws_secret_access_key=<REPLACE-ME-WITH-SECRET>
+\end{lstlisting}
+
+Afterwards, a Velero Server was deployed, using a Helm chart. The following command was used:
+
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl create namespace velero
+$ helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+$ helm install velero --namespace velero -f velero-chart-values.yaml \
+--set configuration.backupStorageLocation.bucket=${K8S_EXP_KOPS_S3_BUCKET} \
+--set configuration.backupStorageLocation.prefix=${K8S_EXP_ENVIRONMENT} \
+--set configuration.backupStorageLocation.config.region=${K8S_EXP_REGION} \
+--set-file credentials.secretContents.cloud=${PWD}/../velero/credentials-velero \
+--wait --atomic vmware-tanzu/velero
+\end{lstlisting}
+
+Then, a backup location for Velero was configured. It was done with the following command:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ velero backup-location create default \
+  --provider aws \
+  --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
+  --prefix ${K8S_EXP_ENVIRONMENT} \
+  --config region=${K8S_EXP_REGION}
+Backup storage location "default" configured successfully.
+\end{lstlisting}
+
+And then, finally, the steps from Velero documentation was followed\cite{velero-examples}. A test application (provided by Velero) was deployed and backuped. The test application was deployed to a Kubernetes namespace: \textit{nginx-example}.   It was verified also that the Kubernetes resources were created.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl apply -f velero-example.yaml
+namespace/nginx-example created
+deployment.apps/nginx-deployment created
+service/my-nginx created
+$ kubectl get -n nginx-example all
+NAME                                    READY   STATUS              RESTARTS   AGE
+pod/nginx-deployment-7cd5ddccc7-9drfn   1/1     Running   0          26s
+pod/nginx-deployment-7cd5ddccc7-hr9zg   1/1     Running             0          7s
+
+NAME               TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+service/my-nginx   LoadBalancer   100.64.170.74   a64fbc3f7b55c45aead4f113025d8a34-1346547608.eu-west-1.elb.amazonaws.com   80:31927/TCP   7s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   1/2     2            1           7s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-7cd5ddccc7   2         2         1       8s
+$ velero backup create nginx-backup1 --include-namespaces nginx-example
+Backup request "nginx-backup1" submitted successfully.
+Run `velero backup describe nginx-backup1` or `velero backup logs nginx-backup1` for more details.
+$ velero backup describe nginx-backup1
+Name:         nginx-backup1
+# output partially ommitted
+Phase:  Completed
+$ velero backup logs nginx-backup1
+# output partially ommitted
+time="2020-06-03T13:35:51Z" level=info msg="Backed up a total of 24 items" backup=velero/nginx-backup1 logSource="pkg/backup/backup.go:436" progress=
+\end{lstlisting}
+
+The backup result was stored in an S3 bucket and it is presented in the image below:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=10cm]{figures/kops-velero-backup.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{Backup of a Kubernetes namespace created by Velero, kept in an S3 bucket}}
+\end{figure}
+
+Next, a disaster was simulated. The whole \textit{nginx-example} namespace was deleted:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl delete namespaces nginx-example
+namespace "nginx-example" deleted
+$ kubectl get -n nginx-example all
+No resources found in nginx-example namespace.
+\end{lstlisting}
+
+The last step was to restore the namespace from Velero backup. It was successful.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ velero restore create --from-backup nginx-backup1
+Restore request "nginx-backup1-20200603133811" submitted successfully.
+Run `velero restore describe nginx-backup1-20200603133811` or `velero restore logs nginx-backup1-20200603133811` for more details.
+$ kubectl get -n nginx-example all
+NAME                                    READY   STATUS    RESTARTS   AGE
+pod/nginx-deployment-7cd5ddccc7-9drfn   1/1     Running   0          9s
+pod/nginx-deployment-7cd5ddccc7-hr9zg   1/1     Running   0          8s
+
+NAME               TYPE           CLUSTER-IP      EXTERNAL-IP                                                               PORT(S)        AGE
+service/my-nginx   LoadBalancer   100.71.21.114   abf6080d1d43a43ba97999bb6b22cabc-2114878664.eu-west-1.elb.amazonaws.com   80:32539/TCP   8s
+
+NAME                               READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/nginx-deployment   2/2     2            2           8s
+
+NAME                                          DESIRED   CURRENT   READY   AGE
+replicaset.apps/nginx-deployment-7cd5ddccc7   2         2         2       8s
+\end{lstlisting}
 
 \subsubsection{Testing a cluster}
 All the tests can be invoked with a single command:
@@ -394,6 +494,7 @@ The test Apache Server serves a very simple website, which all code is just one 
 </html>
 \end{lstlisting}
 Thus, there is a test that runs: \textit{curl} command and expects that the output contains "Welcome to my Master Thesis website!". Such a test is possible thanks to an ingress resource provided by the Apache Helm Chart. When this ingress is deployed on a Kubernetes cluster on AWS, an Elastic Load Balancer (ELB) is created. ELB is an AWS resource. The ELB provides us with the endpoint that can be used with \textit{curl}.
+%%%
 
 \subsubsection{Deleting a cluster}
 
@@ -422,6 +523,62 @@ This problem was also already dealt with in the section \ref{kops-creating-the-c
 
 \textbf{The fourth problem} was with testing the Apache Server. The essential thing to know is that it takes some time (around 5 minutes) for the ELB to be usable by end users and thus the tests may fail in the meantime. The solution was to implement such a command that verifies the Apache Server endpoint many times, but has a maximum number of trials.
 
+There were also \textbf{problems with deploying Velero}. For example, using the example deployment command provided on the Velero Helm Chart page on Github.com vmware-tanzu\cite{velero-helm-chart}, but omitting the aws plugin for Velero resulted in error.
+
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+# output omitted
+$ helm install velero --namespace default \
+  --set configuration.provider=aws \
+  --set configuration.backupStorageLocation.name=aws \
+  --set configuration.backupStorageLocation.bucket=${K8S_EXP_KOPS_S3_BUCKET} \
+  --set configuration.backupStorageLocation.prefix=${K8S_EXP_ENVIRONMENT} \
+  --set configuration.backupStorageLocation.config.region=${K8S_EXP_REGION} \
+  --wait --atomic \
+  vmware-tanzu/velero
+# output omitted
+$ kubectl logs -n default velero-7f476777f6-f9qlc
+An error occurred: some backup storage locations are invalid: error getting backup store for location "aws": unable to locate ObjectStore plugin named velero.io/aws
+\end{lstlisting}
+
+Tinkering with that command resulted also in different error:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+Error: release velero failed, and has been uninstalled due to atomic being set: timed out waiting for the condition
+\end{lstlisting}
+
+It was then decided to try another command to install Velero server. It pushed the progress further and revealed the problem:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$  velero install \
+    --provider velero.io/aws \
+    --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
+    --plugins velero/velero-plugin-for-aws:v1.1.0 \
+    --backup-location-config s3Url=${K8S_EXP_KOPS_S3_BUCKET},region=${K8S_EXP_REGION} \
+    --use-volume-snapshots=false \
+    --secret-file=${PWD}/credentials-velero
+Velero is installed! ⛵ Use 'kubectl logs deployment/velero -n velero' to view the status.
+$ kubectl get -n velero all
+NAME                          READY   STATUS    RESTARTS   AGE
+pod/velero-5f8889f694-6xd7t   0/1     Pending   0          2m30s
+
+NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/velero   0/1     1            0           2m30s
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/velero-5f8889f694   1         1         0       2m30s
+$ kubectl -n velero describe pods
+Name:           velero-5f8889f694-6xd7t
+Namespace:      velero
+Limits:
+     cpu:     1
+     memory:  256Mi
+   Requests:
+     cpu:     500m
+     memory:  128Mi
+Warning  FailedScheduling  70s (x5 over 6m46s)  default-scheduler  0/2 nodes are available: 2 Insufficient cpu.
+\end{lstlisting}
+
+The problem was that the Velero pod was in status: Pending. The Kubernetes documentation on pods troubleshooting suggests, that when a pod is in status: Pending, then there may be not enough resources in the cluster\cite{k8s-deb}. That was the problem in this case. The solution was to use bigger AWS instance types for node: \textit{t2.medium} instead of: \textit{t2.micro}.
+
 
 * autoscaling from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
 
@@ -439,6 +596,6 @@ labels https://github.com/kubernetes/kops/blob/master/docs/manifests_and_customi
 
 \subsection{TODO}
 
-troubleshooting k8s -mastering k8s p. 58
+troubleshooting k8s -mastering k8s p. 58 cite{k8s-deb}
 * what happens if we manually delete a iptables rule? kube-proxy will put it back after 10 to 30s - https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned
 * https://learnk8s.io/troubleshooting-deployments - must read!!

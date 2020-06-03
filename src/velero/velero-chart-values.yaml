@@ -1,0 +1,53 @@
+image:
+  repository: velero/velero
+  tag: v1.4.0
+  pullPolicy: IfNotPresent
+initContainers:
+  - name: aws
+    image: velero/velero-plugin-for-aws:v1.1.0
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+# metrics:
+#   enabled: true
+#   scrapeInterval: 30s
+#
+#   # Pod annotations for Prometheus
+#   podAnnotations:
+#     prometheus.io/scrape: "true"
+#     prometheus.io/port: "8085"
+#     prometheus.io/path: "/metrics"
+#
+#   serviceMonitor:
+#     enabled: false
+#     additionalLabels: {}
+snapshotsEnabled: false
+deployRestic: false
+configuration:
+  provider: aws
+  backupStorageLocation:
+    name: aws
+    #bucket: ${K8S_EXP_KOPS_S3_BUCKET}
+    #prefix: ${K8S_EXP_ENVIRONMENT}
+    #config:
+      #region: ${K8S_EXP_REGION}
+      # s3ForcePathStyle: true
+      # publicUrl: https://minio.devopstales.intra
+      # s3Url: http://minio:9000
+  # volumeSnapshotLocation:
+  #   name: aws
+  #   bucket: kubernetes-pv
+  #   config:
+  #     region: minio
+  #     s3ForcePathStyle: true
+  #     publicUrl: https://minio.devopstales.intra
+  #     s3Url: http://minio:9000
+
+credentials:
+  useSecret: true
+  # secretContents:
+  #   cloud: |
+  #     [default]
+  #     aws_access_key_id = ${VELERO_ACCESS_KEY_ID}
+  #     aws_secret_access_key = ${VELERO_SECRET_ACCESS_KEY}
