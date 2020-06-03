@@ -58,11 +58,12 @@ case "${command}" in
         # this task updates the running cluster
         kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=testing --template cluster.tmpl.yaml --format-yaml > cluster-testing.yaml
         kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=production --template cluster.tmpl.yaml --format-yaml > cluster-production.yaml
-        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         ;;
     _create)
-        # deploy the cluster
-        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+        # deploy the cluster; --force is needed if "kops create cluster" was not run before
+        kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
+        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         # wait for the deployment to finish
         while [ 1 ]; do
@@ -75,6 +76,15 @@ case "${command}" in
         helm install "kube2iam" --namespace="default" --wait --atomic --set rbac.create=true stable/kube2iam
         helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com
         helm install "fluentd-cloudwatch" --namespace="default" --wait --atomic --set awsRegion=${K8S_EXP_REGION},rbac.create=true,logGroupName=k8s-kops-${K8S_EXP_ENVIRONMENT} incubator/fluentd-cloudwatch
+
+        # does NOT work!
+        # enable monitoring with Kubernetes Dashboard
+        # kubectl apply -f k8s-dashboard.yaml
+        #         dashboard_secret=$(kops get secrets kube --type secret -oplaintext --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}")
+        # echo "Kubernetes Dashboard secret is: ${dashboard_secret}"
+
+
+      #  aws put-metric-alarm --alarm-name
         ;;
     _test)
         set -x

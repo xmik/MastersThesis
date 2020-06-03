@@ -186,13 +186,7 @@ The plan here is to simply \textbf{use AWS CloudWatch service}. It should be eas
 
 \subsubsection{Central Monitoring}
 
-To satisfy the Central Monitoring requirement, it is planned to use \textbf{AWS CloudWatch Alarms and dashboards}. The potential alarms could warn the Kubernetes cluster administrator that for example:
-\begin{itemize}
-\item the AWS resources cost more than 20 GBP,
-\item there is too much CPU usage (in percentage units).
-\end{itemize}
-
-Furthermore, a Kubernetes dashboard will be deployed. Thanks to that, it should be easily visible, which pod utilizes what amount of CPU or Memory resources. Kubernetes dashboard was already described in the section: \ref{k8s-other-services}.
+To satisfy the Central Monitoring requirement, it is planned to use \textbf{AWS CloudWatch}. Furthermore, a Kubernetes dashboard will be deployed. Thanks to that, it should be easily visible, which pod utilizes what amount of CPU or Memory resources. Kubernetes dashboard was already described in the section: \ref{k8s-other-services}.
 
 \subsubsection{Central Audit}
 
@@ -256,229 +250,17 @@ The idea here is to test whether a cluster, which consists of master nodes and w
 
 
 \subsubsection{Security}
-\textit{Security is handled by applying private networking, AWS Security groups, proper authentication and authorization.}
-\\
 
-First, let's handle the networking. In order to have a clear understanding of how the networking will be set up, a few terms have to be explained. \textbf{VPC stands for Virtual Private Cloud} and it is an AWS resource, providing the networking services. When a VPC is created, it means that a virtual private network is created and assigned to a particular AWS account. AWS resources can be launched into that VPC. Each VPC has a CIDR block assigned. The VPC cannot span more than one AWS Region. The VPC can be divided into subnetworks (or subnets). One subnet cannot span more than one Availability Zone. \textbf{Subnets can be either public or private}. If a subnet's traffic is routed to an internet gateway (which is an AWS resource), the subnet is known as a public subnet. Otherwise, a subnet is private\cite{aws-vpc}. This means that public subnets have access to the Internet.
+There are many security measures that could be applied on a cluster. In order to stay secure, access to the Kubernetes cluster should be limited. Any Kubernetes deployment on AWS will have to deal with networking.
 
-In order to stay secure, access to the Kubernetes cluster should be limited. This can be achieved in multiple ways.
+\textbf{VPC stands for Virtual Private Cloud} and it is an AWS resource, providing the networking services. When a VPC is created, it means that a virtual private network is created and assigned to a particular AWS account. AWS resources can be launched into that VPC. Each VPC has a CIDR block assigned. The VPC cannot span more than one AWS Region. The VPC can be divided into subnetworks (or subnets). One subnet cannot span more than one Availability Zone. \textbf{Subnets can be either public or private}. If a subnet's traffic is routed to an internet gateway (which is an AWS resource), the subnet is known as a public subnet. Otherwise, a subnet is private\cite{aws-vpc}. This means that public subnets have access to the Internet.
 
-%%% aaa
+By default, both kops and eksctl deploy Kubernetes clusters using public subnets. This means, that anyone who knows the URL of the Kubernetes master node, can access its API Server. Additionally, if one has a private SSH key, then they can SSH login into the master node. A simple way to restrict access to the cluster is to use \textbf{Security Groups}. Security Groups rules will be used to limit SSH access to the master and worker nodes and also to limit access to API Server endpoint\cite{online-kops-cs}. In result, only one IP address should be able to access the endpoints.
 
-it was decided that in the deployments for this work, \textbf{the private network topology was chosen}. This should be set for both deployment methods.
-
-
-% private networking
-
-There are \textbf{two network topologies supported by Kops: public and private}. When the public topology is chosen, then all masters and workers of a Kubernetes cluster will be launched in a public subnet in the VPC. Respectively: when using the private topology, all the machines will be launched in a private subnet in the VPC\cite{kops-net-topo}. This is settable as a CLI flag\cite{kops-net}:
-\begin{lstlisting}[basicstyle=\small,caption={CLI flag used by kops to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
---topology private
-\end{lstlisting}
-
-When using eksctl, this is also possible: the initial nodegroup (worker nodes) can be isolated from the public Internet by the following CLI flag\cite{eksctl-net}:
-\begin{lstlisting}[basicstyle=\small,caption={CLI flag used by eksctl to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
---node-private-networking
-\end{lstlisting}
-or by setting in the YAML configuration file\cite{eks-example}:
-\begin{lstlisting}[basicstyle=\small,caption={YAML configuration used by Kops to set private networking mode},captionpos=b,language=Bash,xleftmargin=1cm]
-nodeGroups:
-  - name: ng-1
-    instanceType: m5.xlarge
-    desiredCapacity: 2
-    privateNetworking: true # if only 'Private' subnets are given, this must be enabled
-\end{lstlisting}
-
-% HA NAT Gateway
-
-When the private network topology is chosen, kops creates one NAT Gateway (NGW) per AZ\cite{kops-net2}. Such a \textbf{NGW is then highly available} - which is an important production deployment requirement. There is also a possibility to set it with eksctl with\cite{eksctl-net}:
-\begin{lstlisting}[basicstyle=\small,caption={YAML configuration used by eksctl to set NAT Gateway as Highly Available},captionpos=b,language=Bash,xleftmargin=1cm]
-vpc:
-  nat:
-    gateway: HighlyAvailable # other options: Disable, Single (default)
-\end{lstlisting}
-
-The NAT Gateway is needed, because the worker nodes must have access to the Internet, in order to function properly. If the worker nodes are deployed in a private subnet, then the private subnet will access the Internet through a NAT Gateway\cite{eks-net}.
-
-% endpoint access
-
-The next thing is to consider \textbf{whether the API Server is accessible from within a VPC only or from the public Internet}. For the production deployment, access from within a VPC only is recommended. \textbf{In order to allow access from a remote computer, through the Internet, a bastion host or a VPN server is needed}\cite{gruntwork-howto}. It is essential to understand that NAT Gateway is needed in order to allow Internet access from an AWS EC2 machine, while bastion host allows to access that machine from outside. The functionality of a bastion host is to provide secure access to Linux instances located in the private and public subnets\cite{aws-bastion}.
-
-When a new EKS cluster is created, Amazon provides an endpoint for the managed Kubernetes API server. Thanks to that, one can communicate with the cluster (for example using a Kubernetes management tool: kubectl). As a default configuration, this API server endpoint is public to the internet, and also access to the API server is secured using a combination of AWS IAM (Identity and Access Management) and RBAC (native Kubernetes Role Based Access Control). Private access to the API server can be enabled. Thanks to that all communication between the worker nodes and the API server stays within a VPC\cite{eks-cluster-endpoint}.
-
-When private endpoint is enabled, AWS EKS creates a Route 53 private hosted zone, but this zone does not appear in AWS Route 53 resources. What is essential is that the Route53 resource is assigned to a VPC and such a VPC must have 'enableDnsHostnames' and 'enableDnsSupport' set to 'true', and also the DHCP options set for the VPC must include 'AmazonProvidedDNS' in its domain name servers list. Apart from this, there is also a requirement that an IAM Role or User (used to manage the AWS EKS cluster) must be given 'route53:AssociateVPCWithHostedZone' permissions\cite{eks-cluster-endpoint}.
-
-Enabling private endpoint is settable with eksctl in YAML file\cite{eksctl-net}:
-\begin{lstlisting}[basicstyle=\small,caption={YAML configuration used by eksctl to set EKS cluster endpoints},captionpos=b,language=Bash,xleftmargin=1cm]
-vpc:
-  clusterEndpoints:
-    publicAccess:  <true|false>
-    privateAccess: <true|false>
-\end{lstlisting}
-However, if only private access is allowed, then eksctl cannot create the cluster. Thus, at cluster creation, both: public and private access will be enabled. Then, the public access can be disabled\cite{eksctl-net}.
-
-
-services, ingress, public access, ALB - https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec
-
-https://kops.sigs.k8s.io/node_authorization/
-
-a Defense in Depth strategy - https://blog.gruntwork.io/how-to-build-an-end-to-end-production-grade-architecture-on-aws-part-1-eae8eeb41fec
-
-The table below summarizes what configuration must be set when using eksctl and kops to ensure a secure, production ready networking:
-
-\begin{table}[H]
-\begin{tabularx}{0.9\textwidth} {
-  | >{\centering\arraybackslash}X
-  | >{\centering\arraybackslash}X
-  | >{\centering\arraybackslash}X
-  | >{\centering\arraybackslash}X
-  | >{\centering\arraybackslash}X
-  | >{\centering\arraybackslash}X | }
- \hline
-  Setting & Using eksctl & Using kops  \\
- \hline
- Private network topology  & 0.0066 & 0.0063 \\
- \hline
- HA NAT Gateway  & 0.0132  & Set by default  \\
- \hline
- Network mode  & 0.026 & 0.025  \\
- \hline
-\end{tabularx}
-\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an EC2 instance on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing website\cite{ec2-pricing}}
-\end{table}
-
-
-There are \textbf{three networking modes supported by Kops: kubenet, cni and external}. Kubenet is the default mode, but it is not recommended for production clusters, because of its limitations. One of the limitations is, that kubenet disallows having more than 50 nodes per cluster. Another limitation is that if a cluster uses the private network topology, then it cannot use kubenet\cite{kops-net}.
-
-dns
-ssh access
-endpoint access
-pod networking
-VPC security: security groups, nacl
-
-* separate k8s ns and also "You should also setup each environment with its own EKS cluster, instead of relying on Kubernetes Namespaces." - maybe?? \cite{gruntwork-howto-blog}
-
-In order to stay secure, it was decided that \textbf{the private network topology and the cni networking mode} should be chosen. But, there are many CNI providers supported by Kops, for example: AWS VPC, Calico, Flannel, Weave\cite{kops-net-topo}.
-
-* private network in cluster.yaml for eks (--node-private-networking); "in most common Kubernetes deployments, nodes in the cluster are not part of the public internet." https://kubernetes.io/docs/concepts/services-networking/ingress/; eksctl create cluster --authenticator-role-arn string
-* api server endpoint how?
-* HTTPS api server; https://kubernetes.io/docs/reference/access-authn-authz/controlling-access/
-* using public AMIs is more secure than using self-created?
-* rbac in action - add some k8s user and restrict the access for a user, check that this is obeyed
-* iam in action (as above, but with AWS role)
-* custom network?
-* built-in security features of managed services and of kops; "Security in Amazon EKS"
-* security scans?
-* security checklists?
-* https://kubernetes.io/docs/tasks/administer-cluster/securing-a-cluster/
-* bastion host?
-* ssh login to a node?
-
-\subsubsection{Live Cluster Upgrades}
-
-* TODO
-
-https://learnk8s.io/troubleshooting-deployments
-https://learnk8s.io/kubernetes-long-lived-connections
-https://blog.pipetail.io/posts/2020-05-04-most-common-mistakes-k8s/
-%%%%%%%%%%%%%%%%%%%
-
-aws cli 2 problems on alpine linux (see k8s-aws-dojo)
-why aws cli 2? better security; AWS CLI version 2 uses an internal Python script that's compiled to use a minimum of TLS 1.2 when the service it's talking to supports it. No further steps are needed to enforce this minimum. https://docs.aws.amazon.com/cli/latest/userguide/cli-security-enforcing-tls.html#enforcing-tls-v2
- use latest aws cli 2 https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-troubleshooting.html
-
-* custom ssh pair? - possible
-* eks - custom vpc? custom cni? - this is possible, future work, https://github.com/weaveworks/eksctl/blob/master/examples/04-existing-vpc.yaml, https://github.com/weaveworks/eksctl/blob/master/examples/02-custom-vpc-cidr-no-nodes.yaml ; By default, eksctl create cluster will build a dedicated VPC https://eksctl.io/usage/vpc-networking/
-* node groups vs managed node groups vs cluster autoscaler?
-* custom iam and role?
-* eks: version in practice: 1.16.8 for nodes, 1.15 for master, also:
-```
-$ echo $(eksctl create cluster --version invalid 2>&1) | rev | sed 's/ //g' | cut -d ":" -f-1 | rev
-1.12,1.13,1.14,1.15
-```https://github.com/weaveworks/eksctl/issues/2040#issuecomment-614322730
-* security - isolate initial nodegroup from the public internet https://eksctl.io/usage/vpc-networking/
-* security - iam https://github.com/weaveworks/eksctl/blob/master/examples/17-permissions-boundary.yaml https://eksctl.io/usage/iam-permissions-boundary/
-* security - RBAC
-* autoscaleir https://github.com/weaveworks/eksctl/blob/master/examples/eks-quickstart-app-dev.yaml http://aws.amazon.com/ec2/autoscaling
-* change control plane config - need a custom ami? https://github.com/awslabs/amazon-eks-ami
-
-
-trobuleshooting? - chapter 5
-2. helm architecture (2 vs 3: no tiller, 3-way merge considers also live state, Release Names are now scoped to the Namespace, cli commands renamed e.g. helm fetch -> helm pull) HELM_VERSION=3.2.0
-3. eksctl or aws cli or aws management console?  https://docs.aws.amazon.com/eks/latest/userguide/create-cluster.html
-https://aws.amazon.com/blogs/opensource/eksctl-eks-cli/ "eksctl is now officially our command line for EKS"
-https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html
-4. eks pricing?  $0.10 per hour for each Amazon EKS cluster  https://aws.amazon.com/eks/pricing/
-When you use Amazon EKS control plane logging, you're charged standard Amazon EKS pricing for each cluster that you run. You are charged the standard CloudWatch Logs data ingestion and storage costs for any logs sent to CloudWatch Logs from your clusters. You are also charged for any AWS resources, such as Amazon EC2 instances or Amazon EBS volumes, that you provision as part of your cluster.  https://docs.aws.amazon.com/eks/latest/userguide/control-plane-logs.html
-5. custom networking needed? not for eksctl, but possible
-6. eksctl needs cloudformation?
-7. eks HA - This control plane consists ofhttps://cloud-images.ubuntu.com/aws-eks/ at least two API server nodes and three etcd nodes that run across three Availability Zones within a Region.  https://docs.aws.amazon.com/eks/latest/userguide/what-is-eks.html
-8. eks - how to set k8s version?
-```
-+ eksctl create cluster -f cluster.yaml --version=1.16.8
-Error: cannot use --version when --config-file/-f is set
-```
-then, we also cannot set patch version:
-```
-+ eksctl create cluster -f cluster.yaml
-[ℹ]  eksctl version 0.19.0-rc.0
-[ℹ]  using region eu-west-1
-Error: invalid version, supported values: 1.12, 1.13, 1.14, 1.15, 1.16
-```
-however:
-```
-metadata:
-  name: cluster-eks
-  region: eu-west-1
-  version: "1.16"
-```
-in cluster.yaml works fine. The only information how to set it i found on: https://github.com/weaveworks/eksctl/issues/1984#issuecomment-608583084 (missing documentation on the whole cluster.yaml file)
-
-* kops vs eksctl addons: https://github.com/kubernetes/kops/blob/master/docs/operations/addons.md
-networking how it works
-
-* fargate for eks??
-
-
-* is vpc and subnets auto created?
-* is iam?
-* how to setup ingress and LB? https://docs.aws.amazon.com/eks/latest/userguide/load-balancing-and-ingress.html
-
-
-https://github.com/thestacks-io/eks-cluster
-https://github.com/slalom/eks-iac
-https://medium.com/risertech/production-eks-with-terraform-5ad9e76db425
-
-t2.nano ami was ok for the default os (amazon linux 2) but is not ok for ubuntu: https://cloud-images.ubuntu.com/aws-eks/amazon-eks-ubuntu-nodegroup.yaml
-```
-+ eksctl create cluster -f cluster.yaml
-[ℹ]  eksctl version 0.19.0-rc.0
-[ℹ]  using region eu-west-1
-[ℹ]  setting availability zones to [eu-west-1b eu-west-1c eu-west-1a]
-[ℹ]  subnets for eu-west-1b - public:192.168.0.0/19 private:192.168.96.0/19
-[ℹ]  subnets for eu-west-1c - public:192.168.32.0/19 private:192.168.128.0/19
-[ℹ]  subnets for eu-west-1a - public:192.168.64.0/19 private:192.168.160.0/19
-Error: unable to determine AMI to use: unable to determine AMI for region eu-west-1, version 1.16, instance type t2.nano and image family Ubuntu1804
-```
-we need at least t2.small and only the region US-WEST-2 or US-EAST-1 ? https://aws.amazon.com/blogs/opensource/optimized-support-amazon-eks-ubuntu-1804/ These commands confirm that there should be an ami for eu-west-1 too:
-```
-dojo@a7ba31d31b64(k8s-aws-dojo):/dojo/work/eks$ aws ec2 describe-images \
-> --filters "Name=owner-id,Values=099720109477" "Name=architecture,Values=x86_64" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" \
-> --query 'Images[?contains(Name, `ubuntu-eks`)] | [?contains(Name, `testing`) == `false`] | [?contains(Name, `minimal`) == `false`] | [?contains(Name, `hvm-ssd`) == `true`] | sort_by(@, &CreationDate)| [-1].ImageId' \
-> --output text \
-> --region us-west-2
-ami-031d5da11ccc1c07b
-
-dojo@a7ba31d31b64(k8s-aws-dojo):/dojo/work/eks$ aws ec2 describe-images --filters "Name=owner-id,Values=099720109477" "Name=architecture,Values=x86_64" "Name=root-device-type,Values=ebs" "Name=virtualization-type,Values=hvm" --query 'Images[?contains(Name, `ubuntu-eks`)] | [?contains(Name, `testing`) == `false`] | [?contains(Name, `minimal`) == `false`] | [?contains(Name, `hvm-ssd`) == `true`] | sort_by(@, &CreationDate)| [-1].ImageId' --output text --region eu-west-1
-ami-0ceab0713d94f9276
-```
-but still:
-```
-Error: unable to determine AMI to use: unable to determine AMI for region eu-west-1, version 1.16, instance type t2.small and image family Ubuntu1804
-```
-This website however suggests that the ami is not available for k8s 1.16: https://cloud-images.ubuntu.com/aws-eks/
-
----
+The deployments described in this work are operated by one person only. Thus, the IP address of the author's laptop will be used. However, when working in a bigger team of many Kubernetes cluster administrators, one could use a NAT Gateway or NAT instance IP address as a single allowed IP address. Furthermore, a bastion host could be used to securely SSH login into the master node\cite{aws-bastion}.
 
 \subsection{Expected cost}
 
-* pricing? what resources does eks use? nat gateway? when? how?
+The cost of running the Kubernetes cluster is expected to be low. The clusters will be run for a short while - just to run some tests and then deleted. This should never be longer than 0.5 hour. Experiments may take longer, around several hours. However, the AWS resources which will be used are cheap and their cost depends on how for long they will exist. All the AWS resources which will be used are: S3 buckets, EC3 instances, VPC subnets, Security Groups, Internet Gateway, EBS volumes (attached to EC2 instances), Autoscaling groups, Keypairs, Load balancers.
+
+The chosen approach was to read about AWS resources pricing and more or less estimate how much a single experiment would cost. Since it was a small number (less than 1 USD), it was decided to use Cost Allocation Tags\cite{amazon-cost-tags}. One custom tag will be set to distinguish a Kubernetes cluster deployment from other AWS resources.

@@ -95,7 +95,7 @@ ssh: Could not resolve hostname api.testing.k8s-kops-for-masters-thesis.k8s.loca
 Name does not resolve
 \end{lstlisting}
 
-It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.micro}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources\cite{online-ha-k8s-blog}\cite{online-perfect-k8s-blog}\cite{online-kops-sa}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to kops creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publically reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
+It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.micro}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources\cite{online-ha-k8s-blog}\cite{online-perfect-k8s-blog}\cite{online-kops-sa}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to kops creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publicly reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
 
 It is also worth mentioning that the kubeconfig (\textit{~/.kube/config}), a Kubernetes configuration file needed to connect to a cluster, was generated automatically. Another thing to notice is that the command, which deploys a Kubernetes cluster, returned immediately, without waiting for the cluster to be ready. In the next deployments, some waiting mechanism must be applied, so that the cluster creation and verification can be automated. Below, there is a command used to request information about the cluster:
 \begin{lstlisting}[basicstyle=\tiny,caption={Command used to request information about a running Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -300,6 +300,72 @@ An example log message looks like this:
     }
 }
 \end{lstlisting}
+
+All the deployed Kubernetes components are listed below:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get -n kube-system pods
+NAME                                                                READY   STATUS    RESTARTS   AGE
+dns-controller-776cdf4ff4-lzb8f                                     1/1     Running   0          2m28s
+etcd-manager-events-ip-172-20-39-5.eu-west-1.compute.internal       1/1     Running   0          2m20s
+etcd-manager-main-ip-172-20-39-5.eu-west-1.compute.internal         1/1     Running   0          2m24s
+kops-controller-49hsh                                               1/1     Running   0          89s
+kube-apiserver-ip-172-20-39-5.eu-west-1.compute.internal            1/1     Running   3          82s
+kube-controller-manager-ip-172-20-39-5.eu-west-1.compute.internal   1/1     Running   0          100s
+kube-dns-autoscaler-594dcb44b5-7psf9                                1/1     Running   0          2m31s
+kube-dns-b84c667f4-4wvsx                                            3/3     Running   0          2m32s
+kube-dns-b84c667f4-kgdgb                                            3/3     Running   0          61s
+kube-proxy-ip-172-20-39-5.eu-west-1.compute.internal                1/1     Running   0          2m20s
+kube-scheduler-ip-172-20-39-5.eu-west-1.compute.internal            1/1     Running   0          93s
+\end{lstlisting}
+
+It can be also verified, that the custom labels applied to AWS resources by the cluster YAML configuration file, are indeed visible. The custom label here is: \textit{deployment: kops-testing}.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/kops-master-ec2-custom-tags.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+When it comes to monitoring the cluster resources, some metrics are available by default on AWS EC2 dashboard. The information concerning CPU utilization or incoming network quantity in bytes can be viewed without any additional configuration. The example charts are depicted below.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm]{figures/k8s-kops-metrics-node1.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm]{figures/k8s-kops-metrics-node2.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+However, the above metrics concern only AWS resources metrics. An attempt to deploy a Kubernetes dashboard\cite{online-kops-addons} was made. That attempt was unsuccessful. First, a recommended command was run, which should have deployed the Kubernetes dashboard, but it resulted in an error:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl create -f https://raw.githubusercontent.com/kubernetes/kops/master/addons/kubernetes-dashboard/v1.10.1.yaml
+error: unable to recognize "https://raw.githubusercontent.com/kubernetes/kops/master/addons/kubernetes-dashboard/v1.10.1.yaml": no matches for kind "Deployment" in version "apps/v1beta2"
+\end{lstlisting}
+
+A very similar problem can be found among issues on github\cite{online-kops-dashboard-issue}. But, a newer version (2.0.1) of Kubernetes dashboard resources were found, thanks to a Github Pull Request\cite{online-kops-dashboard-issue-pr}. Deploying them resulted in two pods with status: Running.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ $ kubectl get -n kubernetes-dashboard pod
+NAME                                        READY   STATUS    RESTARTS   AGE
+dashboard-metrics-scraper-c79c65bb7-cvd9r   1/1     Running   0          85s
+kubernetes-dashboard-6f89967466-st5kw       1/1     Running   0          85s
+\end{lstlisting}
+
+However, there was a problem with accessing the dashboard in a web browser. Several ways have been tried (e.g. with trying Kubernetes resouce: Service with type: ClusterIP and NodePort, with running \textit{kubectl proxy}), but in result, deploying Kubernetes dashboard on a kops created cluster was unsuccessful.
+
+When it comes to \textbf{Central Audit} requirement, no manual steps were needed. One can just log into AWS Management Console through a web browser, go to the AWS CloudTrail service and view the events history. Each event can be viewed and in return, information in JSON format is received. A table with events is presented on the picture below.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=13cm]{figures/kops-cloudtrail.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+
 
 \subsubsection{Testing a cluster}
 All the tests can be invoked with a single command:
