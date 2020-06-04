@@ -940,7 +940,7 @@ The control plane is entirely managed by AWS and it is run across three AWS avai
     \caption{TODO}}
 \end{figure}
 
-A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes\cite{eks-blog-part1}\cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
+A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes\cite{eks-blog-part1}\cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. An issue on Github.com was created to acknowledge this problem\cite{eksctl-no-config-update}. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ eksctl update cluster
 \end{lstlisting}
@@ -1005,14 +1005,58 @@ An example log message looked like this and it was in JSON format:
 }
 \end{lstlisting}
 
+There was nothing needed to be done in order to provide High Availability. The control plane was already Highly Available because AWS EKS automatically provisions and scales the control plane across multiple AWS availability zones for high availability and fault tolerance\cite{eks-faqs}. Even the output provided when creating the cluster confirms the HA:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
++ eksctl create cluster -f cluster.yaml
+[ℹ]  eksctl version 0.20.0
+[ℹ]  using region eu-west-1
+[ℹ]  setting availability zones to [eu-west-1a eu-west-1b eu-west-1c]
+[ℹ]  subnets for eu-west-1a - public:192.168.0.0/19 private:192.168.96.0/19
+[ℹ]  subnets for eu-west-1b - public:192.168.32.0/19 private:192.168.128.0/19
+[ℹ]  subnets for eu-west-1c - public:192.168.64.0/19 private:192.168.160.0/19
+\end{lstlisting}
+
+When it comes to Central Audit, also no additional steps were taken. The actions performed on AWS resources are automatically visible on AWS CloudTrail dashboard. This is the same case as with kops. Since both methods use AWS, they both utilize CloudTrail. An example view showing the CloudTrail events, which occurred due to deleting an EKS cluster is shown next.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=17cm]{figures/eks-ct.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+
 todo: kubectl get -n kube-system pods
 
 \subsubsection{Testing the cluster}
-The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{Testing a cluster}. The command to run tests was:
+The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{Testing a cluster}. Running all the tests took slightly less than 7 minutes. (It took long to have a working Load Balancer). The command to run tests was:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 eks$ ./tasks _test
 \end{lstlisting}
 
+\subsubsection{Deleting the cluster}
+In order to delete the cluster, one had to type:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ ./tasks _delete
+\end{lstlisting}
+
+This command usually took about 13 minutes. It deleted almost all AWS resources, but not CloudWatch LogGroup. Not deleting the LogGroup may be a good thing, because one may be interested to study the logs after the cluster is long gone. But still, it is good to know, that one has to delete it by themselves.
+
+\subsubsection{Troubleshooting the cluster}
+The greatest problem was how to set some security measures. Setting the following in the YAML configuration file:
+
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+vpc:
+  publicAccessCIDRs:
+    - "31.183.242.155/32"
+\end{lstlisting}
+resulted in timeout on creating such cluster. It took 43 minutes then. The output ended with:
+
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+[ℹ]  adding identity "arn:aws:iam::976184668068:role/eksctl-eks-testing-nodegroup-ng-1-NodeInstanceRole-8VB5IDO1Z4KQ" to auth ConfigMap
+[ℹ]  nodegroup "ng-1" has 0 node(s)
+[ℹ]  waiting for at least 1 node(s) to become ready in "ng-1"
+Error: timed out (after 25m0s) waiting for at least 1 nodes to join the cluster and become ready in "ng-1"
+\end{lstlisting}
 
 
 ```
