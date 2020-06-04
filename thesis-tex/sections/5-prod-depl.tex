@@ -563,7 +563,73 @@ kops$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" --qu
 \end{lstlisting}
 Afterwards, the pod replicas were scaled back to 1 and then, autoscaler terminated one of the worker nodes. Soon, one of the EC2 instances was in the status: terminated. This proved that autoscaler works for a Kubernetes cluster deployed with kops.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%
+When it comes to running a cluster in the High Availability mode, there were no problems whatsoever. No matter if the cluster was created with one master node or multiple master nodes - it was working. In HA mode, the following was returned as information about the cluster:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get nodes
+NAME                                          STATUS   ROLES    AGE   VERSION
+ip-172-20-108-29.eu-west-1.compute.internal   Ready    master   73s   v1.16.9
+ip-172-20-55-72.eu-west-1.compute.internal    Ready    node     49s   v1.16.9
+ip-172-20-61-242.eu-west-1.compute.internal   Ready    master   74s   v1.16.9
+ip-172-20-89-96.eu-west-1.compute.internal    Ready    master   75s   v1.16.9
+$ kops validate
+Validating cluster testing.k8s-kops-for-masters-thesis.k8s.local
+
+INSTANCE GROUPS
+NAME			ROLE	MACHINETYPE	MIN	MAX	SUBNETS
+master-eu-west-1a	Master	t2.micro	1	1	eu-west-1a
+master-eu-west-1b	Master	t2.micro	1	1	eu-west-1b
+master-eu-west-1c	Master	t2.micro	1	1	eu-west-1c
+nodes			Node	t2.micro	1	1	eu-west-1a
+
+NODE STATUS
+NAME						ROLE	READY
+ip-172-20-108-29.eu-west-1.compute.internal	master	True
+ip-172-20-55-72.eu-west-1.compute.internal	node	True
+ip-172-20-61-242.eu-west-1.compute.internal	master	True
+ip-172-20-89-96.eu-west-1.compute.internal	master	True
+
+Your cluster testing.k8s-kops-for-masters-thesis.k8s.local is ready
+\end{lstlisting}
+
+The machines can be also viewed on AWS Management Console:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=18cm]{figures/k8s-kops-ha-aws.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+Also, the tests were invoked both in HA mode and also with one master cluster. The tests succeeded in both cases. In HA mode, all the Kubernetes control plane components were duplicated (in this case - three times):
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl -n kube-system get pod
+NAME                                                                  READY   STATUS    RESTARTS   AGE
+dns-controller-776cdf4ff4-xw4tg                                       1/1     Running   0          2m18s
+etcd-manager-events-ip-172-20-108-29.eu-west-1.compute.internal       1/1     Running   0          66s
+etcd-manager-events-ip-172-20-61-242.eu-west-1.compute.internal       1/1     Running   0          86s
+etcd-manager-events-ip-172-20-89-96.eu-west-1.compute.internal        1/1     Running   0          96s
+etcd-manager-main-ip-172-20-108-29.eu-west-1.compute.internal         1/1     Running   0          53s
+etcd-manager-main-ip-172-20-61-242.eu-west-1.compute.internal         1/1     Running   0          56s
+etcd-manager-main-ip-172-20-89-96.eu-west-1.compute.internal          1/1     Running   0          80s
+kops-controller-2tz4h                                                 1/1     Running   0          2m8s
+kops-controller-7mr7s                                                 1/1     Running   0          2m14s
+kops-controller-psfch                                                 1/1     Running   0          2m8s
+kube-apiserver-ip-172-20-108-29.eu-west-1.compute.internal            1/1     Running   3          110s
+kube-apiserver-ip-172-20-61-242.eu-west-1.compute.internal            1/1     Running   3          114s
+kube-apiserver-ip-172-20-89-96.eu-west-1.compute.internal             1/1     Running   3          92s
+kube-controller-manager-ip-172-20-108-29.eu-west-1.compute.internal   1/1     Running   0          2m6s
+kube-controller-manager-ip-172-20-61-242.eu-west-1.compute.internal   1/1     Running   0          105s
+kube-controller-manager-ip-172-20-89-96.eu-west-1.compute.internal    1/1     Running   0          79s
+kube-dns-autoscaler-594dcb44b5-ccnjf                                  1/1     Running   0          2m19s
+kube-dns-b84c667f4-5tb9z                                              3/3     Running   0          105s
+kube-dns-b84c667f4-8vmh4                                              3/3     Running   0          2m21s
+kube-proxy-ip-172-20-108-29.eu-west-1.compute.internal                1/1     Running   0          116s
+kube-proxy-ip-172-20-55-72.eu-west-1.compute.internal                 1/1     Running   0          110s
+kube-proxy-ip-172-20-61-242.eu-west-1.compute.internal                1/1     Running   0          65s
+kube-proxy-ip-172-20-89-96.eu-west-1.compute.internal                 1/1     Running   0          61s
+kube-scheduler-ip-172-20-108-29.eu-west-1.compute.internal            1/1     Running   0          2m
+kube-scheduler-ip-172-20-61-242.eu-west-1.compute.internal            1/1     Running   0          2m13s
+kube-scheduler-ip-172-20-89-96.eu-west-1.compute.internal             1/1     Running   0          112s
+\end{lstlisting}
 
 \subsubsection{Testing a cluster}
 All the tests can be invoked with a single command:
@@ -573,9 +639,11 @@ $ ./kops/tasks _test
 
 This one command runs the following:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
-$ cd tests
-$ bats tests.bats
+$ set -x
+$ time kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
+$ cd ../tests
+$ time bats tests.bats
+$ cd ../kops
 \end{lstlisting}
 
 The \textit{kops validate cluster} command is provided by the kops CLI. It checks that all k8s master and worker nodes are running and have "Ready" status, that all the components are healthy and that all pods in the kube-system namespace are running and healthy\cite{online-kops-valid}. The next command runs the Bats-core tests. They test the version of Kubernetes, number of worker nodes and also they deploy a test Helm chart with Apache Server. All the tests and the deployment (and later deletion) of the Apache Helm chart are automated and intended to be idempotent. Thanks to such a test, it is verified that such a Kubernetes cluster is ready to use for the end users.
@@ -593,15 +661,88 @@ The test Apache Server serves a very simple website, which all code is just one 
 \end{lstlisting}
 Thus, there is a test that runs: \textit{curl} command and expects that the output contains "Welcome to my Master Thesis website!". Such a test is possible thanks to an ingress resource provided by the Apache Helm Chart. When this ingress is deployed on a Kubernetes cluster on AWS, an Elastic Load Balancer (ELB) is created. ELB is an AWS resource. The ELB provides us with the endpoint that can be used with \textit{curl}.
 
-
-
-
-
-
-
-
+The tests were run with Bats-core and their code is presented below:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+@test "kubernetes machines have correct version" {
+  run /bin/bash -c "kubectl version | grep 'Server Version'"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "v1.16" ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "1 kubernetes worker nodes have status: Ready" {
+  run /bin/bash -c "chmod +x get-workers-count.sh && ./get-workers-count.sh"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "1" ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "kubectl cluster-info returns expected output" {
+  run /bin/bash -c "kubectl cluster-info"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "Kubernetes master" ]]
+  [[ "${output}" =~ "https://api-testing-k8s-kops-for" ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "a test application can be deployed on kubernetes" {
+  run /bin/bash -c "chmod +x ./deploy-test-service.sh && ./deploy-test-service.sh"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "Success" ]]
+  [ "$status" -eq 0 ]
+
+  # k8s resource: pod was created
+  run /bin/bash -c "kubectl get --namespace=testing pods"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "apache-testing" ]]
+  [[ "${output}" =~ "Running" ]]
+  [ "$status" -eq 0 ]
+
+  # k8s resource: svc was created
+  run /bin/bash -c "kubectl get --namespace=testing svc"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "apache-testing" ]]
+  [ "$status" -eq 0 ]
+
+  # k8s resource: ing was created
+  run /bin/bash -c "kubectl get --namespace=testing ing"
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "apache-testing" ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "a test application is available (ingress resource works)" {
+  # the LoadBalancer on AWS does not work right away, so here
+  # we try it many times, until it works (max 400 trials)
+  run /bin/bash -c "export SERVICE_IP=$(kubectl get svc --namespace testing apache-testing --template '{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}') && chmod +x test-timeout-until.sh && ./test-timeout-until.sh \"curl --max-time 2 -L http://\$SERVICE_IP 2>/dev/null | grep 'Welcome to my Master Thesis website'\" \"400\" \"curl --max-time 2 -L http://\$SERVICE_IP 2>/dev/null | grep 'Welcome to my Master Thesis website'\""
+  # this is printed on test failure only
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "Welcome to my Master Thesis website" ]]
+  [ "$status" -eq 0 ]
+}
+
+@test "a test service (test website) can be deleted from kubernetes" {
+  run /bin/bash -c 'helm uninstall --namespace="testing" "apache-testing" && kubectl delete -f config-map-www-contents.yaml && kubectl delete namespace "testing"'
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "uninstalled" ]]
+  [ "$status" -eq 0 ]
+
+  # pod, svc and ing resources were deleted
+  run /bin/bash -c 'kubectl get --namespace=testing pods,svc,ing'
+  echo "# test cmd output: $output"
+  [[ "${output}" =~ "No resources found in testing namespace" ]]
+  [ "$status" -eq 0 ]
+}
 \end{lstlisting}
+Several helpful scripts were created and used for the tests. All the needed files are put in the git repository on Github.com. TODO link
+
 
 %%%
 

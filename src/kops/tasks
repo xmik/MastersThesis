@@ -37,7 +37,7 @@ case "${command}" in
           set +x
         fi
         set -x
-        # copy the old config
+        # backup the old config
         if [[ -f cluster.tmpl.yaml ]]; then
           mv cluster.tmpl.yaml cluster-old.tmpl.yaml
         fi
@@ -45,20 +45,22 @@ case "${command}" in
         my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
         kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
         --kubernetes-version=1.16.9 \
-        --master-zones=eu-west-1a --master-count=1 --master-size=t2.micro \
+        --master-zones="eu-west-1a" --master-count=1 --master-size=t2.micro \
         --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
         --ssh-access=${my_ip}/32 \
         ${K8S_EXP_CLUSTER_NAME}
         # export the configuration to a YAML file
         kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.tmpl.yaml
-        echo "Generated config to cluster.tmpl.yaml. You can now edit it to set kubernetesApiAccess"
+        echo "Generated config to cluster.tmpl.yaml. You can now edit it to set kubernetesApiAccess, cloudLabels and additionalPolicies"
         # now run the task: _up_remote_config
         ;;
     _up_remote_config)
         # this task updates the running cluster
-        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=testing --template cluster.tmpl.yaml --format-yaml > cluster-testing.yaml
-        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=production --template cluster.tmpl.yaml --format-yaml > cluster-production.yaml
+        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster.tmpl.yaml --format-yaml > cluster-${K8S_EXP_ENVIRONMENT}.yaml
         kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        # for HA mode:
+        # kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster-ha.tmpl.yaml --format-yaml > cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml
+        # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         ;;
     _install_velero_cli)
         wget -O /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/v1.4.0/velero-v1.4.0-linux-amd64.tar.gz
@@ -71,6 +73,7 @@ case "${command}" in
         # deploy the cluster; --force is needed if "kops create cluster" was not run before
         kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
         kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         # wait for the deployment to finish
         while [ 1 ]; do
@@ -103,8 +106,9 @@ case "${command}" in
     _test)
         set -x
         time kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
-        cd tests
+        cd ../tests
         time bats tests.bats
+        cd ../kops
         ;;
     _delete)
         set -x
