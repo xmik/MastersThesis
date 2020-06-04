@@ -6,11 +6,11 @@
   [ "$status" -eq 0 ]
 }
 
-@test "2 kubernetes worker nodes have status: Ready" {
+@test "1 kubernetes worker nodes have status: Ready" {
   run /bin/bash -c "chmod +x get-workers-count.sh && ./get-workers-count.sh"
   # this is printed on test failure only
   echo "# test cmd output: $output"
-  [[ "${output}" =~ "2" ]]
+  [[ "${output}" =~ "1" ]]
   [ "$status" -eq 0 ]
 }
 
