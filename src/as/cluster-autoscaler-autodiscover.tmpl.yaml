@@ -147,7 +147,7 @@ spec:
             - --cloud-provider=aws
             - --skip-nodes-with-local-storage=false
             - --expander=least-waste
-            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/testing.k8s-kops-for-masters-thesis.k8s.local
+            - --node-group-auto-discovery=asg:tag=k8s.io/cluster-autoscaler/enabled,k8s.io/cluster-autoscaler/${CLUSTER_NAME}
           volumeMounts:
             - name: ssl-certs
               mountPath: /etc/ssl/certs/ca-bundle.crt

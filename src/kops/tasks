@@ -97,6 +97,7 @@ case "${command}" in
         ;;
     _enable_as)
         set -x
+        sed "s/\${CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" ../as/cluster-autoscaler-autodiscover.tmpl.yaml > ../as/cluster-autoscaler-autodiscover.yaml
         kubectl apply -f ../as/cluster-autoscaler-autodiscover.yaml
         ;;
     _test)
