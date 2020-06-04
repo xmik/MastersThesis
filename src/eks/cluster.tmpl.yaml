@@ -4,12 +4,22 @@ kind: ClusterConfig
 metadata:
   name: ${K8S_EXP_CLUSTER_NAME}
   region: ${K8S_EXP_REGION}
+  version: "1.16"
   tags:
     deployment: eks-${K8S_EXP_ENVIRONMENT}
 
+# https://github.com/weaveworks/eksctl/blob/master/examples/11-cloudwatch-cluster-logging.yaml
+# https://eksctl.io/usage/cloudwatch-cluster-logging/
+cloudWatch:
+  clusterLogging:
+    # enable specific types of cluster control plane logs
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+    # all supported types: "api", "audit", "authenticator", "controllerManager", "scheduler"
+    # supported special values: "*" and "all"
+
 nodeGroups:
   - name: ng-1
-    labels: { role: worker, cluster: cluster-eks }
+    labels: { role: worker, cluster: ${K8S_EXP_CLUSTER_NAME} }
     instanceType: t2.nano
     desiredCapacity: 1
     ssh:

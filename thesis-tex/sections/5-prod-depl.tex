@@ -6,6 +6,9 @@
 \textit{In this subsection first experiments of deploying a Kubernetes cluster with Kops on AWS are described.}
 \\
 
+TODO: write about current directory from which commands are run
+TODO: write about common env variables set
+
 \subsubsection{Deployment without prerequisite steps done}
 
 Although the aim of this work is to create a production Kubernetes cluster, it is always welcome, when there is a possibility to start working with a program easily. It is nice to have a simple working proof of concept (POC). Thus, it was decided to start with Kops without performing any prerequisite steps. The following commands were invoked:
@@ -131,8 +134,10 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
 metadata:
-  name: cluster-eks
+  name: eks-testing
   region: eu-west-1
+  tags:
+    deployment: eks-testing
 
 nodeGroups:
   - name: ng-1
@@ -144,11 +149,11 @@ nodeGroups:
 $ eksctl create cluster -f cluster.yaml
 \end{lstlisting}
 
-This resulted in a successful creation of a cluster in "eu-west-1" AWS region with one worker node. Apart from that, the configuration file needed to access the remote cluster (remote, because deployed on AWS) was automatically created and written to: \textit{~/.kube/config} (same as done with kops). In order to \textbf{verify that the worker nodes were running}, the following command was run:
+This resulted in a successful creation of a cluster in "eu-west-1" AWS region with one worker node. It took 19 m 23.379s. Apart from that, the configuration file needed to access the remote cluster (remote, because deployed on AWS) was automatically created and written to: \textit{~/.kube/config} (same as done with kops). In order to \textbf{verify that the worker nodes were running}, the following command was run:
 \begin{lstlisting}[basicstyle=\tiny,caption={Command used to list Kubernetes worker nodes to verify that one such node was running},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl get nodes
-NAME                                           STATUS   ROLES    AGE    VERSION
-ip-192-168-176-90.eu-west-1.compute.internal   Ready    <none>   3m8s   v1.16.8
+NAME                                           STATUS   ROLES    AGE     VERSION
+ip-192-168-13-139.eu-west-1.compute.internal   Ready    <none>   7m18s   v1.16.8-eks-e16311
 \end{lstlisting}
 
 This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. Besides, it was also easy to set up the YAML configuration file, basing on the eksctl documentation\cite{eksctl-creating-clusters}.
@@ -632,6 +637,7 @@ kube-scheduler-ip-172-20-89-96.eu-west-1.compute.internal             1/1     Ru
 \end{lstlisting}
 
 \subsubsection{Testing a cluster}
+\label{testing-cluster}
 All the tests can be invoked with a single command:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ ./kops/tasks _test
@@ -684,7 +690,12 @@ The tests were run with Bats-core and their code is presented below:
   # this is printed on test failure only
   echo "# test cmd output: $output"
   [[ "${output}" =~ "Kubernetes master" ]]
-  [[ "${output}" =~ "https://api-testing-k8s-kops-for" ]]
+  [[ "${output}" =~ "https://" ]]
+  # this works for kops cluster only:
+  # [[ "${output}" =~ "https://api-testing-k8s-kops-for" ]]
+  # output for eks:
+  # Kubernetes master is running at https://E1B139B821FFAEF37082A7B64BB951FC.gr7.eu-west-1.eks.amazonaws.com
+  # CoreDNS is running at https://E1B139B821FFAEF37082A7B64BB951FC.gr7.eu-west-1.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
   [ "$status" -eq 0 ]
 }
 
@@ -839,14 +850,189 @@ Warning  BackOff    12s (x2 over 42s)  kubelet, ip-172-20-62-245.eu-west-1.compu
 Fortunately, this problem was handled by a public issue and the solution was also provided there\cite{as-github-issue}. The solution was to replace a path: \textit{/etc/ssl/certs/ca-certificates.crt} with \textbf{/etc/ssl/certs/ca-bundle.crt}.
 
 
-\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-\end{lstlisting}
 
 \subsection{Production deployment using eksctl}
 \textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using eksctl. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
 \\
 
-\subsection{TODO}
+\subsubsection{Generating the YAML configuration file}
+When using eksctl, it is possible to create a cluster with \textit{eksctl create cluster} command and either with setting command line options or with using a YAML file. The latter solution was chosen. In contrast to kops, it was easier to create such YAML file by hand. Due to the fact that it was desired to automate the cluster deployment across multiple environments, it was decided that there will be one configuration file named: \textit{cluster.tmpl.yaml}. This file will contain Bash variables as some values. This file will be used as a template. Then, to create a configuration file for production environment, such commands were run:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+export K8S_EXP_REGION="eu-west-1"
+export K8S_EXP_ENVIRONMENT="production"
+export K8S_EXP_CLUSTER_NAME="eks-${K8S_EXP_ENVIRONMENT}"
+my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
+sed "s/\${K8S_EXP_CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" cluster.tmpl.yaml > cluster1.yaml
+sed "s/\${K8S_EXP_REGION}/${K8S_EXP_REGION}/" cluster1.yaml > cluster2.yaml
+sed "s/\${K8S_EXP_ENVIRONMENT}/${K8S_EXP_ENVIRONMENT}/" cluster2.yaml > cluster3.yaml
+sed "s'\${my_ip}'${my_ip}/32'" cluster3.yaml > cluster.yaml
+rm cluster1.yaml cluster2.yaml cluster3.yaml
+time eksctl create cluster -f cluster.yaml
+\end{lstlisting}
+
+All these commands were scripted and thanks to the automation, they can be invoked just by running:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ ./tasks _create
+\end{lstlisting}
+This command creates a configuration file for a particular environment and then it deploys a Kubernetes cluster. The whole \textit{cluster.tmpl.yaml} file is presented below:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-testing
+  region: eu-west-1
+  version: "1.16"
+  tags:
+    deployment: eks-testing
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+
+nodeGroups:
+  - name: ng-1
+    labels: { role: worker, cluster: eks-testing }
+    instanceType: t2.nano
+    desiredCapacity: 1
+    ssh:
+      allow: true
+
+\end{lstlisting}
+
+Thanks to \textit{metadata.tags} set in the YAML file, the AWS resources were labeled with a custom tag: \textit{deployment: eks-testing} or \textit{deployment: eks-production} (depending on the environment). Below there are images of a CloudFormation and EKS resource with tags, viewed on AWS Management Console.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-on-aws-mc-tags.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{AWS EKS resource with tags set, viewed on AWS Management Console}}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-cf-tags.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{AWS CloudFormation resource with tags set, viewed on AWS Management Console}}
+\end{figure}
+
+\subsubsection{Creating the cluster}
+There was one command used to generate cluster configuration (described in the previous section) and to deploy the cluster. The nice thing from the end user point of view was, that this command did not return (meaning: it waited) for the cluster to be ready. First, the control plane was deployed, then the worker nodes. For each of these two tasks (deploying control plane and deploying worker nodes) a separate CloudFormation stack was used. It was done automatically by AWS EKS. The image below presents such two stacks.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-cf-stacks.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+It was also possible to view the AWS resources which were provided by each CloudFormation stack. It is illustrated below.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-cf-resources.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+The control plane is entirely managed by AWS and it is run across three AWS availability zones in order to ensure high availability. The end user has even no access to the control plane, meaning: there is no EC2 instance with master node visible and when listing all Kubernetes nodes, only the worker nodes are visible.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-on-aws-node.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes\cite{eks-blog-part1}\cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ eksctl update cluster
+\end{lstlisting}
+
+Enabling the Central Logging was very easy. All what was needed was adding the following code to the configuration YAML file:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+\end{lstlisting}
+
+In result, an AWS LogGroup was created and all the log messages from Kubernetes components were directed onto the LogGroup.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-cw.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=16cm]{figures/eks-cw-apiserver.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}}
+\end{figure}
+
+An example log message looked like this and it was in JSON format:
+
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+2020-06-04T20:00:36.463+02:00
+{
+    "kind": "Event",
+    "apiVersion": "audit.k8s.io/v1",
+    "level": "Metadata",
+    "auditID": "454b8586-2d17-4a53-9eb5-1e7422aabd21",
+    "stage": "ResponseComplete",
+    "requestURI": "/api?timeout=32s",
+    "verb": "get",
+    "user": {
+        "username": "system:serviceaccount:kube-system:resourcequota-controller",
+        "uid": "b7f3c725-196f-4b25-94e4-8f75614d3a04",
+        "groups": [
+            "system:serviceaccounts",
+            "system:serviceaccounts:kube-system",
+            "system:authenticated"
+        ]
+    },
+    "sourceIPs": [
+        "10.0.162.1"
+    ],
+    "userAgent": "kube-controller-manager/v1.16.8 (linux/amd64) kubernetes/e163110/system:serviceaccount:kube-system:resourcequota-controller",
+    "responseStatus": {
+        "metadata": {},
+        "code": 200
+    },
+    "requestReceivedTimestamp": "2020-06-04T18:00:36.279592Z",
+    "stageTimestamp": "2020-06-04T18:00:36.279722Z",
+    "annotations": {
+        "authorization.k8s.io/decision": "allow",
+        "authorization.k8s.io/reason": "RBAC: allowed by ClusterRoleBinding \"system:discovery\" of ClusterRole \"system:discovery\" to Group \"system:authenticated\""
+    }
+}
+\end{lstlisting}
+
+todo: kubectl get -n kube-system pods
+
+\subsubsection{Testing the cluster}
+The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{Testing a cluster}. The command to run tests was:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ ./tasks _test
+\end{lstlisting}
+
+
+
+```
+[ℹ]  waiting for at least 1 node(s) to become ready in "ng-1"
+
+^C
+dojo@88999332cb7d(k8s-aws-dojo):/dojo/work/eks$ eksctl update cluster -f cluster.yaml
+[ℹ]  eksctl version 0.20.0
+[ℹ]  using region eu-west-1
+[!]  NOTE: config file is used for finding cluster name and region
+[!]  NOTE: cluster VPC (subnets, routing & NAT Gateway) configuration changes are not yet implemented
+[ℹ]  re-building cluster stack "eksctl-eks-testing-cluster"
+[✔]  all resources in cluster stack "eksctl-eks-testing-cluster" are up-to-date
+[ℹ]  checking security group configuration for all nodegroups
+[ℹ]  all nodegroups have up-to-date configuration
+dojo@88999332cb7d(k8s-aws-dojo):/dojo/work/eks$ kubectl get nodes
+No resources found in default namespace.
+```
+
+%%
 
 troubleshooting k8s -mastering k8s p. 58 cite{k8s-deb}
 * what happens if we manually delete a iptables rule? kube-proxy will put it back after 10 to 30s - https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned
