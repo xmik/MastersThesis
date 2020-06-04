@@ -1,20 +1,38 @@
 #!/bin/bash
 
+set -e
+
+export K8S_EXP_REGION="eu-west-1"
+
+if [[ "${K8S_EXP_ENVIRONMENT}" != "testing" ]] && [[ "${K8S_EXP_ENVIRONMENT}" != "production" ]]; then
+  echo "Error: K8S_EXP_ENVIRONMENT should be set to testing or production"
+  exit 1
+fi
+
+export K8S_EXP_CLUSTER_NAME="eks-${K8S_EXP_ENVIRONMENT}"
+
 command="$1"
 case "${command}" in
     _create)
     # ssh key? vpc? ip public?
         set -x
-        eksctl create cluster -f cluster.yaml --version=1.16.8 --node-ami-family=Ubuntu1804
+        my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
+        sed "s/\${K8S_EXP_CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" cluster.tmpl.yaml > cluster1.yaml
+        sed "s/\${K8S_EXP_REGION}/${K8S_EXP_REGION}/" cluster1.yaml > cluster2.yaml
+        sed "s/\${K8S_EXP_ENVIRONMENT}/${K8S_EXP_ENVIRONMENT}/" cluster2.yaml > cluster3.yaml
+        sed "s'\${my_ip}'${my_ip}/32'" cluster3.yaml > cluster.yaml
+        rm cluster1.yaml cluster2.yaml cluster3.yaml
+        time eksctl create cluster -f cluster.yaml
         ;;
     _test)
         set -x
-        kubectl version --short
-        kubectl get nodes
+        cd ../tests
+        time bats tests.bats
+        cd ../eks
         ;;
     _delete)
         set -x
-        eksctl delete cluster -f cluster.yaml --wait
+        time eksctl delete cluster -f cluster.yaml --wait
         ;;
     *)
         echo "Invalid command: '${command}'"

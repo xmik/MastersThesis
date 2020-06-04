@@ -19,7 +19,12 @@
   # this is printed on test failure only
   echo "# test cmd output: $output"
   [[ "${output}" =~ "Kubernetes master" ]]
-  [[ "${output}" =~ "https://api-testing-k8s-kops-for" ]]
+  [[ "${output}" =~ "https://" ]]
+  # this works for kops cluster only:
+  # [[ "${output}" =~ "https://api-testing-k8s-kops-for" ]]
+  # output for eks:
+  # Kubernetes master is running at https://E1B139B821FFAEF37082A7B64BB951FC.gr7.eu-west-1.eks.amazonaws.com
+  # CoreDNS is running at https://E1B139B821FFAEF37082A7B64BB951FC.gr7.eu-west-1.eks.amazonaws.com/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
   [ "$status" -eq 0 ]
 }
 

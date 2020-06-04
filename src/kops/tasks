@@ -76,9 +76,11 @@ case "${command}" in
         # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         # wait for the deployment to finish
+        date
         while [ 1 ]; do
           kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" && break || sleep 30
         done;
+        date
         # does NOT work!
         # enable monitoring with Kubernetes Dashboard
         # kubectl apply -f k8s-dashboard.yaml
