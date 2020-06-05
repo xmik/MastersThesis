@@ -239,7 +239,7 @@ $ ./tasks _up_remote_config
 
 In result, two YAML configuration files were created: for testing and for production environments. The procedure was semi-automated, it should be easy to change the YAML file.
 
-\subsubsection{Creating the cluster}
+\subsubsection{Creating a cluster}
 \label{kops-creating-the-cluster}
 All the work described in this section, needed to deploy a Kubernetes cluster is fully automated. In the future it may be used in a CI pipeline. This step can be executed with one command:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -374,7 +374,7 @@ error: unable to recognize "https://raw.githubusercontent.com/kubernetes/kops/ma
 
 A very similar problem can be found among issues on github\cite{online-kops-dashboard-issue}. But, a newer version (2.0.1) of Kubernetes dashboard resources were found, thanks to a Github Pull Request\cite{online-kops-dashboard-issue-pr}. Deploying them resulted in two pods with status: Running.
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-$ $ kubectl get -n kubernetes-dashboard pod
+$ kubectl get -n kubernetes-dashboard pod
 NAME                                        READY   STATUS    RESTARTS   AGE
 dashboard-metrics-scraper-c79c65bb7-cvd9r   1/1     Running   0          85s
 kubernetes-dashboard-6f89967466-st5kw       1/1     Running   0          85s
@@ -637,7 +637,7 @@ kube-scheduler-ip-172-20-89-96.eu-west-1.compute.internal             1/1     Ru
 \end{lstlisting}
 
 \subsubsection{Testing a cluster}
-\label{testing-cluster}
+\label{kops-testing}
 All the tests can be invoked with a single command:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ ./kops/tasks _test
@@ -914,7 +914,7 @@ Thanks to \textit{metadata.tags} set in the YAML file, the AWS resources were la
     \caption{AWS CloudFormation resource with tags set, viewed on AWS Management Console}}
 \end{figure}
 
-\subsubsection{Creating the cluster}
+\subsubsection{Creating a cluster}
 There was one command used to generate cluster configuration (described in the previous section) and to deploy the cluster. The nice thing from the end user point of view was, that this command did not return (meaning: it waited) for the cluster to be ready. First, the control plane was deployed, then the worker nodes. For each of these two tasks (deploying control plane and deploying worker nodes) a separate CloudFormation stack was used. It was done automatically by AWS EKS. The image below presents such two stacks.
 
 \begin{figure}[H]
@@ -940,10 +940,16 @@ The control plane is entirely managed by AWS and it is run across three AWS avai
     \caption{TODO}}
 \end{figure}
 
-A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes\cite{eks-blog-part1}\cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. An issue on Github.com was created to acknowledge this problem\cite{eksctl-no-config-update}. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
+A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes\cite{eks-blog-part1}\cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster using all settings from the YAML configuration file. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. An issue on Github.com was created to acknowledge this problem\cite{eksctl-no-config-update}. This cannot be achieved with eksctl, but many settings can be changed with AWS CLI, for example cluster endpoint\cite{eks-cluster-endpoint}. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ eksctl update cluster
 \end{lstlisting}
+And also, some particular settings may be set using \textit{eksctl utils} command. For example\cite{eksctl-net}:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ eksctl utils set-public-access-cidrs --cluster=<cluster> 1.1.1.1/32,2.2.2.0/24
+$ eksctl utils set-public-access-cidrs -f config.yaml
+\end{lstlisting}
+
 
 Enabling the Central Logging was very easy. All what was needed was adding the following code to the configuration YAML file:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -1024,16 +1030,51 @@ When it comes to Central Audit, also no additional steps were taken. The actions
     \caption{TODO}}
 \end{figure}
 
+In order to make the cluster more secure, it was decided to restrict the ssh access and kubectl access. Searching through eksctl configuration, there was no setting which allowed to whitelist the IP addresses which are allowed to ssh login to worker nodes. However, blocking all the ssh access whatsover was available and it was chosen. This piece of code was needed to set that:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+nodeGroups:
+  - name: ng-1
+    privateNetworking: true
+    ssh:
+      allow: false
+\end{lstlisting}
+This means now, that a cluster administrator has only kubectl access to cluster and no ssh access at all (because ssh access to worker nodes is blocked and access to master nodes is not given by design of AWS EKS). It is acknowledged that sometimes, not being able to ssh to the node may make troubleshooting more difficult, but generally system and EKS logs generally contain enough information for diagnosing problems. Usually the solution is to replace the problematic worker node rather than to diagnose and fix it\cite{eks-security}. Since no access to nodes is needed, thus also \textit{privateNetworking} under the \textit{nodeGroups} array was set to \textit{true}.
 
-todo: kubectl get -n kube-system pods
+The second security requirement was to restrict the access to cluster through kubectl. By default, eksctl exposes the Kubernetes API server publicly but not directly from within the VPC subnets. This means that the public endpoint is by default set to true and the private endpoint to false\cite{eksctl-net}. In this work it was decided to apply the following configuration:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+vpc:
+  publicAccessCIDRs:
+    - "<MY_PUBLIC_IP>/32"
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+\end{lstlisting}
+and also such IAM policies were configured under the \textit{nodeGroups} array:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+nodeGroups:
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+\end{lstlisting}
+There were problems finding a working configuration, but it was finally solved thanks to a blog post\cite{eksctl-net-issue-solution} and thanks to eksctl official documentation\cite{eksctl-net}. The problems are described also in the section \ref{eks-troubleshooting}. The focal setting was \textit{publicAccessCIDRs}. It was set to the this-work-author's IP. Thus, only one IP address should be allowed to communicate with the cluster through kubectl. It was tested that the command kubectl worked from such an IP:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get nodes
+NAME                                            STATUS   ROLES    AGE     VERSION
+ip-192-168-126-229.eu-west-1.compute.internal   Ready    <none>   2m31s   v1.16.8-eks-e16311
+\end{lstlisting}
+and when the same command was run from a different machine, with a different IP, this command reached a timeout. Whenever there is a timeout when reaching an AWS endpoint, it may be caused by a Security Group not allowing such access. Thus, this proved that the kubectl access was restricted and, that security measures were working. Creating the EKS cluster with all the security settings took longer - about 25 minutes. But it was successful.
 
-\subsubsection{Testing the cluster}
-The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{Testing a cluster}. Running all the tests took slightly less than 7 minutes. (It took long to have a working Load Balancer). The command to run tests was:
+
+
+\subsubsection{Testing a cluster}
+The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{kops-testing}. Running all the tests took slightly less than 7 minutes. (It took long to have a working Load Balancer). The command to run tests was:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 eks$ ./tasks _test
 \end{lstlisting}
 
-\subsubsection{Deleting the cluster}
+\subsubsection{Deleting a cluster}
 In order to delete the cluster, one had to type:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 eks$ ./tasks _delete
@@ -1041,13 +1082,14 @@ eks$ ./tasks _delete
 
 This command usually took about 13 minutes. It deleted almost all AWS resources, but not CloudWatch LogGroup. Not deleting the LogGroup may be a good thing, because one may be interested to study the logs after the cluster is long gone. But still, it is good to know, that one has to delete it by themselves.
 
-\subsubsection{Troubleshooting the cluster}
-The greatest problem was how to set some security measures. Setting the following in the YAML configuration file:
+\subsubsection{Troubleshooting a cluster}
+\label{eks-troubleshooting}
 
+The greatest problem was how to set security measures. Setting the following in the YAML configuration file:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 vpc:
   publicAccessCIDRs:
-    - "31.183.242.155/32"
+    - "<MY_PUBLIC_IP>/32"
 \end{lstlisting}
 resulted in timeout on creating such cluster. It took 43 minutes then. The output ended with:
 
@@ -1057,27 +1099,33 @@ resulted in timeout on creating such cluster. It took 43 minutes then. The outpu
 [ℹ]  waiting for at least 1 node(s) to become ready in "ng-1"
 Error: timed out (after 25m0s) waiting for at least 1 nodes to join the cluster and become ready in "ng-1"
 \end{lstlisting}
+This problem was also acknowledged in eksctl Github.com issues\cite{eksctl-net-issue1}\cite{eksctl-net-issue2}.
 
+\subsection{Troubleshooting any Kubernetes cluster}
+\textit{This is a section dedicated to present the ideas of how to troubleshoot any Kubernetes cluster. The ideas were gathered during the empirical work of this study.}
+\\
 
-```
-[ℹ]  waiting for at least 1 node(s) to become ready in "ng-1"
+There are some general guidelines which help to debug the cluster. When a cluster is self-hosted and one is fully responsible for master and worker nodes deployment, then \textbf{one should verify whether any node is still functional}. It means that problems like: corrupt filesystem, kernel deadlock, problems with the Docker Daemon or problems with hardware may occur and should be mitigated. A solution to detect such problems may be: a node problem detector pod\cite{book-mastering-k8s}. One should also run the following commands to check if all the worker nodes are running and if the cluster is generally reachable. But, since this work focuses on deployments on the cloud, then the problems described in this paragraph should be already taken care of.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get nodes
+$ kubectl cluster-info
+\end{lstlisting}
 
-^C
-dojo@88999332cb7d(k8s-aws-dojo):/dojo/work/eks$ eksctl update cluster -f cluster.yaml
-[ℹ]  eksctl version 0.20.0
-[ℹ]  using region eu-west-1
-[!]  NOTE: config file is used for finding cluster name and region
-[!]  NOTE: cluster VPC (subnets, routing & NAT Gateway) configuration changes are not yet implemented
-[ℹ]  re-building cluster stack "eksctl-eks-testing-cluster"
-[✔]  all resources in cluster stack "eksctl-eks-testing-cluster" are up-to-date
-[ℹ]  checking security group configuration for all nodegroups
-[ℹ]  all nodegroups have up-to-date configuration
-dojo@88999332cb7d(k8s-aws-dojo):/dojo/work/eks$ kubectl get nodes
-No resources found in default namespace.
-```
+Another level of troubleshooting is \textbf{debugging the applications deployed on top of the Kubernetes cluster}. Some ideas are discribed on the official Kubernetes documentation website\cite{k8s-deb}. For example, one can get details of a pod with the following commands:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl describe pods ${POD_NAME}
+$ kubectl logs ${POD_NAME}
+\end{lstlisting}
 
-%%
+Even the \textbf{pod status} may provide us with enough information, what steps should be taken next. If a pod is in Pending status, then it could mean that there are not enough resources in the cluster (e.g. the worker nodes use too small EC2 instance types or there are too few worker nodes). A pod may be also in status CrashLoopBackOff which indicates that a container is repeatedly crashing after restarting. There may a problem also that a Docker image for a container cannot be downloaded and a pod may be in state ImagePullBackOff or ErrImagePull\cite{k8s-google-tr}.
 
-troubleshooting k8s -mastering k8s p. 58 cite{k8s-deb}
-* what happens if we manually delete a iptables rule? kube-proxy will put it back after 10 to 30s - https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned
-* https://learnk8s.io/troubleshooting-deployments - must read!!
+It is also always a good idea to \textbf{read log messages} (so access to log messages should be always supplied). The following Kubernetes components log messages may be helpful\cite{k8s-deb-cluster}:
+\begin{itemize}
+\item logs from kube-apiserver - which is responsible for serving the API
+\item logs from kube-scheduler - which is responsible for making scheduling decisions
+\item logs from kube-controller-manager - which manages replication controllers
+\item logs from kubelet - which is responsible for running containers on the node
+\item logs from kube-proxy - which is responsible for service load balancing
+\end{itemize}
+
+To summarize: there are various ways how to debug a Kubernetes cluster or an application deployed on top of it. Still, some problems may be tough to handle. But even then, there are always measures that could be applied to move further into the correct direction. One may ask a question on Stack Overflow or talk to a Kubernetes team on Slack or write on a Kubernetes forum or file a bug on Kubernetes Github.com project website\cite{k8s-deb-ask}.
