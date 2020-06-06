@@ -10,18 +10,20 @@ if [[ "${K8S_EXP_ENVIRONMENT}" != "testing" ]] && [[ "${K8S_EXP_ENVIRONMENT}" !=
 fi
 
 export K8S_EXP_CLUSTER_NAME="eks-${K8S_EXP_ENVIRONMENT}"
+export K8S_EXP_VELERO_S3_BUCKET="k8s-eks-for-masters-thesis.k8s.local"
 
 command="$1"
 case "${command}" in
     _create)
-    # ssh key? vpc? ip public?
-        set -x
         my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
         sed "s/\${K8S_EXP_CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" cluster.tmpl.yaml > cluster1.yaml
         sed "s/\${K8S_EXP_REGION}/${K8S_EXP_REGION}/" cluster1.yaml > cluster2.yaml
         sed "s/\${K8S_EXP_ENVIRONMENT}/${K8S_EXP_ENVIRONMENT}/" cluster2.yaml > cluster3.yaml
         sed "s'\${my_ip}'${my_ip}/32'" cluster3.yaml > cluster.yaml
         rm cluster1.yaml cluster2.yaml cluster3.yaml
+        # print date, so that end user can expect how much longer to wait
+        date
+        set -x
         time eksctl create cluster -f cluster.yaml
         ;;
     _test)
@@ -30,7 +32,31 @@ case "${command}" in
         time bats tests.bats
         cd ../eks
         ;;
+    _install_velero_cli)
+        wget -O /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/v1.4.0/velero-v1.4.0-linux-amd64.tar.gz
+        cd /tmp
+        tar -xvf velero.tar.gz
+        chmod +x velero/velero
+        sudo mv velero/velero /usr/local/bin/velero
+        ;;
+    _enable_velero)
+        if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_VELERO_S3_BUCKET}; then
+          echo "Error: S3 Bucket: ${K8S_EXP_VELERO_S3_BUCKET} does not exist"
+          exit 1
+        fi
+        set -x
+        kubectl create namespace velero
+        helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+        helm install velero --namespace velero -f ${PWD}/../velero/velero-chart-values.yaml \
+          --set configuration.backupStorageLocation.bucket=${K8S_EXP_VELERO_S3_BUCKET} \
+          --set configuration.backupStorageLocation.prefix=${K8S_EXP_ENVIRONMENT} \
+          --set configuration.backupStorageLocation.config.region=${K8S_EXP_REGION} \
+          --set-file credentials.secretContents.cloud=credentials-velero \
+          --wait --atomic vmware-tanzu/velero
+        ;;
     _delete)
+        # print date, so that end user can expect how much longer to wait
+        date
         set -x
         time eksctl delete cluster -f cluster.yaml --wait
         ;;

@@ -35,6 +35,7 @@ nodeGroups:
     privateNetworking: true
     ssh:
       allow: false
+    # https://blog.doit-intl.com/eksctl-stuck-on-waiting-for-nodes-to-join-the-cluster-c3670aa74487
     iam:
       attachPolicyARNs:
         - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy

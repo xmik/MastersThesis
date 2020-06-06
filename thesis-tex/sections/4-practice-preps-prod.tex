@@ -187,6 +187,9 @@ The plan here is to simply \textbf{use AWS CloudWatch service}. It should be eas
 
 To satisfy the Central Monitoring requirement, it is planned to use \textbf{AWS CloudWatch}. Furthermore, a Kubernetes dashboard will be deployed. Thanks to that, it should be easily visible, which pod utilizes what amount of CPU or Memory resources. Kubernetes dashboard was already described in the section: \ref{k8s-other-services}.
 
+There also exist a solution - a program called: Kubernetes Metrics Server. And even though it is a server which provides source of container resource metrics, it should not be used as an accurate source of resource usage metrics. Its main usage is for CPU/Memory based horizontal autoscaling and for automatically adjusting/suggesting resources needed by containers. Thus, it will not be used for Central Monitoring. But one should be aware of its existence\cite{k8s-metrics-server}.
+
+
 \subsubsection{Central Audit}
 
 This requirement will be simply met by utilizing \textbf{the AWS CloudTrail service}. This service should show us, which user is responsible for what changes made to the AWS resources used. Besides, AWS CloudTrail can be also used to detect unusual activity in the AWS accounts\cite{online-ct}.

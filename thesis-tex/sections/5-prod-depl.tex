@@ -393,10 +393,10 @@ When it comes to \textbf{Central Audit} requirement, no manual steps were needed
 
 The next operation is to backup a cluster namespace. Velero was chosen as an application to facilitate backup. In order to install Velero CLI, one can run:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-$ ./kops/tasks _install_velero_cli
+kops$ ./tasks _install_velero_cli
 \end{lstlisting}
 
-The above command installed Velero client. A Velero Server must be also deployed on a Kubernetes cluster. Before it is done, AWS IAM user must be created and proper permissions must be assigned to it. The instructions how to deal with AWS IAM for Velero were available at Github\cite{velero-aws-plugin}. In order to be able to repeat the steps easily, all the instructions were saved to a Bash script as: \textit{src/velero/generate-velero-credentials.sh}. Running it should result in generating two credentials and exporting them as two Bash environment variable: \textit{$VELERO\_ACCESS\_KEY\_ID$} and \textit{$VELERO\_SECRET\_ACCESS\_KEY$}. Then, a file \textit{src/velero/credentials-velero} of such contents was created:
+The above command installed Velero client. A Velero Server must be also deployed on a Kubernetes cluster. Before it is done, AWS IAM user must be created and proper permissions must be assigned to it. The instructions how to deal with AWS IAM for Velero were available at Github\cite{velero-aws-plugin}. In order to be able to repeat the steps easily, all the instructions were saved to a Bash script as: \textit{src/velero/generate-velero-credentials.sh}. Running it should result in generating two credentials and generating a file called \textit{credentials-velero} in the current directory. The file had such contents:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 [default]
 aws_access_key_id=<REPLACE-ME-WITH-SECRET>
@@ -408,11 +408,11 @@ Afterwards, a Velero Server was deployed, using a Helm chart. The following comm
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl create namespace velero
 $ helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
-$ helm install velero --namespace velero -f velero-chart-values.yaml \
---set configuration.backupStorageLocation.bucket=${K8S_EXP_KOPS_S3_BUCKET} \
+$ helm install velero --namespace velero -f ${PWD}/../velero/velero-chart-values.yaml \
+--set configuration.backupStorageLocation.bucket=${K8S_EXP_VELERO_S3_BUCKET} \
 --set configuration.backupStorageLocation.prefix=${K8S_EXP_ENVIRONMENT} \
 --set configuration.backupStorageLocation.config.region=${K8S_EXP_REGION} \
---set-file credentials.secretContents.cloud=${PWD}/../velero/credentials-velero \
+--set-file credentials.secretContents.cloud=credentials-velero \
 --wait --atomic vmware-tanzu/velero
 \end{lstlisting}
 
@@ -420,7 +420,7 @@ Then, a backup location for Velero was configured. It was done with the followin
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ velero backup-location create default \
   --provider aws \
-  --bucket ${K8S_EXP_KOPS_S3_BUCKET} \
+  --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
   --prefix ${K8S_EXP_ENVIRONMENT} \
   --config region=${K8S_EXP_REGION}
 Backup storage location "default" configured successfully.
@@ -428,7 +428,7 @@ Backup storage location "default" configured successfully.
 
 And then, finally, the steps from Velero documentation was followed\cite{velero-examples}. A test application (provided by Velero) was deployed and backuped. The test application was deployed to a Kubernetes namespace: \textit{nginx-example}.   It was verified also that the Kubernetes resources were created.
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-$ kubectl apply -f velero-example.yaml
+$ kubectl apply -f ../velero/velero-example.yaml
 namespace/nginx-example created
 deployment.apps/nginx-deployment created
 service/my-nginx created
@@ -840,6 +840,30 @@ Warning  FailedScheduling  70s (x5 over 6m46s)  default-scheduler  0/2 nodes are
 
 The problem was that the Velero pod was in status: Pending. The Kubernetes documentation on pods troubleshooting suggests, that when a pod is in status: Pending, then there may be not enough resources in the cluster\cite{k8s-deb}. That was the problem in this case. The solution was to use bigger AWS instance types for node: \textit{t2.medium} instead of: \textit{t2.micro}.
 
+Furthermore, it may be helpful to know, that whenever such error occurs, concerning the velero pod:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl get pod -n velero
+NAME                      READY   STATUS             RESTARTS   AGE
+velero-6fffc8dc85-cm4lb   0/1     CrashLoopBackOff   3          107s
+$ kubectl logs -n velero velero-6fffc8dc85-cm4lb
+An error occurred: some backup storage locations are invalid: backup store for location "aws" is invalid: rpc error: code = Unknown desc = AccessDenied: Access Denied
+	status code: 403, request id: 9513047CEEBE2BD3, host id: FjQ4yAzAI1zhyFXRIS67Ww3rSqt2a1fqoeLzYEAdKsRLqx3AmpEzWWloJZXZPx9rKJs9qCH1yHY=
+\end{lstlisting}
+Then, it is due to invalid credentials file. It should be possible to list access keys of AWS IAM user created for velero. This can be tested with the following command:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ aws iam list-access-keys --user-name velero-${K8S_EXP_CLUSTER_NAME}
+{
+    "AccessKeyMetadata": [
+        {
+            "UserName": "velero-kops-testing",
+            "AccessKeyId": "<REPLACE-ME>",
+            "Status": "Active",
+            "CreateDate": "2020-06-03T10:22:46+00:00"
+        }
+    ]
+}
+\end{lstlisting}
+
 A \textbf{problem considering autoscaler deployment} was observed. The Kubernetes resources provided by the official git repository on Github.com had a minor mistake. The autoscaler pod was in error state and it returned the following error:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl describe -n kube-system pod/cluster-autoscaler-8b46dddf5-8xkns
@@ -1066,7 +1090,23 @@ ip-192-168-126-229.eu-west-1.compute.internal   Ready    <none>   2m31s   v1.16.
 \end{lstlisting}
 and when the same command was run from a different machine, with a different IP, this command reached a timeout. Whenever there is a timeout when reaching an AWS endpoint, it may be caused by a Security Group not allowing such access. Thus, this proved that the kubectl access was restricted and, that security measures were working. Creating the EKS cluster with all the security settings took longer - about 25 minutes. But it was successful.
 
-
+In order to meet the production deployment requirement of backup, Velero was used. The identical use case was tested as with the kops cluster. The result was identical, thus, there is no sense in describing it for the second time. Both: backup and restore operations went smoothly. But, one thing must be noted. An S3 bucket was needed as Velero backups destination. Thus, the bucket was created with:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+export K8S_EXP_VELERO_S3_BUCKET="k8s-eks-for-masters-thesis.k8s.local"
+aws s3api create-bucket --bucket ${K8S_EXP_VELERO_S3_BUCKET} --region ${K8S_EXP_REGION} \
+  --create-bucket-configuration LocationConstraint=${K8S_EXP_REGION}
+aws s3api put-bucket-versioning --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
+  --versioning-configuration Status=Enabled
+aws s3api put-bucket-encryption --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
+  --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+\end{lstlisting}
+The backup created by Velero was put in the S3 bucket, which is presented on the illustration below:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=14cm]{figures/eks-backup.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{TODO}
+\end{figure}
 
 \subsubsection{Testing a cluster}
 The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{kops-testing}. Running all the tests took slightly less than 7 minutes. (It took long to have a working Load Balancer). The command to run tests was:
@@ -1083,6 +1123,9 @@ eks$ ./tasks _delete
 This command usually took about 13 minutes. It deleted almost all AWS resources, but not CloudWatch LogGroup. Not deleting the LogGroup may be a good thing, because one may be interested to study the logs after the cluster is long gone. But still, it is good to know, that one has to delete it by themselves.
 
 \subsubsection{Troubleshooting a cluster}
+
+The same issues apply here, considering Velero, as with a cluster created with kops.
+
 \label{eks-troubleshooting}
 
 The greatest problem was how to set security measures. Setting the following in the YAML configuration file:
@@ -1100,6 +1143,16 @@ resulted in timeout on creating such cluster. It took 43 minutes then. The outpu
 Error: timed out (after 25m0s) waiting for at least 1 nodes to join the cluster and become ready in "ng-1"
 \end{lstlisting}
 This problem was also acknowledged in eksctl Github.com issues\cite{eksctl-net-issue1}\cite{eksctl-net-issue2}.
+
+
+velero
+time="2020-06-06T21:14:28Z" level=info msg="All Velero custom resource definitions exist" logSource="pkg/cmd/server/server.go:430"
+time="2020-06-06T21:14:28Z" level=info msg="Checking that all backup storage locations are valid" logSource="pkg/cmd/server/server.go:437"
+An error occurred: some backup storage locations are invalid: backup store for location "aws" is invalid: rpc error: code = Unknown desc = AccessDenied: Access Denied
+	status code: 403, request id: CC9743C5907C62BA, host id: x2q1EH5glcnTS+xUXuz2+dLFBd5r1Apu6qxFu2MLGW7clV7HGqjMmEs4Sugy6TKZyvWmLjjBmts=
+
+$ kubectl logs -n velero velero-6fffc8dc85-2pdh8
+
 
 \subsection{Troubleshooting any Kubernetes cluster}
 \textit{This is a section dedicated to present the ideas of how to troubleshoot any Kubernetes cluster. The ideas were gathered during the empirical work of this study.}
@@ -1128,4 +1181,6 @@ It is also always a good idea to \textbf{read log messages} (so access to log me
 \item logs from kube-proxy - which is responsible for service load balancing
 \end{itemize}
 
-To summarize: there are various ways how to debug a Kubernetes cluster or an application deployed on top of it. Still, some problems may be tough to handle. But even then, there are always measures that could be applied to move further into the correct direction. One may ask a question on Stack Overflow or talk to a Kubernetes team on Slack or write on a Kubernetes forum or file a bug on Kubernetes Github.com project website\cite{k8s-deb-ask}.
+Besides all the troubleshooting ideas presented earlier, one can also visit solutions dedicated entirely to AWS EKS clusters\cite{k8s-eks-tr} or to eksctl\cite{k8s-eksctl-tr}. Still, some problems may be tough to handle. But even then, there are always measures that could be applied to move further into the correct direction. One may \textbf{ask a question} on Stack Overflow or talk to a Kubernetes team on Slack or write on a Kubernetes forum or file a bug on Kubernetes Github.com project website\cite{k8s-deb-ask}.
+
+To summarize: there are various ways how to debug a Kubernetes cluster or an application deployed on top of it. Some steps may be applied to any Kubernetes cluster, other concern only the clusters deployed using a particular method. Nevertheless, if one is in need, they can ask for help or talk with people who are more experienced with Kubernetes.

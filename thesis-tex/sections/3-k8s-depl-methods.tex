@@ -105,6 +105,8 @@ The goal of this method is to have the Kubernetes control plane managed by AWS. 
 
 The control plane being already highly available means that there should be at least two API server nodes and three etcd nodes that run across three Availability Zones within a Region. In addition, AWS EKS is responsible for automatically detecting and replacing unhealthy control plane instances. Furthermore, version upgrades should be provided automatically and applied\cite{what-is-eks}. There exists a \textbf{Service Level Agreement (SLA)} especially concerning AWS EKS. It is a policy which governs the use of the Amazon Elastic Container Service for Kubernetes. For example, the SLA states what is the Monthly Uptime Percentage during any monthly billing cycle (at least 99.95\%)\cite{eks-sla}. Thanks to such a SLA, AWS EKS is claimed to be \textbf{reliable and recommended for production workloads}\cite{what-is-eks}.
 
+As far as the master components are concerned, they are run in an account managed by AWS. The Kubernetes API is exposed via the Amazon EKS endpoint which is associated with the cluster. Each Amazon EKS cluster control plane runs on its own set of Amazon EC2 instances\cite{eks-clusters}.
+
 Furthermore, AWS EKS also manages the Kubernetes (worker) nodes. The nodes are run in one's AWS account and AWS connects them to the already deployed control plane via the cluster API server endpoint. The worker nodes are grouped in an AWS EC2 Auto Scaling group. The latter fact has some consequences, namely all these nodes have to\cite{eks-worker}:
 \begin{itemize}
 \item use the same Amazon EC2 instance type,

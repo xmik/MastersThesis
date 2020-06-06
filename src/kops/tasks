@@ -10,6 +10,7 @@ export K8S_EXP_REGION="eu-west-1"
 # there will be 1 s3 bucket to keep k8s clusters config, for many clusters
 # (for many environments)
 export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
+export K8S_EXP_VELERO_S3_BUCKET="${K8S_EXP_KOPS_S3_BUCKET}"
 
 if [[ "${K8S_EXP_ENVIRONMENT}" != "testing" ]] && [[ "${K8S_EXP_ENVIRONMENT}" != "production" ]]; then
   echo "Error: K8S_EXP_ENVIRONMENT should be set to testing or production"
@@ -62,18 +63,13 @@ case "${command}" in
         # kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster-ha.tmpl.yaml --format-yaml > cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml
         # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         ;;
-    _install_velero_cli)
-        wget -O /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/v1.4.0/velero-v1.4.0-linux-amd64.tar.gz
-        cd /tmp
-        tar -xvf velero.tar.gz
-        chmod +x velero/velero
-        sudo mv velero/velero /usr/local/bin/velero
-        ;;
     _create)
         # deploy the cluster; --force is needed if "kops create cluster" was not run before
         kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
         kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        # print date, so that end user can expect how much longer to wait
+        date
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         # wait for the deployment to finish
         date
@@ -102,8 +98,30 @@ case "${command}" in
         ;;
     _enable_as)
         set -x
-        sed "s/\${CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" ../as/cluster-autoscaler-autodiscover.tmpl.yaml > ../as/cluster-autoscaler-autodiscover.yaml
-        kubectl apply -f ../as/cluster-autoscaler-autodiscover.yaml
+        sed "s/\${CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" ../as/cluster-autoscaler-autodiscover.tmpl.yaml > cluster-autoscaler-autodiscover.yaml
+        kubectl apply -f cluster-autoscaler-autodiscover.yaml
+        ;;
+    _install_velero_cli)
+        wget -O /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/v1.4.0/velero-v1.4.0-linux-amd64.tar.gz
+        cd /tmp
+        tar -xvf velero.tar.gz
+        chmod +x velero/velero
+        sudo mv velero/velero /usr/local/bin/velero
+        ;;
+    _enable_velero)
+        if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_VELERO_S3_BUCKET}; then
+          echo "Error: S3 Bucket: ${K8S_EXP_VELERO_S3_BUCKET} does not exist"
+          exit 1
+        fi
+        set -x
+        kubectl create namespace velero
+        helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
+        helm install velero --namespace velero -f ${PWD}/../velero/velero-chart-values.yaml \
+          --set configuration.backupStorageLocation.bucket=${K8S_EXP_VELERO_S3_BUCKET} \
+          --set configuration.backupStorageLocation.prefix=${K8S_EXP_ENVIRONMENT} \
+          --set configuration.backupStorageLocation.config.region=${K8S_EXP_REGION} \
+          --set-file credentials.secretContents.cloud=credentials-velero \
+          --wait --atomic vmware-tanzu/velero
         ;;
     _test)
         set -x
@@ -113,6 +131,8 @@ case "${command}" in
         cd ../kops
         ;;
     _delete)
+        # print date, so that end user can expect how much longer to wait
+        date
         set -x
         kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         aws logs delete-log-group --log-group-name k8s-kops-${K8S_EXP_ENVIRONMENT}
