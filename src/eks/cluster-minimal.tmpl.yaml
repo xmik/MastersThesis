@@ -1,0 +1,17 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: ${K8S_EXP_CLUSTER_NAME}
+  region: ${K8S_EXP_REGION}
+  version: "1.16"
+  tags:
+    deployment: eks-${K8S_EXP_ENVIRONMENT}
+
+nodeGroups:
+  - name: ng-1
+    labels: { role: worker, cluster: ${K8S_EXP_CLUSTER_NAME} }
+    instanceType: t2.small
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1

@@ -1,0 +1,17 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: eks-testing
+  region: eu-west-1
+  version: "1.16"
+  tags:
+    deployment: eks-testing
+
+nodeGroups:
+  - name: ng-1
+    labels: { role: worker, cluster: eks-testing }
+    instanceType: t2.small
+    desiredCapacity: 1
+    minSize: 1
+    maxSize: 1
