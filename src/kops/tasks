@@ -39,8 +39,8 @@ case "${command}" in
         fi
         set -x
         # backup the old config
-        if [[ -f cluster.tmpl.yaml ]]; then
-          mv cluster.tmpl.yaml cluster-old.tmpl.yaml
+        if [[ -f cluster.kops-tmpl.yaml ]]; then
+          mv cluster.kops-tmpl.yaml cluster-old.kops-tmpl.yaml
         fi
         # generate a cluster configuration
         my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
@@ -51,16 +51,16 @@ case "${command}" in
         --ssh-access=${my_ip}/32 \
         ${K8S_EXP_CLUSTER_NAME}
         # export the configuration to a YAML file
-        kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.tmpl.yaml
-        echo "Generated config to cluster.tmpl.yaml. You can now edit it to set kubernetesApiAccess, cloudLabels and additionalPolicies"
+        kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.kops-tmpl.yaml
+        echo "Generated config to cluster.kops-tmpl.yaml. You can now edit it to set kubernetesApiAccess, cloudLabels and additionalPolicies"
         # now run the task: _up_remote_config
         ;;
     _up_remote_config)
         # this task updates the running cluster
-        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster.tmpl.yaml --format-yaml > cluster-${K8S_EXP_ENVIRONMENT}.yaml
+        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster.kops-tmpl.yaml --format-yaml > cluster-${K8S_EXP_ENVIRONMENT}.yaml
         kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         # for HA mode:
-        # kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster-ha.tmpl.yaml --format-yaml > cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml
+        # kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster-ha.kops-tmpl.yaml --format-yaml > cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml
         # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
         ;;
     _create)
@@ -142,3 +142,5 @@ case "${command}" in
         exit 1
         ;;
 esac
+
+# TODO: delete - delete velero users and s3 buckets; and users keys? aws iam delete-user --user-name Bob

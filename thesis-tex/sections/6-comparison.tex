@@ -1,24 +1,155 @@
 \section{Comparison of the used methods}
 \textit{In this chapter, several comparison criteria will be used in order to compare the two chosen methods of a Kubernetes cluster deployment. The chapter will end with a summary deciding which method was better in relation to which comparison criterion.}
 
+Even though the two methods: using kops and using eksctl help to deploy a Kubernetes cluster, they have some differences. For example: kops works for many clouds (e.g. AWS, GCP), eksctl supports only AWS EKS. Another difference is that the default AMI used by kops is Debian, while - by eksctl: it uses Amazon Linux 2. These differences can be read in the official documentation. Further in this chapter, a comparison between those two methods is provided. This comparison is based on the previous chapter.
+
+\subsection{Production requirements which could not be satisfied}
+
+There were 9 production environment requirements which were supposed to be met by both tested methods. They were met for each of the methods. This means that they both can be applied in production use cases. The table below assesses how easy it was to satisfy each of the requirements for each method.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{1\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X |}
+ \hline
+  \textbf{Requirement} & \textbf{Using kops method} & \textbf{Using eksctl method} \\
+ \hline
+ A healthy cluster  & \multicolumn{2}{c|}{The same approach was used, Bats-core was chosen as a test framework} \\
+ \hline
+ Automated operations  & \multicolumn{2}{c|}{The same approach was used, a Bash file \textit{tasks} was used } \\
+ \hline
+ Central Monitoring & \multicolumn{2}{c|}{It was provided by AWS upfront, thanks to CloudWatch } \\
+ \hline
+ Central Logging  & Two helm charts were deployed & It was easy to configure with YAML \\
+ \hline
+ Central Audit  & \multicolumn{2}{c|}{It was provided by AWS upfront, thanks to CloudTrail } \\
+ \hline
+ Backup  & \multicolumn{2}{c|}{The same approach was chosen, Velero was used with an S3 bucket } \\
+ \hline
+ High Availability & It was easy to configure either with YAML or CLI & It was provided by AWS EKS upfront \\
+ \hline
+ Autoscaling  & \multicolumn{2}{c|}{The same approach was chosen, ClusterAutoscaler was deployed } \\
+ \hline
+ Security  & It was easy to set in YAML & Finding a working YAML configuration was more demanding \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:comparison-prod-req}A comparison of how each production requirement was satisfied using the two methods: kops and eksctl}
+\end{table}
+
+Many requirements were handled in the same way for both methods. Subjectively, the hardest requirement to meet was: security, using eksctl. There was a problem with finding a working YAML configuration, where the cluster was healthy. \textbf{Eksctl provides a more automated approach}. For example: the AWS CloudWatch LogGroup, needed for Central logging, was automatically created when using eksctl, but not when using kops. Also, eksctl provides the cluster which is already Highly Available.
+
+On the other hand, \textbf{kops provides more flexibility}. One can SSH into the master node with kops and not with eksctl. With kops, one can see all the kube-system namespaced pods, which is not the case with eksctl. With eksctl one cannot set any parameters of the control plane components (to the best of the author's knowledge), with kops it is possible.
+
+\subsection{Time}
+The first criterion used to compare the two deployment methods was: time. The time of several operations concerning Kubernetes cluster management was measured. Each of the operation was performed several times and the mean value was used. It is presented in the table below.
+
+\begin{table}[H]
+\small
+\begin{tabularx}{1\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X |}
+ \hline
+  \textbf{Operation} & \textbf{Using kops method} & \textbf{Using eksctl method} \\
+ \hline
+ Create a minimal cluster  & TODO & 20 min \\
+ \hline
+ Create a production-grade cluster  & TODO & 25 min \\
+ \hline
+ Test a cluster  & TODO & 6 min 40 s \\
+ \hline
+ Delete a cluster  & TODO & 13 min 25 s \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:comparison-time}A comparison of time needed to run several Kubernetes management operations using kops and eksctl}
+\end{table}
+
+The minimal cluster here means such a cluster that is usable for end user and utilizes the default configuration. The production-grade cluster includes the following requirements: HA, central logging and security. The 5 min difference between creating a minimal and production-grade cluster using eksctl was caused by setting the security measures. Testing a cluster involves running the automated tests - verifying that the cluster is healthy. It does not involve testing each of the production deployment requirements.
+
+Below you can see which file was used to test which cluster. The files can be found in the public Git repository TODO. They are also appended at the end of this study TODO.
+\begin{table}[H]
+\small
+\begin{tabularx}{1\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X |}
+ \hline
+  \textbf{Which cluster} & \textbf{Using kops method} & \textbf{Using eksctl method} \\
+ \hline
+ A minimal cluster & src/kops/cluster-minimal.yaml & src/eks/cluster-minimal.yaml \\
+ \hline
+ A production cluster & src/kops/cluster.yaml and central logging deployed & src/eks/cluster-minimal.yaml \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:comparison-which-file}A comparison of how each production requirement was satisfied using the two methods: kops and eksctl}
+\end{table}
+
+
 \subsection{Additional steps needed to create a Kubernetes cluster}
+In order to deploy the clusters, many tools were needed. However, these tools were packaged inside a Docker image. Therefore, the development environment, provided by the Docker image was reliable and easily reproducible. It could be destroyed and recreated any time. But, apart from the development tools, there were also some prerequisites needed to be deployed for the production-grade clusters.
+
+When using kops, one has to use and create an S3 bucket. Kops needs this bucket to store cluster configuration. Contrary to that, AWS EKS does not need any additional AWS Resources created beforehands. However, this work attempted to deploy Kubernetes clusters in a production environment. In order to satisfy the backup requirement, Velero was used. Velero needs some location to store backups. In this work, a S3 bucket was used. Therefore \textbf{an S3 bucket was needed for both deployments}.
+
+To summarize, both methods require the same steps to work in a production environment.
+
+\subsection{Minimal EC2 instance type needed for a Kubernetes worker node}
+Various EC2 instances types cost various amount of money. Thus, it is preferable if one could use the cheapest possible instance type. It was proved, that \textbf{the smallest EC2 instance type, possible to be used in an AWS EKS cluster is \textit{t2.small}}. It was because of the hard limits set by AWS EKS for number of pods allowed for a particular EC2 instance type. \textit{t2.micro} allows for maximally 4 pods\cite{eks-hard-limits}. It was verified by experiment that AWS EKS deployes 4 pods on a worker node. Thus, there is no room left to deploy any application more. \textit{t2.small} allows for 11 pods.
+
+Contrary to the AWS EKS cluster, there are no hardcoded limits for the number of pods when using kops. This method allowed to use smaller instances of type: \textit{t2.micro}. Using even smaller type (\textit{t2.nano}) resulted in the worker node being not accessible. There was no way to connect to the EC2 instance. The type \textit{t2.micro} was also used in some publicly available kops tutorials, thus it was acknowledged that the practice matched the theory.
+
+To summarize, kops worker nodes allow smaller and cheaper EC2 instance types.
+
+
 * kubeconfig automatically edited by both kops and eksctl
-* prerequisites; eksctl - none; kops - s3 bucket;
-* command creating the cluster waited for the cluster to be finished: kops - not; eksctl - ??
+* command creating the cluster waited for the cluster to be finished: kops - not; eksctl - yes
 * can api server flags be changed?
 * kops default img: debian; eksctl - amazon linux 2
 
+* eksctl more magical and hidden config
+* kops harder to configure, yaml generate from cli from s3
+* TODO: how to change running cluster configuration
+* kops validate is nice
+* eksctl some error with vpc dont know what to do; long to create and timeout
+* eks config iam - some in nodegroups, some under iam: ; not obvious what it concerns
+* kops - more control, but also more settings to set
+
+* kops config change https://github.com/kubernetes/kops/blob/master/docs/changing_configuration.md
+
+* eksctl: LogGroup on cloudWatch automatically created, little config, but not deleted on eksctl delete cluster
+
+\subsection{Configuration easiness}
 \subsection{Cost}
+* labels used; show cost explorer on AWS
+* cloudFormation output for eks show, compute it all
+
 
 * kops, s3 bucket for cluster store, versioning and encryption enabled,  The objects are encrypted using server-side encryption with either Amazon S3-managed keys (SSE-S3) or customer master keys (CMKs) stored in AWS Key Management Service (AWS KMS). https://docs.aws.amazon.com/AmazonS3/latest/dev/bucket-encryption.html; "There are no new charges for using default encryption for S3 buckets. Requests to configure the default encryption feature incur standard Amazon S3 request charges. " AES-256 (SSE-S3) https://docs.amazonaws.cn/en_us/AmazonS3/latest/user-guide/default-bucket-encryption.html; s3 data transfer pricing; maybe storage classes
 * ec2 instances
 * load balancer for cluster as api endpoint and for each ing resources (kops) (avoiding LB: consider NodePort instead or also - would it work with curl http://api-endpoint -H 'my-ingress-url'?)
 * vpc costs?
 
+how many resources used for the control plane for kops and for eksctl
+
+* autoscaling from https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned to display the hostname of the current pod in a web page (so that we know if many pods are deployed?); kubectl scale then!
+
+
+% "Service: A Kubernetes Service that identifies a set of Pods using label selectors. Unless mentioned otherwise, Services are assumed to have virtual IPs only routable within the cluster network." thus we use ingress https://kubernetes.io/docs/concepts/services-networking/ingress/ ; "Kubernetes Service with type: LoadBalancer -> Each Service spawns its own ELB, incurring extra cost." https://medium.com/@dmaas/amazon-eks-ingress-guide-8ec2ec940a70
+
+
+how much would it cost to run it for 1 month?
+
+kops documentation - on github, choose a tag; do not use their public website? dont know which version it concerns
+
+
+* what happens if we manually delete a iptables rule? kube-proxy will put it back after 10 to 30s - https://learnk8s.io/blog/kubernetes-chaos-engineering-lessons-learned
+* https://learnk8s.io/troubleshooting-deployments - must read!!
+
 \subsection{Problems count}
 * OS_PASSWORD variable problem with kops
 * t2.nano instance types not working with kops
 
-\subsection{Production requirements which could not be satisfied}
 \subsection{Resources which could not be automated}
 \subsection{Summary}
+* https://medium.com/@Amet13/kops-eks-79a267f58d81
