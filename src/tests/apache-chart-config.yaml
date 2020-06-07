@@ -4,3 +4,11 @@ service:
 ingress:
   enabled: true
   #hostname: my-dummy-hostname.com
+metrics:
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi

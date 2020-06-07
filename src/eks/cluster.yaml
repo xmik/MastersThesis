@@ -8,9 +8,6 @@ metadata:
   tags:
     deployment: eks-testing
 
-# 1. does it really work? https://github.com/aws/containers-roadmap/issues/108#issuecomment-578109867 it didn't
-# 2. can a cluster get created at all? add private net true for vpc or for nodeGroups? https://github.com/aws/containers-roadmap/issues/108#issuecomment-578109867 https://eksctl.io/usage/vpc-networking/#restricting-access-to-the-eks-kubernetes-public-api-endpoint https://github.com/weaveworks/eksctl/issues/1482
-# 3. how to update cluster config? this was done here? https://github.com/aws/containers-roadmap/issues/108#issuecomment-578109867
 vpc:
   publicAccessCIDRs:
     - "31.183.242.155/32"
@@ -30,14 +27,20 @@ cloudWatch:
 nodeGroups:
   - name: ng-1
     labels: { role: worker, cluster: eks-testing }
-    instanceType: t2.nano
+    # https://aws.amazon.com/ec2/instance-types/
+    instanceType: t2.small
     desiredCapacity: 1
+    minSize: 1
+    maxSize: 2
     privateNetworking: true
     ssh:
       allow: false
-    # https://blog.doit-intl.com/eksctl-stuck-on-waiting-for-nodes-to-join-the-cluster-c3670aa74487
+    tags:
+      # EC2 tags required for cluster-autoscaler auto-discovery
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/eks-testing: "owned"
     iam:
-      attachPolicyARNs:
-        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+      withAddonPolicies:
+        autoScaler: true
+        albIngress: true
+        cloudWatch: true

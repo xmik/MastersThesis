@@ -1,24 +1,54 @@
-\section{Deployment of a Kubernetes cluster, using two selected methods}
+\section{Deployment of a Kubernetes cluster, using the two selected methods}
 \textit{This is a practical chapter and it was written together with performing the empirical work and writing the source code. Main steps of Kubernetes cluster deployment will be described. Also, encountered problems will be listed and potential solutions will be presented.}
 \\
+
+\subsection{Setup}
+\textit{Here the setup, common to all the deployments performed in this work, is explained.}
+\\
+
+\subsubsection{Environment variables}
+For each deployment the following environment variables were set:
+\begin{itemize}
+\item \verb|K8S_EXP_REGION| to choose an AWS Region. It was always set to: \textit{eu-west-1}.
+\item \verb|K8S_EXP_ENVIRONMENT| to choose a deployment environment. In this work two such environments were supported: \verb|testing| and \verb|production|.
+\item \verb|K8S_EXP_CLUSTER_NAME| to choose a Kubernetes cluster name. This was combined from the prefix: either \verb|eks-| or \verb|kops-| and with the value of the variable \verb|K8S_EXP_ENVIRONMENT|. Example value: \verb|eks-testing|.
+\end{itemize}
+
+All these environment variables start with the same prefix: \verb|K8S_EXP_|, therefore it is easier to differentiate them from all the other environment variables.
+
+\subsubsection{The source code}
+The source code is publicly available on: TODO (gitlab). It contains the text of this thesis and all the files needed to deploy Kubernetes clusters. The source code is kept as a Git repository and it contains the following directories:
+\begin{itemize}
+\item \verb|figures| contains the images used in this thesis
+\item \verb|presentation| contains the files needed for presentation for the Final Project Seminar subject
+\item \verb|conspect-tex| contains the files needed for drafting the thesis topic, scope and aims
+\item \verb|thesis-tex| contains this thesis text
+\item \verb|src| contains the source code needed to deploy Kubernetes clusters
+\item \verb|src/eks| contains the files needed to deploy a Kubernetes cluster on AWS EKS
+\item \verb|src/kops| contains the files needed to deploy a Kubernetes cluster using kops
+\end{itemize}
+
+In the \verb|src| there is a file called: \textit{Dojofile}. It was used in order to provide a development environment to operate Kubernetes clusters. The file is needed by the program: Dojo, described in the earlier chapter. Another \textit{Dojofile} is kept in the root directory of the source code. It was used to generate a PDF file with this thesis text.
+
+Throughout this work, such a convention was applied, that each command typed into a Bash terminal starts with the dollar sign \$, output from a command is not prepended with any special sign, and whenever there is a word written before the dollar sign - it indicates a current directory which was set when running a command. Whenever a command starts with hash #, it means that it is a text comment. Example is presented below:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+# this is a comment
+kops$ ./this-is-a-command-run-from-kops-directory
+this is output
+\end{lstlisting}
 
 \subsection{Experimental deployments using Kops}
 \textit{In this subsection first experiments of deploying a Kubernetes cluster with Kops on AWS are described.}
 \\
 
-TODO: write about current directory from which commands are run
-TODO: write about common env variables set
-
 \subsubsection{Deployment without prerequisite steps done}
 
 Although the aim of this work is to create a production Kubernetes cluster, it is always welcome, when there is a possibility to start working with a program easily. It is nice to have a simple working proof of concept (POC). Thus, it was decided to start with Kops without performing any prerequisite steps. The following commands were invoked:
-\begin{lstlisting}[basicstyle=\tiny,caption={Commands used to create a cluster with kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
-$ export KOPS_STATE_STORE=s3://dummy-k8s-kops-state-store
-$ export NAME=dummy-k8s-kops.k8s.local
-$ kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
---master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
---zones=eu-west-1a --node-count=1 --node-size=t2.nano \
-${NAME}
+\begin{lstlisting}[basicstyle=\tiny,caption={Command used to create a cluster with kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kops create cluster --state "s3://dummy-k8s-kops-state-store" \
+  --master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
+  --zones=eu-west-1a --node-count=1 --node-size=t2.nano \
+  dummy-k8s-kops.k8s.local
 \end{lstlisting}
 
 
@@ -43,7 +73,7 @@ Further in this chapter, after all the prerequisites will have been met, Kops wi
 
 \subsubsection{Deployment with prerequisite steps done - first working cluster}
 
-First, all the prerequisites were done and they are described here. In order to make things simpler, an AWS user with administrator permissions was used. SSH keypair was already set. Then, it was decided to use the gossip-based DNS. Then, an S3 bucket was created to keep the Kops cluster configuration. Both versioning and server side encryption of the S3 bucket were enabled. Versioning was strongly recommended, because thanks to it, one may revert or recover a previous cluster state store. S3 bucket encryption is not required, but may be needed for compliance reasons\cite{online-kops-aws}. \textbf{Setting the S3 bucket} was done by the following commands:
+First, all the prerequisites were met. In order to make things simpler, an AWS user with administrator permissions was used. SSH keypair was already set. Then, it was decided to use the gossip-based DNS. Then, an S3 bucket was created to keep the Kops cluster configuration. Both versioning and server side encryption of the S3 bucket were enabled. Versioning was strongly recommended, because thanks to it, one may revert or recover a previous cluster state store. S3 bucket encryption is not required, but may be needed for compliance reasons\cite{online-kops-aws}. \textbf{Setting the S3 bucket} was done by the following commands:
 \begin{lstlisting}[basicstyle=\tiny,caption={Commands used to set an AWS S3 bucket for Kops},captionpos=b,language=Bash,xleftmargin=1cm]
 $ export K8S_EXP_REGION="eu-west-1"
 $ export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
@@ -62,7 +92,6 @@ Then, \textbf{the command below was used to make Kops create the cluster configu
 $ kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
 --master-zones=eu-west-1a --master-count=1 --master-size=t2.nano \
 --zones=eu-west-1a --node-count=1 --node-size=t2.nano ${K8S_EXP_CLUSTER_NAME}
-
 error building tasks: error remapping manifest addons/kops-controller.addons.k8s.io/k8s-1.16.yaml: \
 error parsing yaml: error converting YAML to JSON: yaml: line 56: did not find expected alphabetic or numeric character
 \end{lstlisting}
@@ -141,7 +170,7 @@ metadata:
 
 nodeGroups:
   - name: ng-1
-    labels: { role: worker, cluster: cluster-eks }
+    labels: { role: worker, cluster: eks-testing }
     instanceType: t2.nano
     desiredCapacity: 1
     ssh:
@@ -156,7 +185,7 @@ NAME                                           STATUS   ROLES    AGE     VERSION
 ip-192-168-13-139.eu-west-1.compute.internal   Ready    <none>   7m18s   v1.16.8-eks-e16311
 \end{lstlisting}
 
-This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. Besides, it was also easy to set up the YAML configuration file, basing on the eksctl documentation\cite{eksctl-creating-clusters}.
+This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. Besides, it was also easy to set up the YAML configuration file, basing on the eksctl documentation\cite{eksctl-creating-clusters}. However, later it was discovered, that even though all the tests worked using the \textit{t2.nano} worker instance, they should not have worked. They worked, because one pod from the kube-system namespace was not deployed, because there was too little resources for it. Thus, there were just 3 pods running on the worker node and thus, there was a place to deploy the test pod.
 
 
 \textbf{The cluster was then deleted} with the following command:
@@ -187,17 +216,37 @@ ${K8S_EXP_CLUSTER_NAME}
 \end{lstlisting}
 
 The following options were set:
-\begin{itemize}
-\item \textit{$--state="s3://\${K8S\_EXP\_KOPS\_S3\_BUCKET}"$} to set a S3 bucket name
-\item \textit{--kubernetes-version=1.16.9} to choose a particular Kubernetes version
-\item \textit{--master-zones="eu-west-1a,eu-west-1b,eu-west-1c"} to choose AZs for master instances (to ensure HA)
-\item \textit{--master-count=3} to deploy 3 master nodes
-\item \textit{--master-size=t2.micro} to choose EC2 instance type for master nodes
-\item \textit{--zones="eu-west-1a"} to choose AZs for node instances
-\item \textit{--node-count=1} to deploy 1 worker node
-\item \textit{--node-size=t2.micro} to choose EC2 instance type for worker nodes
-\item \textit{--ssh-access=\${my\_ip}/32} to apply more security
-\end{itemize}
+
+\begin{table}[H]
+\small
+\begin{tabularx}{1\textwidth} {
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | }
+ \hline
+  \textbf{Option} & \textbf{Descripton}  \\
+ \hline
+ -{}-state="s3://\$\{K8S\_EXP\_KOPS\_S3\_BUCKET\}"  & set a S3 bucket name \\
+ \hline
+ -{}-kubernetes-version=1.16.9  & choose a particular Kubernetes version \\
+ \hline
+ -{}-master-zones="eu-west-1a,eu-west-1b,eu-west-1c"  & choose AZs for master instances (to ensure HA) \\
+ \hline
+ -{}-master-count=3  & deploy 3 master nodes \\
+ \hline
+ -{}-master-size=t2.micro  & choose EC2 instance type for master nodes \\
+ \hline
+ -{}-zones="eu-west-1a"  & choose AZs for node instances \\
+ \hline
+ -{}-node-count=1  & deploy 1 worker node \\
+ \hline
+ -{}-node-size=t2.micro  & choose EC2 instance type for worker nodes \\
+ \hline
+ -{}-ssh-access=\$\{my\_ip\}/32  & apply more security \\
+ \hline
+\end{tabularx}
+\caption{\label{tab:kops-production-options}Options set to kops when creating a Kubernetes cluster}
+\end{table}
+
 
 Then, the configuration was exported to local filesystem, as a configuration template:
 \begin{lstlisting}[basicstyle=\tiny,caption={Command used export kops configuration from S3 to a local file},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -243,7 +292,7 @@ In result, two YAML configuration files were created: for testing and for produc
 \label{kops-creating-the-cluster}
 All the work described in this section, needed to deploy a Kubernetes cluster is fully automated. In the future it may be used in a CI pipeline. This step can be executed with one command:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-$ ./kops/tasks _create
+kops$ ./kops/tasks _create
 \end{lstlisting}
 
 The rest of this section describes what this one command provides. This command provides several things. First, it updates the cluster configuration in S3 bucket, based on the local YAML configuration file. Then, it creates AWS resources needed for Kubernetes cluster (EC2 instances, VPC, etc.). Then, it was decided that this command should return only after the Kubernetes cluster is ready. Thus, a simple Bash loop was implemented, which verifies if a cluster is ready, every 1 second. The code for these commands is presented below:
@@ -760,6 +809,7 @@ Several helpful scripts were created and used for the tests. All the needed file
 \subsubsection{Deleting a cluster}
 
 \subsubsection{Troubleshooting}
+\label{kops-troubleshooting}
 
 \textbf{The first problem} was, that the command responsible for creating a cluster did not wait until the cluster was ready. It returned as soon as the AWS resources were scheduled for creation. This was a problem, because if one wanted to create, test and then delete a Kubernetes cluster in a CI pipeline, then the tests would never work. And the pipeline would always fail. The solution for this problem was already described in the section \ref{kops-creating-the-cluster}.
 
@@ -1081,15 +1131,6 @@ vpc:
     publicAccess: true
     privateAccess: true
 \end{lstlisting}
-and also such IAM policies were configured under the \textit{nodeGroups} array:
-\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-nodeGroups:
-    iam:
-      attachPolicyARNs:
-        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
-        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
-        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
-\end{lstlisting}
 There were problems finding a working configuration, but it was finally solved thanks to a blog post\cite{eksctl-net-issue-solution} and thanks to eksctl official documentation\cite{eksctl-net}. The problems are described also in the section \ref{eks-troubleshooting}. The focal setting was \textit{publicAccessCIDRs}. It was set to the this-work-author's IP. Thus, only one IP address should be allowed to communicate with the cluster through kubectl. It was tested that the command kubectl worked from such an IP:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl get nodes
@@ -1100,12 +1141,12 @@ and when the same command was run from a different machine, with a different IP,
 
 In order to meet the production deployment requirement of backup, Velero was used. The identical use case was tested as with the kops cluster. The result was identical, thus, there is no sense in describing it for the second time. Both: backup and restore operations went smoothly. But, one thing must be noted. An S3 bucket was needed as Velero backups destination. Thus, the bucket was created with:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
-export K8S_EXP_VELERO_S3_BUCKET="k8s-eks-for-masters-thesis.k8s.local"
-aws s3api create-bucket --bucket ${K8S_EXP_VELERO_S3_BUCKET} --region ${K8S_EXP_REGION} \
+$ export K8S_EXP_VELERO_S3_BUCKET="k8s-eks-for-masters-thesis.k8s.local"
+$ aws s3api create-bucket --bucket ${K8S_EXP_VELERO_S3_BUCKET} --region ${K8S_EXP_REGION} \
   --create-bucket-configuration LocationConstraint=${K8S_EXP_REGION}
-aws s3api put-bucket-versioning --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
+$ aws s3api put-bucket-versioning --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
   --versioning-configuration Status=Enabled
-aws s3api put-bucket-encryption --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
+$ aws s3api put-bucket-encryption --bucket ${K8S_EXP_VELERO_S3_BUCKET} \
   --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
 \end{lstlisting}
 The backup created by Velero was put in the S3 bucket, which is presented on the illustration below:
@@ -1115,6 +1156,45 @@ The backup created by Velero was put in the S3 bucket, which is presented on the
     \captionsetup{justification=centering,margin=2cm}
     \caption{TODO}
 \end{figure}
+
+The next step was to deliver the autoscaling requirement. The same Kubernetes resources were used as with the kops method. This part of cluster configuration was needed to be put under the \textit{nodeGroups} YAML array:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+tags:
+  # EC2 tags required for cluster-autoscaler auto-discovery
+  k8s.io/cluster-autoscaler/enabled: "true"
+  k8s.io/cluster-autoscaler/eks-testing: "owned"
+iam:
+  withAddonPolicies:
+    autoScaler: true
+    albIngress: true
+    cloudWatch: true
+\end{lstlisting}
+
+Afterwards, the same procedure as described with kops was used. In result, deploying a test application and scaling its replicas number to 20 resulted in autoscaler adding another EC2 instance - a worker node. All the worker nodes were listed with the following commands:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}"
+[
+    [
+        {
+            "PublicIP": null,
+            "Name": "eks-testing-ng-1-Node",
+            "Status": "running"
+        }
+    ],
+    [
+        {
+            "PublicIP": null,
+            "Name": "eks-testing-ng-1-Node",
+            "Status": "running"
+        }
+    ]
+]
+eks$ kubectl get node
+NAME                                            STATUS   ROLES    AGE   VERSION
+ip-192-168-111-191.eu-west-1.compute.internal   Ready    <none>   67s   v1.16.8-eks-e16311
+ip-192-168-162-84.eu-west-1.compute.internal    Ready    <none>   10m   v1.16.8-eks-e16311
+\end{lstlisting}
+Afterwards, the testing application was uninstalled with helm and after more than 5 minutes, the worker node EC2 instance was automatically removed.
 
 \subsubsection{Testing a cluster}
 The testing procedure was the same as with kops. Different command was invoked (because all the commands to run with eksctl were put into one file), but all the Bats-core tests were the same. Even the same bats files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to kops clusters only. For the details, please refer to \ref{kops-testing}. Running all the tests took slightly less than 7 minutes. (It took long to have a working Load Balancer). The command to run tests was:
@@ -1131,10 +1211,10 @@ eks$ ./tasks _delete
 This command usually took about 13 minutes. It deleted almost all AWS resources, but not CloudWatch LogGroup. Not deleting the LogGroup may be a good thing, because one may be interested to study the logs after the cluster is long gone. But still, it is good to know, that one has to delete it by themselves.
 
 \subsubsection{Troubleshooting a cluster}
+\label{eks-troubleshooting}
 
 The same issues apply here, considering Velero, as with a cluster created with kops.
 
-\label{eks-troubleshooting}
 
 The greatest problem was how to set security measures. Setting the following in the YAML configuration file:
 \begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -1150,17 +1230,83 @@ resulted in timeout on creating such cluster. It took 43 minutes then. The outpu
 [ℹ]  waiting for at least 1 node(s) to become ready in "ng-1"
 Error: timed out (after 25m0s) waiting for at least 1 nodes to join the cluster and become ready in "ng-1"
 \end{lstlisting}
-This problem was also acknowledged in eksctl Github.com issues\cite{eksctl-net-issue1}\cite{eksctl-net-issue2}.
+This problem was also acknowledged in eksctl Github.com issues\cite{eksctl-net-issue1}\cite{eksctl-net-issue2}. Even though the blog post\cite{eksctl-net-issue-solution}, which tremendously helped to find the working solution, suggested setting the following IAM policies to be configured under the \textit{nodeGroups} array, in practice, the IAM policies deemed unneeded. Cluster is working and healthy without them.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+nodeGroups:
+    iam:
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
+\end{lstlisting}
 
+When deploying Cluster Autoscaler, there was a problem. The Cluster Autoscaler pod was in status: Pending. This is the same case as with the Velero Pod, described in \ref{kops-troubleshooting}. In this case there was too little memory. The EC2 instances type which was used initially, were \textit{t2.nano}. It was decided to try \textit{t2.micro} instances type. The problem was debugged with such commands:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ kubectl get -n kube-system pod
+NAME                                  READY   STATUS    RESTARTS   AGE
+aws-node-9sttv                        1/1     Running   0          61m
+cluster-autoscaler-7d7b5564df-r6sqh   0/1     Pending   0          27s
+coredns-8568c98b77-d7txg              0/1     Pending   0          74m
+coredns-8568c98b77-hpmjk              1/1     Running   0          74m
+kube-proxy-4qplq                      1/1     Running   0          61m
+$ kubectl describe -n kube-system pod/cluster-autoscaler-7d7b5564df-r6sqh
+# some output omitted
+Events:
+  Type     Reason            Age                From               Message
+  ----     ------            ----               ----               -------
+  Warning  FailedScheduling  66s (x2 over 66s)  default-scheduler  0/1 nodes are available: 1 Insufficient memory.
+\end{lstlisting}
 
-velero
-time="2020-06-06T21:14:28Z" level=info msg="All Velero custom resource definitions exist" logSource="pkg/cmd/server/server.go:430"
-time="2020-06-06T21:14:28Z" level=info msg="Checking that all backup storage locations are valid" logSource="pkg/cmd/server/server.go:437"
-An error occurred: some backup storage locations are invalid: backup store for location "aws" is invalid: rpc error: code = Unknown desc = AccessDenied: Access Denied
-	status code: 403, request id: CC9743C5907C62BA, host id: x2q1EH5glcnTS+xUXuz2+dLFBd5r1Apu6qxFu2MLGW7clV7HGqjMmEs4Sugy6TKZyvWmLjjBmts=
+Using the \textit{t2.micro} instances type, there was a problem with deploying the test application:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+$ kubectl -n testing describe pod/apache-testing-77594c54fb-fsc5s
+# some output omitted
+Events:
+  Type     Reason            Age                 From               Message
+  ----     ------            ----                ----               -------
+  Warning  FailedScheduling  38s (x10 over 12m)  default-scheduler  0/1 nodes are available: 1 Insufficient pods.
+\end{lstlisting}
 
-$ kubectl logs -n velero velero-6fffc8dc85-2pdh8
+The potential solution, found on Stack Overflow, suggested that \textit{t2.small} is the smallest instance type which is acceptable\cite{eks-instance-problem-so}. It turned out, that this problem was caused by an already described fact, that AWS EKS uses hard limits for number of pods allowed for a particular EC2 instance type\cite{eks-hard-limits}. Thus, even bigger instance was used: \textit{t2.small}. After the bigger instance type was used, all the pods in kube-system namespace were in status: Running.
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ kubectl get pod -n kube-system
+NAME                       READY   STATUS    RESTARTS   AGE
+aws-node-dk457             1/1     Running   0          3m38s
+coredns-8568c98b77-gf5r4   1/1     Running   0          16m
+coredns-8568c98b77-xg7jv   1/1     Running   0          16m
+kube-proxy-hgjml           1/1     Running   0          3m38s
+eks$ kubectl get pod -n testing
+NAME                              READY   STATUS    RESTARTS   AGE
+apache-testing-77594c54fb-nl5b2   1/1     Running   0          117s
+\end{lstlisting}
 
+Once, there was also a problem with deleting the EKS cluster. This was probably, because every time EKS was operated in the following way:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ eksctl create cluster -f cluster.yaml
+eks$ eksctl delete cluster -f cluster.yaml --wait
+\end{lstlisting}
+and this particular time, it was decided to delete a worker nodegroup with the intension to recreate it with different configuration. Therefore, this particular time, the cluster was operated in the following way and resulted in the following output:
+\begin{lstlisting}[basicstyle=\tiny,caption={TODO},captionpos=b,language=Bash,xleftmargin=1cm]
+eks$ eksctl create cluster -f cluster.yaml
+# output omitted
+eks $ eksctl delete nodegroup -f cluster.yaml --approve
+# some output omitted
+[ℹ]  will delete stack "eksctl-eks-testing-nodegroup-ng-1"
+[✔]  deleted 1 nodegroup(s) from cluster "eks-testing"
+eks$ eksctl delete cluster -f cluster.yaml --wait
+# some output omitted
+[ℹ]  2 sequential tasks: { delete nodegroup "ng-1", delete cluster control plane "eks-testing" }
+[ℹ]  will delete stack "eksctl-eks-testing-nodegroup-ng-1"
+[ℹ]  waiting for stack "eksctl-eks-testing-nodegroup-ng-1" to get deleted
+[✖]  unexpected status "DELETE_FAILED" while waiting for CloudFormation stack "eksctl-eks-testing-nodegroup-ng-1"
+[ℹ]  fetching stack events in attempt to troubleshoot the root cause of the failure
+[✖]  AWS::CloudFormation::Stack/eksctl-eks-testing-nodegroup-ng-1: DELETE_FAILED – "The following resource(s) failed to delete: [SG]. "
+[✖]  AWS::EC2::SecurityGroup/SG: DELETE_FAILED – "resource sg-03f9a9928f765ecae has a dependent object (Service: AmazonEC2; Status Code: 400; Error Code: DependencyViolation; Request ID: 682fd971-5ec7-472e-9eee-4d52a44f9455)"
+[ℹ]  1 error(s) occurred while deleting cluster with nodegroup(s)
+[✖]  waiting for CloudFormation stack "eksctl-eks-testing-nodegroup-ng-1": ResourceNotReady: failed waiting for successful resource state
+Error: failed to delete cluster with nodegroup(s)
+\end{lstlisting}
+Fortunately, running the \textit{eksctl delete cluster} again resulted in success.
 
 \subsection{Troubleshooting any Kubernetes cluster}
 \textit{This is a section dedicated to present the ideas of how to troubleshoot any Kubernetes cluster. The ideas were gathered during the empirical work of this study.}

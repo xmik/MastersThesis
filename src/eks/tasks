@@ -32,6 +32,11 @@ case "${command}" in
         time bats tests.bats
         cd ../eks
         ;;
+    _enable_as)
+        set -x
+        sed "s/\${CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" ../as/cluster-autoscaler-autodiscover.tmpl.yaml > cluster-autoscaler-autodiscover.yaml
+        kubectl apply -f cluster-autoscaler-autodiscover.yaml
+        ;;
     _install_velero_cli)
         wget -O /tmp/velero.tar.gz https://github.com/vmware-tanzu/velero/releases/download/v1.4.0/velero-v1.4.0-linux-amd64.tar.gz
         cd /tmp

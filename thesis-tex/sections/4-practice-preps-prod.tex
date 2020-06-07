@@ -165,7 +165,7 @@ $ ./tasks _delete
 
 It is essential to obey the Infrastructure as Code policy, because it facilitates repeating the operations and the whole experiment of a cluster deployment. Although, in this work no CI server is going to be used, it should be easy to use the Bash script in a potential CI pipeline.
 
-Moreover, it should be also possible to \textbf{differentiate between two deployment environments: testing and production}. The testing environment should be very similar to the production environment. But, there may be more tests run in the testing environment and more resources used in the production environment.
+Moreover, it should be also possible to \textbf{differentiate between two deployment environments: testing and production}. The testing environment should be very similar to the production environment. But, there may be more tests run in the testing environment and more resources used in the production environment. Another thing to note is, due to the automation requirement, there should be no need to perform any operations using AWS Management Console, but it is desirable to view any potential dashboards (e.g. with metrics) through a web browser.
 
 It is recommended to set up \textbf{a package manager for reusable deployments} which happen on top of Kubernetes\cite{gruntwork-howto-blog}. In this work Helm will be used and it was already described in the section: \rel{tools}. Applications deployments which happen on top of Kubernetes are already facilitated thanks to many resources available by Kubernetes API, such as: Deployment\cite{k8s-resources-depl} or DaeonSet\cite{k8s-resources-ds}, etc.
 
