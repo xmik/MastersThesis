@@ -96,7 +96,7 @@ case "${command}" in
         #     k8s.io/cluster-autoscaler/testing.k8s-kops-for-masters-thesis.k8s.local: ""
         ;;
     _create)
-        # this task deploys a cluster; 8 41 43
+        # this task deploys a cluster
         template_file="cluster.tmpl.yaml"
         config_file="cluster.yaml"
 
@@ -125,6 +125,7 @@ case "${command}" in
         date
         ;;
     _enable_logging)
+        date
         set -x
         # enable logging to AWS CloudWatch
         # https://awscli.amazonaws.com/v2/documentation/api/latest/reference/logs/create-log-group.html
@@ -132,6 +133,7 @@ case "${command}" in
         helm install "kube2iam" --namespace="default" --wait --atomic --set rbac.create=true stable/kube2iam
         helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com
         helm install "fluentd-cloudwatch" --namespace="default" --wait --atomic --set awsRegion=${K8S_EXP_REGION},rbac.create=true,logGroupName=k8s-kops-${K8S_EXP_ENVIRONMENT} incubator/fluentd-cloudwatch
+        date
         ;;
     _list_instances)
         aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}"
