@@ -2,37 +2,8 @@ apiVersion: kops.k8s.io/v1alpha2
 kind: Cluster
 metadata:
   creationTimestamp: "2020-06-08T07:47:37Z"
-  name: ${K8S_EXP_CLUSTER_NAME}
+  name: kops.k8s.local
 spec:
-  additionalPolicies:
-    master: |
-      [
-        {
-          "Effect": "Allow",
-          "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
-          "Resource": ["*"]
-        }
-      ]
-    node: |
-      [
-        {
-          "Effect": "Allow",
-          "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogGroups", "logs:DescribeLogStreams"],
-          "Resource": ["*"]
-        },
-        {
-          "Effect": "Allow",
-          "Action": [
-            "autoscaling:DescribeAutoScalingGroups",
-            "autoscaling:DescribeAutoScalingInstances",
-            "autoscaling:DescribeLaunchConfigurations",
-            "autoscaling:SetDesiredCapacity",
-            "autoscaling:TerminateInstanceInAutoScalingGroup",
-            "autoscaling:DescribeTags"
-          ],
-          "Resource": "*"
-        }
-      ]
   api:
     loadBalancer:
       type: Public
@@ -40,9 +11,9 @@ spec:
     rbac: {}
   channel: stable
   cloudLabels:
-    deployment: kops-${K8S_EXP_ENVIRONMENT}
+    deployment: kops-testing
   cloudProvider: aws
-  configBase: s3://${K8S_EXP_KOPS_S3_BUCKET}/${K8S_EXP_CLUSTER_NAME}
+  configBase: s3://k8s-kops-for-masters-thesis.k8s.local/kops.k8s.local
   etcdClusters:
   - cpuRequest: 200m
     etcdMembers:
@@ -70,15 +41,15 @@ spec:
   kubelet:
     anonymousAuth: false
   kubernetesApiAccess:
-  - ${my_ip}
+  - 0.0.0.0/0
   kubernetesVersion: 1.16.9
-  masterPublicName: api.${K8S_EXP_CLUSTER_NAME}
+  masterPublicName: api.kops.k8s.local
   networkCIDR: 172.20.0.0/16
   networking:
     kubenet: {}
   nonMasqueradeCIDR: 100.64.0.0/10
   sshAccess:
-  - ${my_ip}
+  - 31.183.242.155/32
   subnets:
   - cidr: 172.20.32.0/19
     name: eu-west-1a
@@ -105,7 +76,7 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: "2020-06-08T07:47:37Z"
   labels:
-    kops.k8s.io/cluster: ${K8S_EXP_CLUSTER_NAME}
+    kops.k8s.io/cluster: kops.k8s.local
   name: master-eu-west-1a
 spec:
   image: kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17
@@ -125,7 +96,7 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: "2020-06-08T07:47:38Z"
   labels:
-    kops.k8s.io/cluster: ${K8S_EXP_CLUSTER_NAME}
+    kops.k8s.io/cluster: kops.k8s.local
   name: master-eu-west-1b
 spec:
   image: kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17
@@ -145,7 +116,7 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: "2020-06-08T07:47:38Z"
   labels:
-    kops.k8s.io/cluster: ${K8S_EXP_CLUSTER_NAME}
+    kops.k8s.io/cluster: kops.k8s.local
   name: master-eu-west-1c
 spec:
   image: kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17
@@ -165,19 +136,15 @@ kind: InstanceGroup
 metadata:
   creationTimestamp: "2020-06-08T07:47:38Z"
   labels:
-    kops.k8s.io/cluster: ${K8S_EXP_CLUSTER_NAME}
+    kops.k8s.io/cluster: kops.k8s.local
   name: nodes
 spec:
   image: kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17
   machineType: t2.micro
-  maxSize: 2
+  maxSize: 1
   minSize: 1
   nodeLabels:
     kops.k8s.io/instancegroup: nodes
-  cloudLabels:
-    service: k8s_node
-    k8s.io/cluster-autoscaler/enabled: ""
-    k8s.io/cluster-autoscaler/testing.k8s-kops-for-masters-thesis.k8s.local: ""
   role: Node
   subnets:
   - eu-west-1a

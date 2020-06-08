@@ -43,7 +43,7 @@ function create_s3_bucket() {
 
 command="$1"
 case "${command}" in
-    _gen_config)
+    _gen_config_minimal)
         # this task generates the minimal configuration
 
         cluster_name="kops.minimal.k8s.local"
@@ -51,29 +51,68 @@ case "${command}" in
         set -x
         # generate a cluster configuration
         kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
-        --cloud=aws --cloud-labels="deployment=kops-${K8S_EXP_ENVIRONMENT}" \
-        --kubernetes-version=1.16.9 \
-        --master-zones="eu-west-1a" --master-count=1 --master-size=t2.micro \
-        --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
-        ${cluster_name}
+          --cloud=aws --cloud-labels="deployment=kops-${K8S_EXP_ENVIRONMENT}" \
+          --kubernetes-version=1.16.9 \
+          --master-zones="eu-west-1a" --master-count=1 --master-size=t2.micro \
+          --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
+          ${cluster_name}
         # export the configuration to a YAML file
         kops get -o yaml --name   ${cluster_name} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster-minimal.kops-tmpl.yaml
-        echo "Generated config to cluster-minimal.kops-tmpl.yaml. You can now edit it to set kubernetesApiAccess, sshAccess and additionalPolicies"
-        # now run the task: _up_remote_config
+        # now create cluster-minimal.tmpl.yaml with the following steps:
+        # * replace string: testing with string: ${K8S_EXP_ENVIRONMENT}
+        # * replace string: kops.minimal.k8s.local with string: ${K8S_EXP_CLUSTER_NAME}
+        # * replace string: k8s-kops-for-masters-thesis.k8s.local with string: ${K8S_EXP_KOPS_S3_BUCKET}
+        ;;
+    _gen_config_full)
+        # this task generates the full configuration
+
+        cluster_name="${K8S_EXP_CLUSTER_NAME}"
+        create_s3_bucket ${K8S_EXP_KOPS_S3_BUCKET} ${K8S_EXP_REGION}
+        set -x
+        # generate a cluster configuration
+        my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
+        kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
+          --cloud=aws --cloud-labels="deployment=kops-${K8S_EXP_ENVIRONMENT}" \
+          --kubernetes-version=1.16.9 \
+          --master-zones="eu-west-1a,eu-west-1b,eu-west-1c" --master-count=3 --master-size=t2.micro \
+          --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
+          --ssh-access=${my_ip}/32 \
+          ${cluster_name}
+        # export the configuration to a YAML file
+        kops get -o yaml --name   ${cluster_name} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.kops-tmpl.yaml
+        # now create cluster.tmpl.yaml with the following steps:
+        # * set kubernetesApiAccess
+        # * replace any ip with ${my_ip}/32 (this should concern sshAccess and kubernetesApiAccess)
+        # * replace string: testing with string: ${K8S_EXP_ENVIRONMENT}
+        # * replace string: kops.minimal.k8s.local with string: ${K8S_EXP_CLUSTER_NAME}
+        # * replace string: k8s-kops-for-masters-thesis.k8s.local with string: ${K8S_EXP_KOPS_S3_BUCKET}
+        # * add additionalPolicies
+        # * set maxSize: 2 (or sth bigger than 1) to allow autoscaling of worker nodes
+        # * also for autoscaling, set cloudLabels for worker nodes
+        # spec:
+        #   cloudLabels:
+        #     service: k8s_node
+        #     k8s.io/cluster-autoscaler/enabled: ""
+        #     k8s.io/cluster-autoscaler/testing.k8s-kops-for-masters-thesis.k8s.local: ""
         ;;
     _create)
-        # this task deploys a cluster; 7 24 14
+        # this task deploys a cluster; 8 41 43
+        template_file="cluster.tmpl.yaml"
+        config_file="cluster.yaml"
 
         my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
-        sed "s/\${K8S_EXP_CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" cluster-minimal.tmpl.yaml > cluster1.yaml
+        sed "s/\${K8S_EXP_CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" ${template_file} > cluster1.yaml
         sed "s/\${K8S_EXP_KOPS_S3_BUCKET}/${K8S_EXP_KOPS_S3_BUCKET}/" cluster1.yaml > cluster2.yaml
         sed "s/\${K8S_EXP_ENVIRONMENT}/${K8S_EXP_ENVIRONMENT}/" cluster2.yaml > cluster3.yaml
-        sed "s'\${my_ip}'${my_ip}/32'" cluster3.yaml > cluster-minimal.yaml
+        sed "s'\${my_ip}'${my_ip}/32'" cluster3.yaml > ${config_file}
         rm cluster1.yaml cluster2.yaml cluster3.yaml
+        echo "Generated ${config_file}"
 
         # deploy the cluster; --force is needed if "kops create cluster" was not run before
+        set -x
         kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
-        kops replace -f cluster-minimal.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        kops replace -f ${config_file} --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        set +x
 
         # print date, so that end user can expect how much longer to wait
         date
