@@ -265,3 +265,9 @@ To summarize: in order to make the cluster more secure, access to the cluster sh
 The cost of running the Kubernetes cluster is expected to be low. The clusters will be run for a short while - just to run some tests and then deleted. This should never be longer than 0.5 hour. Experiments may take longer, around several hours. However, the AWS resources which will be used are cheap and their cost depends on how for long they will exist. All the AWS resources which will be used are: S3 buckets, EC3 instances, VPC subnets, Security Groups, Internet Gateway, EBS volumes (attached to EC2 instances), Autoscaling groups, Keypairs, Load balancers.
 
 The chosen approach was to read about AWS resources pricing and more or less estimate how much a single experiment would cost. Since it was a small number (less than 1 USD), it was decided to use Cost Allocation Tags\cite{amazon-cost-tags}. One custom tag will be set to distinguish a Kubernetes cluster deployment from other AWS resources.
+
+\subsection{Summary}
+
+This chapter was needed to gather all the requirements and to establish acceptance criteria for each of the requirements. Apart from that the AWS Region was set to \textit{eu-west-1} and the Kubernetes version was chosen to be 1.16.9 for kops and 1.16.8 for eksctl. The chapter also attempted to state how many master and worker nodes are needed. There should be 3 master and 2 worker nodes deployed.
+
+Another topic touched in this chapter were the development tools. They were all listed here. It was decided that a Docker image will be used with all the development tools already installed. This solution was chosen, because it was easy to recreate such an environment (such a Docker container) and it helped with automating the deployment.
