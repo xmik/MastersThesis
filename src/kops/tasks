@@ -19,55 +19,62 @@ fi
 
 export K8S_EXP_CLUSTER_NAME="${K8S_EXP_ENVIRONMENT}.${K8S_EXP_KOPS_S3_BUCKET}"
 
+function create_s3_bucket() {
+  local bucket_name=$1
+  local region=$2
+
+  if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${bucket_name} >/dev/null; then
+    echo "S3 Bucket already exists"
+  else
+    echo "Creating S3 Bucket: ${bucket_name}"
+    set -x
+    aws s3api create-bucket --bucket ${bucket_name} --region ${region} --create-bucket-configuration LocationConstraint=${region}
+    # enable s3 bucket versioning.
+    # strongly recommended in: https://aws.amazon.com/blogs/compute/kubernetes-clusters-aws-kops/
+    # https://kops.sigs.k8s.io/getting_started/aws
+    aws s3api put-bucket-versioning --bucket ${bucket_name} --versioning-configuration Status=Enabled
+    # enable s3 default encryption (AES-256, SSE-S3)
+    # https://kops.sigs.k8s.io/getting_started/aws
+    aws s3api put-bucket-encryption --bucket ${bucket_name} --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+    set +x
+    echo "Success"
+  fi
+}
+
 command="$1"
 case "${command}" in
     _gen_config)
-        if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_KOPS_S3_BUCKET}; then
-          echo "S3 Bucket already exists"
-        else
-          echo "Creating S3 Bucket: ${K8S_EXP_KOPS_S3_BUCKET}"
-          set -x
-          aws s3api create-bucket --bucket ${K8S_EXP_KOPS_S3_BUCKET} --region ${K8S_EXP_REGION} --create-bucket-configuration LocationConstraint=${K8S_EXP_REGION}
-          # enable s3 bucket versioning.
-          # strongly recommended in: https://aws.amazon.com/blogs/compute/kubernetes-clusters-aws-kops/
-          # https://kops.sigs.k8s.io/getting_started/aws
-          aws s3api put-bucket-versioning --bucket ${K8S_EXP_KOPS_S3_BUCKET} --versioning-configuration Status=Enabled
-          # enable s3 default encryption (AES-256, SSE-S3)
-          # https://kops.sigs.k8s.io/getting_started/aws
-          aws s3api put-bucket-encryption --bucket ${K8S_EXP_KOPS_S3_BUCKET} --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
-          set +x
-        fi
+        # this task generates the minimal configuration
+
+        cluster_name="kops.minimal.k8s.local"
+        create_s3_bucket ${K8S_EXP_KOPS_S3_BUCKET} ${K8S_EXP_REGION}
         set -x
-        # backup the old config
-        if [[ -f cluster.kops-tmpl.yaml ]]; then
-          mv cluster.kops-tmpl.yaml cluster-old.kops-tmpl.yaml
-        fi
         # generate a cluster configuration
-        my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
         kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
+        --cloud=aws --cloud-labels="deployment=kops-${K8S_EXP_ENVIRONMENT}" \
         --kubernetes-version=1.16.9 \
         --master-zones="eu-west-1a" --master-count=1 --master-size=t2.micro \
         --zones=eu-west-1a --node-count=1 --node-size=t2.micro \
-        --ssh-access=${my_ip}/32 \
-        ${K8S_EXP_CLUSTER_NAME}
+        ${cluster_name}
         # export the configuration to a YAML file
-        kops get -o yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster.kops-tmpl.yaml
-        echo "Generated config to cluster.kops-tmpl.yaml. You can now edit it to set kubernetesApiAccess, cloudLabels and additionalPolicies"
+        kops get -o yaml --name   ${cluster_name} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster-minimal.kops-tmpl.yaml
+        echo "Generated config to cluster-minimal.kops-tmpl.yaml. You can now edit it to set kubernetesApiAccess, sshAccess and additionalPolicies"
         # now run the task: _up_remote_config
         ;;
-    _up_remote_config)
-        # this task updates the running cluster
-        kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster.kops-tmpl.yaml --format-yaml > cluster-${K8S_EXP_ENVIRONMENT}.yaml
-        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
-        # for HA mode:
-        # kops toolbox template --name ${K8S_EXP_CLUSTER_NAME} --set environment=${K8S_EXP_ENVIRONMENT} --template cluster-ha.kops-tmpl.yaml --format-yaml > cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml
-        # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
-        ;;
     _create)
+        # this task deploys a cluster; 7 24 14
+
+        my_ip=$(curl https://ipinfo.io/ip 2>/dev/null)
+        sed "s/\${K8S_EXP_CLUSTER_NAME}/${K8S_EXP_CLUSTER_NAME}/" cluster-minimal.tmpl.yaml > cluster1.yaml
+        sed "s/\${K8S_EXP_KOPS_S3_BUCKET}/${K8S_EXP_KOPS_S3_BUCKET}/" cluster1.yaml > cluster2.yaml
+        sed "s/\${K8S_EXP_ENVIRONMENT}/${K8S_EXP_ENVIRONMENT}/" cluster2.yaml > cluster3.yaml
+        sed "s'\${my_ip}'${my_ip}/32'" cluster3.yaml > cluster-minimal.yaml
+        rm cluster1.yaml cluster2.yaml cluster3.yaml
+
         # deploy the cluster; --force is needed if "kops create cluster" was not run before
         kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
-        kops replace -f cluster-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
-        # kops replace -f cluster-ha-${K8S_EXP_ENVIRONMENT}.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        kops replace -f cluster-minimal.yaml --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+
         # print date, so that end user can expect how much longer to wait
         date
         kops update cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
@@ -77,12 +84,6 @@ case "${command}" in
           kops validate cluster ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" && break || sleep 30
         done;
         date
-        # does NOT work!
-        # enable monitoring with Kubernetes Dashboard
-        # kubectl apply -f k8s-dashboard.yaml
-        #         dashboard_secret=$(kops get secrets kube --type secret -oplaintext --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}")
-        # echo "Kubernetes Dashboard secret is: ${dashboard_secret}"
-      #  aws put-metric-alarm --alarm-name
         ;;
     _enable_logging)
         set -x
@@ -134,13 +135,17 @@ case "${command}" in
         # print date, so that end user can expect how much longer to wait
         date
         set -x
-        kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
+        time kops delete cluster --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --yes
         aws logs delete-log-group --log-group-name k8s-kops-${K8S_EXP_ENVIRONMENT}
+        ;;
+    _clean)
+        # print date, so that end user can expect how much longer to wait
+        date
+        set -x
+        # TODO: delete - delete velero users and s3 buckets; and users keys? aws iam delete-user --user-name Bob
         ;;
     *)
         echo "Invalid command: '${command}'"
         exit 1
         ;;
 esac
-
-# TODO: delete - delete velero users and s3 buckets; and users keys? aws iam delete-user --user-name Bob
