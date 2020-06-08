@@ -20,6 +20,7 @@ For each deployment the following environment variables were set:
 All these environment variables start with the same prefix: \verb|K8S_EXP_|, therefore it is easier to differentiate them from all the other environment variables.
 
 \subsubsection{The source code}
+\label{5-sc}
 The source code is publicly available on: TODO (gitlab). It contains the text of this thesis and all the files needed to deploy Kubernetes clusters. The source code is kept as a Git repository and it contains the following directories:
 \begin{itemize}
 \item \verb|figures| contains the images used in this thesis
@@ -434,7 +435,6 @@ When it comes to monitoring the cluster resources, some metrics are available by
     \centering
     \includegraphics[width=13cm]{figures/k8s-kops-metrics-node2.png}
     \caption{CloudWatch metrics of a worker node, Network input}}
-    \caption{TODO}}
 \end{figure}
 
 When it comes to \textbf{Central Audit} requirement, no manual steps were needed. One can just log into AWS Management Console through a web browser, go to the AWS CloudTrail service and view the events history. Each event can be viewed and in return, information in JSON format is received. A table with events is presented on the picture below.
