@@ -23,22 +23,44 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Configure code listings
-% $ tlmgr install mdframed needspace
+% $ tlmgr install mdframed needspace chngcntr
 
 \usepackage{mdframed}
-\usepackage{listings}
+\usepackage[]{listings}
+\renewcommand*{\lstlistlistingname}{List of Listings}
+% by default the listings are numered as: Listing 1, Listing 2,
+% the command below replaces the "Listing" to an empty string
+\renewcommand{\lstlistingname}{ }
+
+\usepackage{chngcntr}
+
+
 \usepackage{xcolor}
 \DeclareCaptionFont{white}{\color{white}}
+
 \DeclareCaptionFormat{listing}{%
-  \parbox{\textwidth}{\colorbox{gray}{\parbox{\textwidth}{#1#2#3}}\vskip-4pt}}
+  \parbox{\textwidth}{
+    \colorbox{gray}{
+      %\parbox{\textwidth}{\color{white}Listing \arabic{section}.#1#2#3}
+      \parbox{\textwidth}{#1#2#3}
+    }
+    \vskip-4pt
+
+  }
+}
 \captionsetup[lstlisting]{
-  format=listing,labelfont=white,textfont=white,
-  indention=100pt}
+  format=listing,
+  labelfont=white,
+  textfont=white,
+  indention=100pt,
+  numberbychapter=true
+}
 \lstset{
   basicstyle=\tiny,frame=lrtb,
   xleftmargin=1cm,
   %xleftmargin=\fboxsep,xrightmargin=-\fboxsep,
-  captionpos=b
+  captionpos=b,
+  numberbychapter=true
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -62,6 +84,7 @@
 \date{\today}
 
 \begin{document}
+\numberwithin{lstlisting}{section}
 
 \maketitle
 ~\vspace{8cm}
@@ -75,12 +98,14 @@
 % 1
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlisting}{0}
 \input{thesis-tex/sections/1-intro.tex}
 \newpage
 
 % 2
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlistings}{0}
 \section{From microservices to automated orchestration}
 \textit{This chapter serves as an introduction to microservices, DevOps, Docker, Kubernetes and AWS. It is a theoretical chapter. It ends with stipulating the requirements of a production deployment.}
 
@@ -92,30 +117,35 @@
 % 3
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlisting}{0}
 \input{thesis-tex/sections/3-k8s-depl-methods.tex}
 \newpage
 
 % 4
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlisting}{0}
 \input{thesis-tex/sections/4-practice-preps-prod.tex}
 \newpage
 
 % 5
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlisting}{0}
 \input{thesis-tex/sections/5-prod-depl.tex}
 \newpage
 
 % 6
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlisting}{0}
 \input{thesis-tex/sections/6-comparison.tex}
 \newpage
 
 % 7
 \setcounter{figure}{0}
 \setcounter{table}{0}
+\setcounter{lstlisting}{0}
 \input{thesis-tex/sections/7-summary.tex}
 \newpage
 
@@ -123,6 +153,7 @@
 
 \listoffigures
 \listoftables
+\lstlistoflistings
 \printbibliography[sort=ynt]
 
 \end{document}
