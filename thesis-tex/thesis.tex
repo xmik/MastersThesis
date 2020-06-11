@@ -16,7 +16,10 @@
 \usepackage{longtable}
 \usepackage{enumitem}
 \usepackage{caption}
+% set custom numeration of figures to be x.y, where x is section number
 \renewcommand{\thefigure}{\arabic{section}.\arabic{figure}}
+% set custom numeration of tables to be x.y, where x is section number
+\renewcommand{\thetable}{\arabic{section}.\arabic{table}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Configure code listings
@@ -70,10 +73,14 @@
 \newpage
 
 % 1
+\setcounter{figure}{0}
+\setcounter{table}{0}
 \input{thesis-tex/sections/1-intro.tex}
 \newpage
 
 % 2
+\setcounter{figure}{0}
+\setcounter{table}{0}
 \section{From microservices to automated orchestration}
 \textit{This chapter serves as an introduction to microservices, DevOps, Docker, Kubernetes and AWS. It is a theoretical chapter. It ends with stipulating the requirements of a production deployment.}
 
@@ -84,26 +91,31 @@
 
 % 3
 \setcounter{figure}{0}
+\setcounter{table}{0}
 \input{thesis-tex/sections/3-k8s-depl-methods.tex}
 \newpage
 
 % 4
 \setcounter{figure}{0}
+\setcounter{table}{0}
 \input{thesis-tex/sections/4-practice-preps-prod.tex}
 \newpage
 
 % 5
 \setcounter{figure}{0}
+\setcounter{table}{0}
 \input{thesis-tex/sections/5-prod-depl.tex}
 \newpage
 
 % 6
 \setcounter{figure}{0}
+\setcounter{table}{0}
 \input{thesis-tex/sections/6-comparison.tex}
 \newpage
 
 % 7
 \setcounter{figure}{0}
+\setcounter{table}{0}
 \input{thesis-tex/sections/7-summary.tex}
 \newpage
 
