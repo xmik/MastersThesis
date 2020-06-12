@@ -57,14 +57,14 @@ $ kops create cluster --state "s3://dummy-k8s-kops-state-store" \
 \end{lstlisting}
 \end{mdframed}
 
-The command \textit{kops create cluster} instructs kops how to create a cluster. The flag \verb|--master-count=1| says that there will be one master node created, \verb|--master-size=t2.nano| sets the EC2 instance type and \verb|--master-zones=eu-west-1a| configures the AZs in which master nodes will be deployed. Similar flags are used to configure worker nodes. The \verb|--state| flag sets which S3 bucket to use.  \textbf{As expected and what is aligned with the Kops documentation\cite{online-kops-aws}, the above commands failed}, because the S3 bucket was not created. The command failed with the following output:
+The command \textit{kops create cluster} instructs kops how to create a cluster. The flag \verb|--master-count=1| says that there will be one master node created, \verb|--master-size=t2.nano| sets the EC2 instance type and \verb|--master-zones=eu-west-1a| configures the AZs in which master nodes will be deployed. Similar flags are used to configure worker nodes. The \verb|--state| flag sets which S3 bucket to use.  \textbf{As expected and what is aligned with the Kops documentation \cite{online-kops-aws}, the above commands failed}, because the S3 bucket was not created. The command failed with the following output:
 \begin{lstlisting}[basicstyle=\tiny,caption={Output of the commands used to create a cluster with Kops, without prerequisite steps performed},captionpos=b,language=Bash,xleftmargin=1cm]
 error reading cluster configuration "dummy-k8s-kops.k8s.local":
 error reading s3://dummy-k8s-kops-state-store/dummy-k8s-kops.k8s.local/config:
 Could not retrieve location for AWS bucket dummy-k8s-kops-state-store
 \end{lstlisting}
 
-The Kops documentation\cite{online-kops-aws} informs that the following goals should be first accomplished, before deploying a Kubernetes cluster:
+The Kops documentation \cite{online-kops-aws} informs that the following goals should be first accomplished, before deploying a Kubernetes cluster:
 \begin{itemize}
 \item AWS CLI tools should be installed
 \item AWS credentials should be set
@@ -78,7 +78,7 @@ Further in this chapter, after all the prerequisites will have been met, Kops wi
 
 \subsubsection{Deployment with prerequisite steps done - first working cluster}
 
-First, all the prerequisites were met. In order to make things simpler, an AWS user with administrator permissions was used. SSH keypair was already set. Then, it was decided to use the gossip-based DNS. Then, an S3 bucket was created to keep the Kops cluster configuration. Both versioning and server side encryption of the S3 bucket were enabled. Versioning was strongly recommended, because thanks to it, one may revert or recover a previous cluster state store. S3 bucket encryption is not required, but may be needed for compliance reasons\cite{online-kops-aws}. \textbf{Setting the S3 bucket} was done by the following commands:
+First, all the prerequisites were met. In order to make things simpler, an AWS user with administrator permissions was used. SSH keypair was already set. Then, it was decided to use the gossip-based DNS. Then, an S3 bucket was created to keep the Kops cluster configuration. Both versioning and server side encryption of the S3 bucket were enabled. Versioning was strongly recommended, because thanks to it, one may revert or recover a previous cluster state store. S3 bucket encryption is not required, but may be needed for compliance reasons \cite{online-kops-aws}. \textbf{Setting the S3 bucket} was done by the following commands:
 \begin{lstlisting}[basicstyle=\tiny,caption={Commands used to set an AWS S3 bucket for Kops},captionpos=b,language=Bash,xleftmargin=1cm]
 $ export K8S_EXP_REGION="eu-west-1"
 $ export K8S_EXP_KOPS_S3_BUCKET="k8s-kops-for-masters-thesis.k8s.local"
@@ -108,7 +108,7 @@ $ kops create cluster --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" \
 $ kops get -o yaml --name   ${cluster_name} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" > cluster-minimal.kops-tmpl.yaml
 \end{lstlisting}
 
-The created file \textit{cluster-minimal.kops-tmpl.yaml} was a Go template\cite{online-kops-ct}. But, in \ref{prep-prod} it was decided to use templates with Bash variables. Therefore the created file was copied as \textit{cluster-minimal.tmpl.yaml} and these steps were taken:
+The created file \textit{cluster-minimal.kops-tmpl.yaml} was a Go template \cite{online-kops-ct}. But, in \ref{prep-prod} it was decided to use templates with Bash variables. Therefore the created file was copied as \textit{cluster-minimal.tmpl.yaml} and these steps were taken:
 \begin{itemize}
 \item replaced string: testing with string: \verb|${K8S_EXP_ENVIRONMENT}|
 \item replaced string: kops.minimal.k8s.local with string: \verb|${K8S_EXP_CLUSTER_NAME}|
@@ -147,7 +147,7 @@ ssh: Could not resolve hostname api.testing.k8s-kops-for-masters-thesis.k8s.loca
 Name does not resolve
 \end{lstlisting}
 
-It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.nano}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources\cite{online-ha-k8s-blog}\cite{online-perfect-k8s-blog}\cite{online-kops-sa}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to kops creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publicly reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
+It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution - bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.nano}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources \cite{online-ha-k8s-blog} \cite{online-perfect-k8s-blog} \cite{online-kops-sa}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to kops creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publicly reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
 
 It is also worth mentioning that the kubeconfig (\textit{~/.kube/config}), a Kubernetes configuration file needed to connect to a cluster, was generated automatically. Another thing to notice is that the command, which deploys a Kubernetes cluster, returned immediately, without waiting for the cluster to be ready. In the next deployments, some waiting mechanism must be applied, so that the cluster creation and verification can be automated. Below, there is a command used to request information about the cluster:
 \begin{lstlisting}[basicstyle=\tiny,caption={Command used to request information about a running Kubernetes cluster}]
@@ -201,7 +201,7 @@ NAME                                           STATUS   ROLES    AGE     VERSION
 ip-192-168-13-139.eu-west-1.compute.internal   Ready    <none>   7m18s   v1.16.8-eks-e16311
 \end{lstlisting}
 
-This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. Besides, it was also easy to set up the YAML configuration file, basing on the eksctl documentation\cite{eksctl-creating-clusters}. However, later it was discovered, that even though all the tests worked using the \textit{t2.nano} worker instance, they should not have worked. They worked, because one pod from the kube-system namespace was not deployed, because there was too little resources for it. Thus, there were just 3 pods running on the worker node and thus, there was a place to deploy the test pod.
+This experiment was successful. \textbf{It was easy to deploy a Kubernetes cluster using eksctl. No prerequisite steps were needed}. Besides, it was also easy to set up the YAML configuration file, basing on the eksctl documentation \cite{eksctl-creating-clusters}. However, later it was discovered, that even though all the tests worked using the \textit{t2.nano} worker instance, they should not have worked. They worked, because one pod from the kube-system namespace was not deployed, because there was too little resources for it. Thus, there were just 3 pods running on the worker node and thus, there was a place to deploy the test pod.
 
 
 \textbf{The cluster was then deleted} with the following command:
@@ -209,7 +209,7 @@ This experiment was successful. \textbf{It was easy to deploy a Kubernetes clust
 $ eksctl delete cluster -f cluster.yaml --wait
 \end{lstlisting}
 
-The \verb|--wait| CLI flag was applied. Without it, a delete operation would have been only requested but not waited for. In some cases it happens that the deletion fails, and, without this flag, the errors would not have been propagated back as the CLI command output. Then, one would be forced to delete the AWS resources manually\cite{eksctl-creating-clusters}.
+The \verb|--wait| CLI flag was applied. Without it, a delete operation would have been only requested but not waited for. In some cases it happens that the deletion fails, and, without this flag, the errors would not have been propagated back as the CLI command output. Then, one would be forced to delete the AWS resources manually \cite{eksctl-creating-clusters}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -218,7 +218,7 @@ The \verb|--wait| CLI flag was applied. Without it, a delete operation would hav
 \\
 
 \subsubsection{Generating the YAML configuration file}
-Commands was used to generate a cluster YAML configuration file. Creating the YAML file is not recommended to be done by hand. Rather, one should first run \textit{kops create cluster} command (which creates a cluster configuration in a S3 bucket state store) and then export the configuration from the state store with: \textit{kops get -o yaml}. There are plans to change it. Using YAML instead of CLI has another advantage: more options can be set\cite{online-kops-manifest} and addons can be deployed\cite{online-kops-addons}.
+Commands was used to generate a cluster YAML configuration file. Creating the YAML file is not recommended to be done by hand. Rather, one should first run \textit{kops create cluster} command (which creates a cluster configuration in a S3 bucket state store) and then export the configuration from the state store with: \textit{kops get -o yaml}. There are plans to change it. Using YAML instead of CLI has another advantage: more options can be set \cite{online-kops-manifest} and addons can be deployed \cite{online-kops-addons}.
 
 The S3 bucket was reused from previous experiments. The cluster YAML configuration file was generated with:
 \begin{lstlisting}[basicstyle=\tiny,caption={Commands used to generate a cluster configuration with kops},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -275,7 +275,7 @@ Afterwards, as in the experimental deployment, that configuration template file 
 \item replaced string: testing with \verb|${K8S_EXP_ENVIRONMENT}|. Now, it is possible to decide on the environment at the moment of cluster deployment.
 \item replaced string: kops.minimal.k8s.local with \verb|${K8S_EXP_CLUSTER_NAME}|.
 \item replaced string: k8s-kops-for-masters-thesis.k8s.local with \verb|${K8S_EXP_KOPS_S3_BUCKET}|.
-\item \textit{cloudLabels} were specified. Now, it is easier to identify which AWS resources belong to this Kubernetes deployment\cite{online-kops-labels}.
+\item \textit{cloudLabels} were specified. Now, it is easier to identify which AWS resources belong to this Kubernetes deployment \cite{online-kops-labels}.
 \item IAM permissions were added, so that Kubernetes logs may go to AWS CloudWatch.
 \end{itemize}
 
@@ -451,7 +451,7 @@ The next operation is to backup a cluster namespace. Velero was chosen as an app
 kops$ ./tasks _install_velero_cli
 \end{lstlisting}
 
-The above command installed Velero client. A Velero Server must be also deployed on a Kubernetes cluster. Before it is done, AWS IAM user must be created and proper permissions must be assigned to it. The instructions how to deal with AWS IAM for Velero were available at Github\cite{velero-aws-plugin}. In order to be able to repeat the steps easily, all the instructions were saved to a Bash script as: \textit{src/velero/generate-velero-credentials.sh}. Running it should result in generating two credentials and generating a file called \textit{credentials-velero} in the current directory. The file had such contents:
+The above command installed Velero client. A Velero Server must be also deployed on a Kubernetes cluster. Before it is done, AWS IAM user must be created and proper permissions must be assigned to it. The instructions how to deal with AWS IAM for Velero were available at Github \cite{velero-aws-plugin}. In order to be able to repeat the steps easily, all the instructions were saved to a Bash script as: \textit{src/velero/generate-velero-credentials.sh}. Running it should result in generating two credentials and generating a file called \textit{credentials-velero} in the current directory. The file had such contents:
 \begin{lstlisting}[basicstyle=\tiny,caption={Contents of AWS credentials file}]
 [default]
 aws_access_key_id=<REPLACE-ME-WITH-SECRET>
@@ -481,7 +481,7 @@ $ velero backup-location create default \
 Backup storage location "default" configured successfully.
 \end{lstlisting}
 
-And then, finally, the steps from Velero documentation was followed\cite{velero-examples}. A test application (provided by Velero) was deployed and backuped. The test application was deployed to a Kubernetes namespace: \textit{nginx-example}.   It was verified also that the Kubernetes resources were created.
+And then, finally, the steps from Velero documentation was followed \cite{velero-examples}. A test application (provided by Velero) was deployed and backuped. The test application was deployed to a Kubernetes namespace: \textit{nginx-example}.   It was verified also that the Kubernetes resources were created.
 \begin{lstlisting}[basicstyle=\tiny,caption={Testing backup operation}]
 $ kubectl apply -f ../velero/velero-example.yaml
 namespace/nginx-example created
@@ -557,7 +557,7 @@ Then, autoscaling was tested. The autoscaler Kubernetes resources were deployed 
 \begin{lstlisting}[basicstyle=\tiny,caption={Bash command to deploy autoscaker}]
 kops$ ./tasks _enable_as
 \end{lstlisting}
-which basically just deployed the resources configured at autoscaler git repository\cite{as-github}. Some modifications were also applied to the cluster YAML configuration, namely: under \textit{additionalPolicies} of node configuration, the following code was added:
+which basically just deployed the resources configured at autoscaler git repository \cite{as-github}. Some modifications were also applied to the cluster YAML configuration, namely: under \textit{additionalPolicies} of node configuration, the following code was added:
 \begin{lstlisting}[basicstyle=\tiny,caption={IAM Policies needed by autoscaler}]
 {
   "Effect": "Allow",
@@ -572,7 +572,7 @@ which basically just deployed the resources configured at autoscaler git reposit
   "Resource": "*"
 }
 \end{lstlisting}
-Also, additional labels for InstanceGroup of worker nodes were set and maximum number of worker nodes were set to 2. This went smoothly thanks to a blog post\cite{as-blog}. The modified configuration is presented below:
+Also, additional labels for InstanceGroup of worker nodes were set and maximum number of worker nodes were set to 2. This went smoothly thanks to a blog post \cite{as-blog}. The modified configuration is presented below:
 \begin{lstlisting}[basicstyle=\tiny,caption={Kops cluster YAML configuration needed for autoscaler}]
 spec:
   cloudLabels:
@@ -712,7 +712,7 @@ $ time bats tests.bats
 $ cd ../kops
 \end{lstlisting}
 
-The \textit{kops validate cluster} command is provided by the kops CLI. It checks that all k8s master and worker nodes are running and have "Ready" status, that all the components are healthy and that all pods in the kube-system namespace are running and healthy\cite{online-kops-valid}. The next command runs the Bats-core tests. They test the version of Kubernetes, number of worker nodes and also they deploy a test Helm chart with Apache Server. All the tests and the deployment (and later deletion) of the Apache Helm chart are automated and intended to be idempotent. Thanks to such a test, it is verified that such a Kubernetes cluster is ready to use for the end users.
+The \textit{kops validate cluster} command is provided by the kops CLI. It checks that all k8s master and worker nodes are running and have "Ready" status, that all the components are healthy and that all pods in the kube-system namespace are running and healthy \cite{online-kops-valid}. The next command runs the Bats-core tests. They test the version of Kubernetes, number of worker nodes and also they deploy a test Helm chart with Apache Server. All the tests and the deployment (and later deletion) of the Apache Helm chart are automated and intended to be idempotent. Thanks to such a test, it is verified that such a Kubernetes cluster is ready to use for the end users.
 
 The test Apache Server serves a very simple website, which all code is just one index.html file with the following contents:
 \begin{lstlisting}[basicstyle=\tiny,caption={Contents of a test application - Apache web server}]
@@ -829,7 +829,7 @@ kops$ ./tasks _delete
 
 \textbf{The first problem} was, that the command responsible for creating a cluster did not wait until the cluster was ready. It returned as soon as the AWS resources were scheduled for creation. This was a problem, because if one wanted to create, test and then delete a Kubernetes cluster in a CI pipeline, then the tests would never work. And the pipeline would always fail. The solution for this problem was already described in the section \ref{kops-creating-the-cluster}.
 
-\textbf{The second problem} was how to configure logging to AWS CloudWatch. The documentation of the Helm chart: kube2iam\cite{kube2iam} provided an example command of how to deploy the chart: \textit{helm install stable/kube2iam --name my-release}. But this resulted in errors, which are presented below, thanks to debugging the kube2iam pod.
+\textbf{The second problem} was how to configure logging to AWS CloudWatch. The documentation of the Helm chart: kube2iam \cite{kube2iam} provided an example command of how to deploy the chart: \textit{helm install stable/kube2iam --name my-release}. But this resulted in errors, which are presented below, thanks to debugging the kube2iam pod.
 \begin{lstlisting}[basicstyle=\tiny,caption={Debugging kube2iam pod},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl get pod
 NAME                       READY   STATUS             RESTARTS   AGE
@@ -846,11 +846,11 @@ These errors went away, when the chart was deployed with additional settings set
 $ kubectl logs fluentd-cloudwatch-xkk58
 2020-06-01 11:03:14 +0000 [warn]: #0 [out_cloudwatch_logs_host_logs] failed to flush the buffer. retry_time=8 next_retry_seconds=2020-06-01 11:05:22 +0000 chunk="5a703b5e45c9592f24399f9b73acaf43" error_class=Aws::CloudWatchLogs::Errors::AccessDeniedException error="User: arn:aws:sts::976184668068:assumed-role/nodes.testing.k8s-kops-for-masters-thesis.k8s.local/i-04a926040234f36d6 is not authorized to perform: logs:DescribeLogGroups on resource: arn:aws:logs:eu-west-1:976184668068:log-group::log-stream:"
 \end{lstlisting}
-This problem was also already dealt with in the section \ref{kops-creating-the-cluster}. The solution was to add IAM permissions in the YAML template configuration file. The solution was inspired by a Tobias Sturm's blog post\cite{kops-logs-cw-tobias} and by the kops documentation\cite{online-kops-iam}.
+This problem was also already dealt with in the section \ref{kops-creating-the-cluster}. The solution was to add IAM permissions in the YAML template configuration file. The solution was inspired by a Tobias Sturm's blog post \cite{kops-logs-cw-tobias} and by the kops documentation\cite{online-kops-iam}.
 
 \textbf{The fourth problem} was with testing the Apache Server. The essential thing to know is that it takes some time (around 5 minutes) for the ELB to be usable by end users and thus the tests may fail in the meantime. The solution was to implement such a command that verifies the Apache Server endpoint many times, but has a maximum number of trials.
 
-There were also \textbf{problems with deploying Velero}. For example, using the example deployment command provided on the Velero Helm Chart page on Github.com vmware-tanzu\cite{velero-helm-chart}, but omitting the aws plugin for Velero resulted in error.
+There were also \textbf{problems with deploying Velero}. For example, using the example deployment command provided on the Velero Helm Chart page on Github.com vmware-tanzu \cite{velero-helm-chart}, but omitting the aws plugin for Velero resulted in error.
 
 \begin{lstlisting}[basicstyle=\tiny,caption={Installing Velero server},captionpos=b,language=Bash,xleftmargin=1cm]
 $ helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
@@ -904,7 +904,7 @@ Limits:
 Warning  FailedScheduling  70s (x5 over 6m46s)  default-scheduler  0/2 nodes are available: 2 Insufficient cpu.
 \end{lstlisting}
 
-The problem was that the Velero pod was in status: Pending. The Kubernetes documentation on pods troubleshooting suggests, that when a pod is in status: Pending, then there may be not enough resources in the cluster\cite{k8s-deb}. That was the problem in this case. The solution was to use bigger AWS instance types for node: \textit{t2.medium} instead of: \textit{t2.micro}.
+The problem was that the Velero pod was in status: Pending. The Kubernetes documentation on pods troubleshooting suggests, that when a pod is in status: Pending, then there may be not enough resources in the cluster \cite{k8s-deb}. That was the problem in this case. The solution was to use bigger AWS instance types for node: \textit{t2.medium} instead of: \textit{t2.micro}.
 
 Furthermore, it may be helpful to know, that whenever such error occurs, concerning the velero pod:
 \begin{lstlisting}[basicstyle=\tiny,caption={Debuggin Velero},captionpos=b,language=Bash,xleftmargin=1cm]
@@ -937,7 +937,7 @@ Warning  Failed     26s                kubelet, ip-172-20-62-245.eu-west-1.compu
 Warning  BackOff    12s (x2 over 42s)  kubelet, ip-172-20-62-245.eu-west-1.compute.internal  Back-off restarting failed container
 \end{lstlisting}
 
-Fortunately, this problem was handled by a public issue and the solution was also provided there\cite{as-github-issue}. The solution was to replace a path: \textit{/etc/ssl/certs/ca-certificates.crt} with \textbf{/etc/ssl/certs/ca-bundle.crt}.
+Fortunately, this problem was handled by a public issue and the solution was also provided there \cite{as-github-issue}. The solution was to replace a path: \textit{/etc/ssl/certs/ca-certificates.crt} with \textbf{/etc/ssl/certs/ca-bundle.crt}.
 
 Also, running the \textit{kops create cluster} initially resulted in error:
 \begin{lstlisting}[caption={Error output of \textit{kops create cluster} command}]
@@ -949,7 +949,7 @@ The reason for this was that the development environment had a non-numeric envir
 
 
 \subsection{Production deployment using eksctl}
-\textit{This section briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using eksctl. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
+\textit{This subchapter briefly presents all the steps performed that lead to a Kubernetes cluster deployment on the AWS cloud using eksctl. Here an attempt was made to satisfy all the production environment requirements selected in the chapter: \ref{prep-prod}.}
 \\
 
 \subsubsection{Generating the YAML configuration file}
@@ -1012,7 +1012,7 @@ Thanks to \textit{metadata.tags} set in the YAML file, the AWS resources were la
 \end{figure}
 
 \subsubsection{Creating a cluster}
-There was one command used to generate cluster configuration (described in the previous section) and to deploy the cluster. The nice thing from the end user point of view was, that this command did not return (meaning: it waited) for the cluster to be ready. First, the control plane was deployed, then the worker nodes. For each of these two tasks (deploying control plane and deploying worker nodes) a separate CloudFormation stack was used. It was done automatically by AWS EKS. The image below presents such two stacks.
+There was one command used to generate cluster configuration (described in the previous subchapter) and to deploy the cluster. The nice thing from the end user point of view was, that this command did not return (meaning: it waited) for the cluster to be ready. First, the control plane was deployed, then the worker nodes. For each of these two tasks (deploying control plane and deploying worker nodes) a separate CloudFormation stack was used. It was done automatically by AWS EKS. The image below presents such two stacks.
 
 \begin{figure}[H]
     \centering
@@ -1037,11 +1037,11 @@ The control plane is entirely managed by AWS and it is run across three AWS avai
     \caption{AWS EKS instances, no master nodes}}
 \end{figure}
 
-A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes\cite{eks-blog-part1}\cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster using all settings from the YAML configuration file. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. An issue on Github.com was created to acknowledge this problem\cite{eksctl-no-config-update}. This cannot be achieved with eksctl, but many settings can be changed with AWS CLI, for example cluster endpoint\cite{eks-cluster-endpoint}. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
+A few sources claimed that the creation of Kubernetes cluster on AWS EKS should take 10 - 15 minutes \cite{eks-blog-part1} \cite{eks-blog2}, but in this particular case it took about 20 minutes. Also, to the best of this work’s author knowledge, there was no command which allows to reconfigure the cluster using all settings from the YAML configuration file. This means that when there was a need to change e.g. tags of the AWS resources, the cluster must have been deleted and created from scratch. An issue on Github.com was created to acknowledge this problem \cite{eksctl-no-config-update}. This cannot be achieved with eksctl, but many settings can be changed with AWS CLI, for example cluster endpoint \cite{eks-cluster-endpoint}. There is, however, a command that enables to upgrade the control plane to the next Kubernetes version (if it available). This command is:
 \begin{lstlisting}[basicstyle=\tiny,caption={Updating eksctl cluster},captionpos=b,language=Bash,xleftmargin=1cm]
 $ eksctl update cluster
 \end{lstlisting}
-And also, some particular settings may be set using \textit{eksctl utils} command. For example\cite{eksctl-net}:
+And also, some particular settings may be set using \textit{eksctl utils} command. For example \cite{eksctl-net}:
 \begin{lstlisting}[basicstyle=\tiny,caption={Updating eksctl cluster configuration},captionpos=b,language=Bash,xleftmargin=1cm]
 $ eksctl utils set-public-access-cidrs --cluster=<cluster> 1.1.1.1/32,2.2.2.0/24
 $ eksctl utils set-public-access-cidrs -f config.yaml
@@ -1111,7 +1111,7 @@ An example log message looked like this and it was in JSON format:
 }
 \end{lstlisting}
 
-There was nothing needed to be done in order to provide High Availability. The control plane was already Highly Available because AWS EKS automatically provisions and scales the control plane across multiple AWS availability zones for high availability and fault tolerance\cite{eks-faqs}. Even the output provided when creating the cluster confirms the HA:
+There was nothing needed to be done in order to provide High Availability. The control plane was already Highly Available because AWS EKS automatically provisions and scales the control plane across multiple AWS availability zones for high availability and fault tolerance \cite{eks-faqs}. Even the output provided when creating the cluster confirms the HA:
 \begin{lstlisting}[basicstyle=\tiny,caption={Output from creating a eksctl cluster},captionpos=b,language=Bash,xleftmargin=1cm]
 + eksctl create cluster -f cluster.yaml
 [ℹ]  eksctl version 0.20.0
@@ -1122,7 +1122,7 @@ There was nothing needed to be done in order to provide High Availability. The c
 [ℹ]  subnets for eu-west-1c - public:192.168.64.0/19 private:192.168.160.0/19
 \end{lstlisting}
 
-Central Monitoring system was also already available. AWS provides several metrics considering EC2 instances. The same metrics can be viewed in this section as in the according section for kops cluster. All the available metrics are presented in the following image.
+Central Monitoring system was also already available. AWS provides several metrics considering EC2 instances. The same metrics can be viewed in this subchapter as in the according subchapter for kops cluster. All the available metrics are presented in the following image.
 \begin{figure}[H]
     \centering
     \includegraphics[width=17cm]{figures/eks-monitoring-ec2-node.png}
@@ -1146,9 +1146,9 @@ nodeGroups:
     ssh:
       allow: false
 \end{lstlisting}
-This means now, that a cluster administrator has only kubectl access to cluster and no ssh access at all (because ssh access to worker nodes is blocked and access to master nodes is not given by design of AWS EKS). It is acknowledged that sometimes, not being able to ssh to the node may make troubleshooting more difficult, but generally system and EKS logs generally contain enough information for diagnosing problems. Usually the solution is to replace the problematic worker node rather than to diagnose and fix it\cite{eks-security}. Since no access to nodes is needed, thus also \textit{privateNetworking} under the \textit{nodeGroups} array was set to \textit{true}.
+This means now, that a cluster administrator has only kubectl access to cluster and no ssh access at all (because ssh access to worker nodes is blocked and access to master nodes is not given by design of AWS EKS). It is acknowledged that sometimes, not being able to ssh to the node may make troubleshooting more difficult, but generally system and EKS logs generally contain enough information for diagnosing problems. Usually the solution is to replace the problematic worker node rather than to diagnose and fix it \cite{eks-security}. Since no access to nodes is needed, thus also \textit{privateNetworking} under the \textit{nodeGroups} array was set to \textit{true}.
 
-The second security requirement was to restrict the access to cluster through kubectl. By default, eksctl exposes the Kubernetes API server publicly but not directly from within the VPC subnets. This means that the public endpoint is by default set to true and the private endpoint to false\cite{eksctl-net}. In this work it was decided to apply the following configuration:
+The second security requirement was to restrict the access to cluster through kubectl. By default, eksctl exposes the Kubernetes API server publicly but not directly from within the VPC subnets. This means that the public endpoint is by default set to true and the private endpoint to false \cite{eksctl-net}. In this work it was decided to apply the following configuration:
 \begin{lstlisting}[basicstyle=\tiny,caption={Eksctl configuration applying security measures},captionpos=b,language=Bash,xleftmargin=1cm]
 vpc:
   publicAccessCIDRs:
@@ -1157,7 +1157,7 @@ vpc:
     publicAccess: true
     privateAccess: true
 \end{lstlisting}
-There were problems finding a working configuration, but it was finally solved thanks to a blog post\cite{eksctl-net-issue-solution} and thanks to eksctl official documentation\cite{eksctl-net}. The problems are described also in the section \ref{eks-troubleshooting}. The focal setting was \textit{publicAccessCIDRs}. It was set to the this-work-author's IP. Thus, only one IP address should be allowed to communicate with the cluster through kubectl. It was tested that the command kubectl worked from such an IP:
+There were problems finding a working configuration, but it was finally solved thanks to a blog post \cite{eksctl-net-issue-solution} and thanks to eksctl official documentation \cite{eksctl-net}. The problems are described also in the subchapter \ref{eks-troubleshooting}. The focal setting was \textit{publicAccessCIDRs}. It was set to the this-work-author's IP. Thus, only one IP address should be allowed to communicate with the cluster through kubectl. It was tested that the command kubectl worked from such an IP:
 \begin{lstlisting}[basicstyle=\tiny,caption={Verifying connection to API server},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl get nodes
 NAME                                            STATUS   ROLES    AGE     VERSION
@@ -1256,7 +1256,7 @@ resulted in timeout on creating such cluster. It took 43 minutes then. The outpu
 [ℹ]  waiting for at least 1 node(s) to become ready in "ng-1"
 Error: timed out (after 25m0s) waiting for at least 1 nodes to join the cluster and become ready in "ng-1"
 \end{lstlisting}
-This problem was also acknowledged in eksctl Github.com issues\cite{eksctl-net-issue1}\cite{eksctl-net-issue2}. Even though the blog post\cite{eksctl-net-issue-solution}, which tremendously helped to find the working solution, suggested setting the following IAM policies to be configured under the \textit{nodeGroups} array, in practice, the IAM policies deemed unneeded. Cluster is working and healthy without them.
+This problem was also acknowledged in eksctl Github.com issues \cite{eksctl-net-issue1,eksctl-net-issue2}. Even though the blog post \cite{eksctl-net-issue-solution}, which tremendously helped to find the working solution, suggested setting the following IAM policies to be configured under the \textit{nodeGroups} array, in practice, the IAM policies deemed unneeded. Cluster is working and healthy without them.
 \begin{lstlisting}[basicstyle=\tiny,caption={IAM policies recommended for eksctl by a blog post},captionpos=b,language=Bash,xleftmargin=1cm]
 nodeGroups:
     iam:
@@ -1293,7 +1293,7 @@ Events:
   Warning  FailedScheduling  38s (x10 over 12m)  default-scheduler  0/1 nodes are available: 1 Insufficient pods.
 \end{lstlisting}
 
-The potential solution, found on Stack Overflow, suggested that \textit{t2.small} is the smallest instance type which is acceptable\cite{eks-instance-problem-so}. It turned out, that this problem was caused by an already described fact, that AWS EKS uses hard limits for number of pods allowed for a particular EC2 instance type\cite{eks-hard-limits}. Thus, even bigger instance was used: \textit{t2.small}. After the bigger instance type was used, all the pods in kube-system namespace were in status: Running.
+The potential solution, found on Stack Overflow, suggested that \textit{t2.small} is the smallest instance type which is acceptable \cite{eks-instance-problem-so}. It turned out, that this problem was caused by an already described fact, that AWS EKS uses hard limits for number of pods allowed for a particular EC2 instance type \cite{eks-hard-limits}. Thus, even bigger instance was used: \textit{t2.small}. After the bigger instance type was used, all the pods in kube-system namespace were in status: Running.
 \begin{lstlisting}[basicstyle=\tiny,caption={Verifying that all the pods are running},captionpos=b,language=Bash,xleftmargin=1cm]
 eks$ kubectl get pod -n kube-system
 NAME                       READY   STATUS    RESTARTS   AGE
@@ -1335,24 +1335,24 @@ Error: failed to delete cluster with nodegroup(s)
 Fortunately, running the \textit{eksctl delete cluster} again resulted in success.
 
 \subsection{Troubleshooting any Kubernetes cluster}
-\textit{This is a section dedicated to present the ideas of how to troubleshoot any Kubernetes cluster. The ideas were gathered during the empirical work of this study.}
+\textit{This is a subchapter dedicated to present the ideas of how to troubleshoot any Kubernetes cluster. The ideas were gathered during the empirical work of this study.}
 \\
 
-There are some general guidelines which help to debug the cluster. When a cluster is self-hosted and one is fully responsible for master and worker nodes deployment, then \textbf{one should verify whether any node is still functional}. It means that problems like: corrupt filesystem, kernel deadlock, problems with the Docker Daemon or problems with hardware may occur and should be mitigated. A solution to detect such problems may be: a node problem detector pod\cite{book-mastering-k8s}. One should also run the following commands to check if all the worker nodes are running and if the cluster is generally reachable. But, since this work focuses on deployments on the cloud, then the problems described in this paragraph should be already taken care of.
+There are some general guidelines which help to debug the cluster. When a cluster is self-hosted and one is fully responsible for master and worker nodes deployment, then \textbf{one should verify whether any node is still functional}. It means that problems like: corrupt filesystem, kernel deadlock, problems with the Docker Daemon or problems with hardware may occur and should be mitigated. A solution to detect such problems may be: a node problem detector pod \cite{book-mastering-k8s}. One should also run the following commands to check if all the worker nodes are running and if the cluster is generally reachable. But, since this work focuses on deployments on the cloud, then the problems described in this paragraph should be already taken care of.
 \begin{lstlisting}[basicstyle=\tiny,caption={Getting information about a cluster},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl get nodes
 $ kubectl cluster-info
 \end{lstlisting}
 
-Another level of troubleshooting is \textbf{debugging the applications deployed on top of the Kubernetes cluster}. Some ideas are discribed on the official Kubernetes documentation website\cite{k8s-deb}. For example, one can get details of a pod with the following commands:
+Another level of troubleshooting is \textbf{debugging the applications deployed on top of the Kubernetes cluster}. Some ideas are discribed on the official Kubernetes documentation website \cite{k8s-deb}. For example, one can get details of a pod with the following commands:
 \begin{lstlisting}[basicstyle=\tiny,caption={Getting information about pods},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kubectl describe pods ${POD_NAME}
 $ kubectl logs ${POD_NAME}
 \end{lstlisting}
 
-Even the \textbf{pod status} may provide us with enough information, what steps should be taken next. If a pod is in Pending status, then it could mean that there are not enough resources in the cluster (e.g. the worker nodes use too small EC2 instance types or there are too few worker nodes). A pod may be also in status CrashLoopBackOff which indicates that a container is repeatedly crashing after restarting. There may a problem also that a Docker image for a container cannot be downloaded and a pod may be in state ImagePullBackOff or ErrImagePull\cite{k8s-google-tr}.
+Even the \textbf{pod status} may provide us with enough information, what steps should be taken next. If a pod is in Pending status, then it could mean that there are not enough resources in the cluster (e.g. the worker nodes use too small EC2 instance types or there are too few worker nodes). A pod may be also in status CrashLoopBackOff which indicates that a container is repeatedly crashing after restarting. There may a problem also that a Docker image for a container cannot be downloaded and a pod may be in state ImagePullBackOff or ErrImagePull \cite{k8s-google-tr}.
 
-It is also always a good idea to \textbf{read log messages} (so access to log messages should be always supplied). The following Kubernetes components log messages may be helpful\cite{k8s-deb-cluster}:
+It is also always a good idea to \textbf{read log messages} (so access to log messages should be always supplied). The following Kubernetes components log messages may be helpful \cite{k8s-deb-cluster}:
 \begin{itemize}
 \item logs from kube-apiserver - which is responsible for serving the API
 \item logs from kube-scheduler - which is responsible for making scheduling decisions
@@ -1361,7 +1361,7 @@ It is also always a good idea to \textbf{read log messages} (so access to log me
 \item logs from kube-proxy - which is responsible for service load balancing
 \end{itemize}
 
-Besides all the troubleshooting ideas presented earlier, one can also visit solutions dedicated entirely to AWS EKS clusters\cite{k8s-eks-tr} or to eksctl\cite{k8s-eksctl-tr}. Still, some problems may be tough to handle. But even then, there are always measures that could be applied to move further into the correct direction. One may \textbf{ask a question} on Stack Overflow or talk to a Kubernetes team on Slack or write on a Kubernetes forum or file a bug on Kubernetes Github.com project website\cite{k8s-deb-ask}.
+Besides all the troubleshooting ideas presented earlier, one can also visit solutions dedicated entirely to AWS EKS clusters \cite{k8s-eks-tr} or to eksctl \cite{k8s-eksctl-tr}. Still, some problems may be tough to handle. But even then, there are always measures that could be applied to move further into the correct direction. One may \textbf{ask a question} on Stack Overflow or talk to a Kubernetes team on Slack or write on a Kubernetes forum or file a bug on Kubernetes Github.com project website \cite{k8s-deb-ask}.
 
 To summarize: there are various ways how to debug a Kubernetes cluster or an application deployed on top of it. Some steps may be applied to any Kubernetes cluster, other concern only the clusters deployed using a particular method. Nevertheless, if one is in need, they can ask for help or talk with people who are more experienced with Kubernetes.
 

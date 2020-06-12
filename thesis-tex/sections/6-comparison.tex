@@ -110,7 +110,7 @@ In order to deploy the clusters, many tools were needed. However, these tools we
 To summarize, both methods require the same steps to work in a production environment specified in this work, but the S3 bucket was used by choice and it could be replaced with some other storage solution.
 
 \subsection{Minimal EC2 instance type needed for a Kubernetes worker node}
-Various EC2 instances types cost various amount of money. Thus, it is preferable if one could use the cheapest possible instance type. It was proved, that \textbf{the smallest EC2 instance type, possible to be used in an AWS EKS cluster is \textit{t2.small}}. It was because of the hard limits set by AWS EKS for number of pods allowed for a particular EC2 instance type. The type \textit{t2.micro} allows for maximally 4 pods\cite{eks-hard-limits}. It was verified by experiment that eksctl deploys 4 pods on a worker node, be design. Thus, there is no room left to deploy any application more. The type \textit{t2.small} allows for 11 pods.
+Various EC2 instances types cost various amount of money. Thus, it is preferable if one could use the cheapest possible instance type. It was proved, that \textbf{the smallest EC2 instance type, possible to be used in an AWS EKS cluster is \textit{t2.small}}. It was because of the hard limits set by AWS EKS for number of pods allowed for a particular EC2 instance type. The type \textit{t2.micro} allows for maximally 4 pods \cite{eks-hard-limits}. It was verified by experiment that eksctl deploys 4 pods on a worker node, be design. Thus, there is no room left to deploy any application more. The type \textit{t2.small} allows for 11 pods.
 
 Contrary to the AWS EKS cluster, there are no hardcoded limits for the number of pods when using kops. \textbf{Kops method allowed to use smaller instances of type: \textit{t2.micro}}. Using even smaller type (\textit{t2.nano}) resulted in the worker node being not accessible. There was no way to connect to the EC2 instance. The type \textit{t2.micro} was also used in some publicly available kops tutorials, thus it was a proof that the practice matched the theory.
 
@@ -159,16 +159,16 @@ In order to be able to compare the cost of a cluster created with kops and a clu
 \item The eks cluster was deleted.
 \end{enumerate}
 
-\textbf{This procedure resulted in two lists of all AWS resources, used by each Kubernetes deployment method}. Next, all the free AWS resources (VPC Subnets, Security Groups, Internet Gateway, Route Table) were omitted. Overall, using eksctl, the following AWS resources were used: 1 Nat Gateway, 2 CloudFormation stacks, AWS EKS cluster, 2 EC2 instances of type: \textit{t2.small} (used as worker nodes), an S3 bucket, 1 Load Balancer (ALB) (to expose API server). For kops, there was a bug and not all the AWS resources were tagged\cite{kops-issue-tags}. That bug should be fixed in the future releases of kops, because there is already a PR merged on kops Github.com webiste\cite{kops-issue-tags-pr}. Despite this, it was possible to itemize the not free AWS resources used by kops: 3 EC2 instances of type: \textit{t2.micro} (used as master nodes), 2 EC2 instances of type: \textit{t2.micro} (used as worker nodes), 1 Load Balancer (ALB) (to expose API server), 6 EBS volumes (3 for etcd-main and 3 for etcd-events) of type gp2 and 20GB each, an S3 bucket. Whenever Elastic IPs were used, they were omitted, because an attached Elastic IP does not cost anything.
+\textbf{This procedure resulted in two lists of all AWS resources, used by each Kubernetes deployment method}. Next, all the free AWS resources (VPC Subnets, Security Groups, Internet Gateway, Route Table) were omitted. Overall, using eksctl, the following AWS resources were used: 1 Nat Gateway, 2 CloudFormation stacks, AWS EKS cluster, 2 EC2 instances of type: \textit{t2.small} (used as worker nodes), an S3 bucket, 1 Load Balancer (ALB) (to expose API server). For kops, there was a bug and not all the AWS resources were tagged \cite{kops-issue-tags}. That bug should be fixed in the future releases of kops, because there is already a PR merged on kops Github.com webiste \cite{kops-issue-tags-pr}. Despite this, it was possible to itemize the not free AWS resources used by kops: 3 EC2 instances of type: \textit{t2.micro} (used as master nodes), 2 EC2 instances of type: \textit{t2.micro} (used as worker nodes), 1 Load Balancer (ALB) (to expose API server), 6 EBS volumes (3 for etcd-main and 3 for etcd-events) of type gp2 and 20GB each, an S3 bucket. Whenever Elastic IPs were used, they were omitted, because an attached Elastic IP does not cost anything.
 
 Then, the cost for running a cluster for one month was computed. It is presented in the two tables below. The calculated cost does not include everything (e.g. transfer costs), but it should be enough to compare kops to eksctl. Many pricing information is given by Amazon per hour. 720 hours in a month was assumed. When it comes to CloudFormation resources, there were 2 stacks used. The resources managed by the CloudFormation stacks were received with the following command:
 \begin{lstlisting}[basicstyle=\tiny,caption={AWS CLI commands used to list CloudFormation resources used by eksctl},captionpos=b,language=Bash,xleftmargin=1cm]
 $ aws cloudformation list-stack-resources  --stack-name eksctl-eks-testing-nodegroup-ng-1
 $ aws cloudformation list-stack-resources  --stack-name eksctl-eks-testing-cluster
 \end{lstlisting}
-The first stack managed 10 resources and the second stack - 34. The CloudFormation pricing\cite{amazon-cf-pricing} depends on operations count. 10+34=44 creation operations and 10+34=44 deletion operations were assumed based on the information given. 88 operations total. The pricing website also informs that for operation durations above 30 seconds per operation, one will be charged \$0.00008 per second above the threshold. It cannot be assumed that all the resources took the same time to create, this was not measured. Thus, this cost is not included in the below calculations.
+The first stack managed 10 resources and the second stack - 34. The CloudFormation pricing \cite{amazon-cf-pricing} depends on operations count. 10+34=44 creation operations and 10+34=44 deletion operations were assumed based on the information given. 88 operations total. The pricing website also informs that for operation durations above 30 seconds per operation, one will be charged \$0.00008 per second above the threshold. It cannot be assumed that all the resources took the same time to create, this was not measured. Thus, this cost is not included in the below calculations.
 
-When it comes to the S3 cost, the storage cost is very cheap - \$0.023 for 1 GB\cite{s3-pricing}. The storage used by either kops or eksctl was for sure less than 1 GB, thus \$0.023 was assumed as monthly usage cost. Transfer costs were omitted.
+When it comes to the S3 cost, the storage cost is very cheap - \$0.023 for 1 GB \cite{s3-pricing}. The storage used by either kops or eksctl was for sure less than 1 GB, thus \$0.023 was assumed as monthly usage cost. Transfer costs were omitted.
 
 Below, there are two tables provided. Each of them lists the AWS resources used by one deployment method. \textbf{The last row of each table contains the total amount, in USD, of the monthly cost of the AWS resources}.
 
@@ -180,17 +180,17 @@ Below, there are two tables provided. Each of them lists the AWS resources used 
  \hline
   \textbf{AWS Resource} & \textbf{Cost using eksctl method} \\
  \hline
- 1 Nat Gateway\cite{amazon-vpc-pricing} & 720 * \$0.048 = \$34.56 \\
+ 1 Nat Gateway \cite{amazon-vpc-pricing} & 720 * \$0.048 = \$34.56 \\
  \hline
- Classic Load Balancer\cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
+ Classic Load Balancer \cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
  \hline
- 2 CloudFormation stacks\cite{amazon-cf-pricing}  & 88 * \$0.0009 = \$ 0.0792 \\
+ 2 CloudFormation stacks \cite{amazon-cf-pricing}  & 88 * \$0.0009 = \$ 0.0792 \\
  \hline
- AWS EKS cluster\cite{online-eks-pricing} & 720 * \$0.10 = \$ 72 \\
+ AWS EKS cluster \cite{online-eks-pricing} & 720 * \$0.10 = \$ 72 \\
  \hline
- 2 EC2 instances of type: \textit{t2.small}\cite{ec2-pricing}  & 2 * 720 * \$0.025 = \$36 \\
+ 2 EC2 instances of type: \textit{t2.small} \cite{ec2-pricing}  & 2 * 720 * \$0.025 = \$36 \\
  \hline
- keeping files on S3 bucket\cite{s3-pricing}  & \$0.023 \\
+ keeping files on S3 bucket \cite{s3-pricing}  & \$0.023 \\
  \hline
  \textbf{Total}  & \textbf{\$ 162.82} \\
  \hline
@@ -206,13 +206,13 @@ Below, there are two tables provided. Each of them lists the AWS resources used 
  \hline
   \textbf{AWS Resource} & \textbf{Cost using kops method} \\
  \hline
- 5 EC2 instances of type: \textit{t2.micro}\cite{ec2-pricing} & 720 * \$0.0126 = \$ 9.072  \\
+ 5 EC2 instances of type: \textit{t2.micro} \cite{ec2-pricing} & 720 * \$0.0126 = \$ 9.072  \\
  \hline
- Classic Load Balancer\cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
+ Classic Load Balancer \cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
  \hline
- 6 EBS volumes of type gp2 and 20GB each\cite{ebs-pricing} & 6 * 20 * \$0.11 = \$13.2 \\
+ 6 EBS volumes of type gp2 and 20GB each \cite{ebs-pricing} & 6 * 20 * \$0.11 = \$13.2 \\
  \hline
- keeping files on S3 bucket\cite{s3-pricing}  & \$0.023 \\
+ keeping files on S3 bucket \cite{s3-pricing}  & \$0.023 \\
  \hline
  \textbf{Total}  & \textbf{\$42.46} \\
  \hline
