@@ -32,7 +32,7 @@
 \renewcommand*{\lstlistlistingname}{List of Listings}
 % by default the listings are numered as: Listing 1, Listing 2,
 % the command below replaces the "Listing" to an empty string
-\renewcommand{\lstlistingname}{ }
+% \renewcommand{\lstlistingname}{ }
 
 \usepackage{chngcntr}
 
@@ -46,23 +46,22 @@
       %\parbox{\textwidth}{\color{white}Listing \arabic{section}.#1#2#3}
       \parbox{\textwidth}{#1#2#3}
     }
-    \vskip-4pt
 
   }
 }
-\captionsetup[lstlisting]{
-  format=listing,
-  labelfont=white,
-  textfont=white,
-  indention=100pt,
-  numberbychapter=true
-}
+%\captionsetup[lstlisting]{
+%  format=listing,
+%  labelfont=white,
+%  textfont=white,
+%  justification=centering,
+%  % singlelinecheck=off means that the justification setting is used even when the caption is only a single line long.
+%  singlelinecheck=off
+%}
 \lstset{
   basicstyle=\tiny,frame=lrtb,
   xleftmargin=1cm,
   %xleftmargin=\fboxsep,xrightmargin=-\fboxsep,
-  captionpos=b,
-  numberbychapter=true
+  captionpos=b
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
