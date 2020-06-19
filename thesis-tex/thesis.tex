@@ -41,23 +41,24 @@
 \usepackage{xcolor}
 \DeclareCaptionFont{white}{\color{white}}
 
-\DeclareCaptionFormat{listing}{%
-  \parbox{\textwidth}{
-    \colorbox{gray}{
-      %\parbox{\textwidth}{\color{white}Listing \arabic{section}.#1#2#3}
-      \parbox{\textwidth}{#1#2#3}
-    }
-
-  }
-}
-%\captionsetup[lstlisting]{
+%\DeclareCaptionFormat{listing}{%
+%  \parbox{\textwidth}{
+%    \colorbox{gray}{
+%      %\parbox{\textwidth}{\color{white}Listing \arabic{section}.#1#2#3}
+%      \parbox{\dimexpr \captionwidth-2\fboxsep}{\caption@hj #1#2#3}}}
+%      %\parbox{\captionwidth-2\fboxsep}{#1#2#3}
+%    }
+%
+%  }
+%}
+\captionsetup[lstlisting]{
 %  format=listing,
 %  labelfont=white,
 %  textfont=white,
-%  justification=centering,
-%  % singlelinecheck=off means that the justification setting is used even when the caption is only a single line long.
-%  singlelinecheck=off
-%}
+  justification=centering,
+  % singlelinecheck=off means that the justification setting is used even when the caption is only a single line long.
+  singlelinecheck=off
+}
 \lstset{
   basicstyle=\tiny,frame=lrtb,
   xleftmargin=1cm,
