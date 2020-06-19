@@ -1,7 +1,7 @@
 % 4
-\section{Preparations for production deployment of a Kubernetes cluster}
+\section{Preparations for production deployment of Kubernetes cluster}
 \label{prep-prod}
-\textit{This is a practical chapter. It includes planning and designing the production deployment, considering: capacity planning, choosing which requirements to satisfy and taking any other deployment and infrastructure related decisions. No AWS resources were created here, but AWS CLI was used to get some information.}
+\textit{This is a practical chapter. It includes planning and designing the production deployment, considering: capacity planning, choosing which requirements to satisfy and taking any other deployment and infrastructure related decisions. No AWS resources were created here, but \textit{AWS CLI} was used to get some information.}
 ~\\
 
 \subsection{AWS Region}
@@ -14,24 +14,26 @@ While it matters not which Availability Zone will be chosen, \textbf{choosing a 
 
 AWS Local Zones are a new type of AWS infrastructure deployment. Thanks to them, AWS resources can be put closer to large population, industry, and IT centers where no AWS Region exists today. AWS Local Zones help to run latency sensitive applications closer to end users. Even single-digit millisecond latency can be achieved. The use cases for such latency are for example: media & entertainment content creation, real-time gaming, reservoir simulations, electronic design automation, and machine learning \cite{lz}. AWS Local Zones are available since 9th March 2020 and there is currently one AWS Local Zone, available in Los Angeles, California \cite{lz-blog}. For this work, single-digit millisecond latency is not needed.
 
-In this work, AWS EC2 instances will be used (Elastic Compute Cloud resources). The following AWS CLI command was run to list all the available regions for the AWS account of the author of this work:
-\begin{lstlisting}[basicstyle=\small,caption={A command of AWS CLI tool used to list all the available regions (for an AWS account)}]
+In this work, AWS EC2 instances will be used (Elastic Compute Cloud resources). The following \textit{AWS CLI} command was run to list all the available regions for the AWS account of the author of this work:
+\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{AWS CLI} tool used to list all the available regions (for an AWS account)}]
 $ aws ec2 describe-regions
 \end{lstlisting}
 
 The returned list of Regions was: "eu-north-1", "eu-west-3", "eu-west-2", "eu-west-1", "eu-central-1", "ap-south-1", "ap-northeast-2", "ap-northeast-1", "sa-east-1", "ca-central-1", "ap-southeast-1", "ap-southeast-2", "us-east-1", "us-east-2", "us-west-1", "us-west-2". Considering the geographical proximity, the Region should be in Europe. The Regions' names are mapped to geographical locations below (limited to Europe) \cite{aws-region-map}:
 \begin{itemize}
-\item "eu-north-1" - Europe (Stockholm)
-\item "eu-west-1" - Europe (Ireland)
-\item "eu-west-2" - Europe (London)
-\item "eu-west-3" - Europe (Paris)
-\item "eu-central-1" - Europe (Frankfurt)
-\item "eu-south-1" - Europe (Milan)
+\item "eu-north-1" -- Europe (Stockholm),
+\item "eu-west-1" -- Europe (Ireland),
+\item "eu-west-2" -- Europe (London),
+\item "eu-west-3" -- Europe (Paris),
+\item "eu-central-1" -- Europe (Frankfurt),
+\item "eu-south-1" -- Europe (Milan).
 \end{itemize}
 
-The next criterion of choosing the Region is \textbf{price}. The pricing for EC2 instances were compared for 5 AWS Regions (available for a particular AWS account, in Europe). A few EC2 instance types were considered, but from the General Purpose family of types. Only Linux/UNIX usage was taken into consideration. The comparison is presented in the table below. The data comes from the official AWS EC2 pricing website \cite{ec2-pricing}. The prices are noted \textbf{in USD per hour of an EC2 instance running}.
+The next criterion of choosing the Region is \textbf{price}. The pricing for EC2 instances were compared for 5 AWS Regions (available for a particular AWS account, in Europe). A few EC2 instance types were considered, but from the General Purpose family of types. Only Linux/UNIX usage was taken into consideration. The comparison is presented in the table \ref{tab:ec2-pricing}. The data comes from the official AWS EC2 pricing website \cite{ec2-pricing}. The prices are noted \textbf{in USD per hour of an EC2 instance running}.
 
 \begin{table}[H]
+\captionsetup{justification=centering}
+\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an EC2 instance on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing~website \cite{ec2-pricing}}
 \begin{tabularx}{0.9\textwidth} {
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -51,21 +53,19 @@ The next criterion of choosing the Region is \textbf{price}. The pricing for EC2
  t2.medium  & 0.052 & 0.05 & 0.0536 & 0.0528 & not given \\
  \hline
 \end{tabularx}
-\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an EC2 instance on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing website \cite{ec2-pricing}}
 \end{table}
 
 
-Basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) - "eu-west-1"}. Then, the next thing to decide upon was choosing availability zones. All the AZs available in the chosen region can be listed with the following command \cite{online-kops-aws}:
-\begin{lstlisting}[basicstyle=\small,caption={A command of AWS CLI tool used to list all the available AZs in the chosen AWS Region)},captionpos=b,language=Bash,xleftmargin=1cm]
+Basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) -- "eu-west-1"}. Then, the next thing to decide upon was choosing availability zones. All the AZs available in the chosen region can be listed with the following command \cite{online-kops-aws}:
+\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{AWS CLI} tool used to list all the available AZs in the chosen AWS Region)},captionpos=b,language=Bash,xleftmargin=1cm]
 $ aws ec2 describe-availability-zones --region eu-west-1
 \end{lstlisting}
 The command output listed the following AZs: "eu-west-1a", "eu-west-1b", "eu-west-1c".
 
 \subsection{Version of Kubernetes}
 \textit{In this subchapter, it is decided which Kubernetes version to use.}
-\\
 
-\subsubsection{Why it is important to choose a particular version}
+\subsubsection{Why it is important to choose a particular version?}
 In order to compare two methods of Kubernetes deployment in a reasonable way, \textbf{both methods should deploy the same Kubernetes version}. Also, the version should be one of the latest released ones, for the sake of keeping this comparison up-to-date. Furthermore, using a specified version is important for the production environment, because:
 \begin{itemize}
 \item the environment should be easy to recreate,
@@ -73,20 +73,20 @@ In order to compare two methods of Kubernetes deployment in a reasonable way, \t
 \item using specified versions helps to incorporate Infrastructure as Code and DevOps best practices and to automate the deployments.
 \end{itemize}
 
-\subsubsection{Which version was chosen}
+\subsubsection{Which version was chosen?}
 At the time of writing this work, \textbf{in May 2020}, the latest released versions of the needed software are:
 \begin{itemize}
-\item Kubernetes version 1.18 \cite{online-k8s-blog-latest},
-\item Kops version 1.16.2, Kubernetes versions supported by Kops are: 1.16.9, 1.15.11, 1.14.10, 1.13.12, 1.12.10 \cite{online-kops-versions} \cite{kops-releases} \cite{online-kops-versions2},
+\item Kubernetes version 1.18 \cite{online-k8s-blog-latest}.
+\item \textit{Kops} version 1.16.2, Kubernetes versions supported by \textit{kop}s are: 1.16.9, 1.15.11, 1.14.10, 1.13.12, 1.12.10 \cite{online-kops-versions2,online-kops-versions,kops-releases}.
 \item Kubernetes versions supported by EKS: 1.16.8, 1.15.11, 1.14.9, 1.13.12. However, Kubernetes version 1.13 is deprecated \cite{online-eks-versions}. There are also particular EKS Platform versions for each supported Kubernetes version. For example, for Kubernetes 1.16.8 there is one EKS Platform version: eks.1 \cite{online-eks-platform-versions}.
-\item Eksctl version 0.20.0 \cite{online-eksctl-versions}
+\item \textit{Eksctl} version 0.20.0 \cite{online-eksctl-versions}.
 \end{itemize}
 
-EKS documentation recommends that unless a specific Kubernetes version is required, the latest supported version should be chosen \cite{online-eks-versions}. \textbf{The maximum version of Kubernetes, supported by kops is 1.16.9 and by eksctl: 1.16.8}. When it comes to the AWS AMIs, there are some EKS-optimized Linux AMIs - built for this exact purpose - to be deployed in a Kubernetes cluster. They are built on top of \textbf{Amazon Linux 2} \cite{eks-optimized-ami}. Besides the official Amazon EKS-optimized AMIs, Canonical (the commercial support provider for Ubuntu) has partnered with Amazon EKS to create worker node AMIs built on top of \textbf{Ubuntu} \cite{eks-ubu}. On the other hand, the default Operating System for kops is Debian whereas Amazon Linux 2 support is still experimental, but should work \cite{online-kops-img}.
+EKS documentation recommends that unless a specific Kubernetes version is required, the latest supported version should be chosen \cite{online-eks-versions}. \textbf{The maximum version of Kubernetes, supported by \textit{kops} is 1.16.9 and by \textit{eksctl}: 1.16.8}. When it comes to the AWS AMIs, there are some EKS-optimized Linux AMIs -- built for this exact purpose -- to be deployed in a Kubernetes cluster. They are built on top of \textbf{Amazon Linux 2} \cite{eks-optimized-ami}. Besides the official Amazon EKS-optimized AMIs, Canonical (the commercial support provider for Ubuntu) has partnered with Amazon EKS to create worker node AMIs built on top of \textbf{Ubuntu} \cite{eks-ubu}. On the other hand, the default Operating System for \textit{kops} is Debian whereas Amazon Linux 2 support is still experimental, but should work \cite{online-kops-img}.
 
 Amazon Linux 2 is a Linux Server Operating System, provided by Amazon. Among the features it provides are: optimized performance (to help ease integration with AWS Services), long term support, bleeding edge software updates support, on-premises use, systemd support, etc. \cite{al2}. However, Amazon Linux 2 is a RPM-based Linux distribution (which can be judged based on information that many applications developed on CentOS (and similar distributions) run on Amazon Linux) \cite{al2-centos}. RPM-based Linux distributions include: CentOS, Fedora, Red Hat Linux, etc.
 
-Considering all the information presented in this subchapter, the \textbf{version of Kubernetes chosen was: 1.16.9 for kops and 1.16.8 for eksctl}.
+Considering all the information presented in this subchapter, the \textbf{version of Kubernetes chosen was: 1.16.9 for \textit{kops} and 1.16.8 for \textit{eksctl}}.
 
 
 \subsection{Tools and development environment}
@@ -94,23 +94,23 @@ Considering all the information presented in this subchapter, the \textbf{versio
 \textit{This subchapter can be treated as a checklist of what tools should be gathered before deploying a Kubernetes cluster. It also characterizes a development environment.}
 \\
 
-The following tools were selected and deemed essential:
+The following tools were selected and deemed essential to deploy a Kubernetes cluster:
 \begin{itemize}
-\item Linux
-\item Bash
-\item kubectl
-\item AWS CLI 2
-\item eksctl
-\item kops
-\item helm
-\item Bats-core
+\item Linux,
+\item \textit{Bash},
+\item \textit{kubectl},
+\item \textit{AWS CLI 2},
+\item \textit{eksctl},
+\item \textit{kops},
+\item \textit{Helm},
+\item \textit{Bats-core}.
 \end{itemize}
 
-When it comes to \textbf{development environment - the Ubuntu 18.04 workstation} was used. In order to facilitate repetition of the empirical work, all the deployment was performed in a Docker container. Thus, the local development environment was just obliged to: have Docker installed, Internet access and AWS credentials configured.
+When it comes to \textbf{development environment -- the Ubuntu 18.04 workstation} was used. In order to facilitate repetition of the empirical work, all the deployment was performed in a Docker container. Thus, the local development environment was just obliged to: have Docker installed, Internet access and AWS credentials configured.
 
-The \textbf{Docker container} used, was created from a Docker image: \textit{kudulab/k8s-aws-dojo} \cite{gh-k8s-aws-dojo}. This Docker image already has all the needed tools installed. In order to run this Docker container, Dojo was used. Dojo is a CLI program, designed to provide portable development environments \cite{gh-dojo}. Thanks to using Dojo and Docker, one can ensure that the same development environment is present on their laptop and also on a CI server.
+The \textbf{Docker container} used, was created from a Docker image: \textit{kudulab/k8s-aws-dojo} \cite{gh-k8s-aws-dojo}. This Docker image already has all the needed tools installed. In order to run this Docker container, \textit{Dojo} was used. \textit{Dojo} is a CLI program, designed to provide portable development environments \cite{gh-dojo}. Thanks to using Dojo and Docker, one can ensure that the same development environment is present on their laptop and also on a CI server.
 
-Bash is a shell language, available on Linux distributions like Ubuntu or Debian. kubectl is a CLI program needed to access and manage a Kubernetes cluster \cite{kubectl}. AWS CLI allows to communicate directly with AWS. eksctl is a CLI program that facilitates Kubernetes deployment on AWS EKS\cite{eksctl}. kops is also a CLI program that facilitates Kubernetes deployment on AWS (but does not use AWS EKS) \cite{online-kops}. Helm is a package manager for applications which are deployed on top of Kubernetes \cite{helm}. Bats-core is a CLI program, used to run tests using Bash shell \cite{bats-core}.
+\textit{Bash} is a shell language, available on Linux distributions like Ubuntu or Debian. \textit{kubectl} is a CLI program needed to access and manage a Kubernetes cluster \cite{kubectl}. \textit{AWS CLI} allows to communicate directly with AWS. \textit{Eksctl} is a CLI program that facilitates Kubernetes deployment on \textit{AWS EKS} \cite{eksctl}. \textit{Kops} is also a CLI program that facilitates Kubernetes deployment on AWS (but does not use \textit{AWS EKS}) \cite{online-kops}. \textit{Helm} is a package manager for applications which are deployed on top of Kubernetes \cite{helm}. \textit{Bats-core} is a CLI program, used to run tests using \textit{Bash} shell \cite{bats-core}.
 
 \subsection{Selected requirements of a production deployment and acceptance criteria needed to satisfy them}
 \textit{Here a set of production deployment requirements is presented. Each of them is shortly described. Acceptance criteria, needed to satisfy the requirements are provided. This subchapter helps to plan the deployment.}
@@ -120,101 +120,104 @@ Bash is a shell language, available on Linux distributions like Ubuntu or Debian
 
 Below, there is a list of the selected production deployment requirements. The most important one were selected (but it was a subjective opinion of the author of this work). In the empirical part of this study, the requirements were  attempted to be satisfied.
 \begin{itemize}
-\item A healthy cluster
-\item Automated operations
-\item Central Logging
-\item Central Monitoring
-\item Central Audit
-\item Backup
-\item High Availability
-\item Autoscaling
-\item Security
+\item healthy cluster,
+\item automated operations,
+\item central logging,
+\item central monitoring,
+\item central audit,
+\item backup,
+\item high availability,
+\item autoscaling,
+\item security.
 \end{itemize}
 
 The set entails \textbf{9 requirements}. Each of them was already described theoretically, but further in this chapter, each requirement is explained from a practical point of view. The \textbf{acceptance criteria} needed to satisfy each of the requirements are presented. Basing on this, a plan of a Kubernetes cluster deployment is created. The work done is described in the next chapter, together with any problems encountered and troubleshooting sessions.
 
-\subsubsection{A healthy and usable cluster}
+\subsubsection{Healthy and usable cluster}
 \label{A healthy cluster}
 
 % health checks
 Unless any of the Kubernetes control plane components is healthy, it will need to be fixed. It should not be a problem with a managed Kubernetes services, but for self hosted clusters, this should be checked. It should be noted that, since the \textbf{health checks} ought to be run frequently, they shouldn't do anything too expensive. To monitor the health of a Kubernetes cluster, \textbf{the following could be checked: number of nodes, node health status, number of pods per node and overall, resource usage/allocation per node, and overall} \cite{book-cndwk}.
 
 % api endpoint reachable under a domain name
-When all the cluster health checks are passed, then the cluster is healthy. But, the cluster should be also usable for end users. End users will want to deploy applications on top of the cluster. Thus, they have to have the possibility to reach the cluster endpoint, which in practice means, that they have to \textbf{be able to reach the Kubernetes API Server endpoint}. Such an endpoint may be an IP address or a domain name. Since the cluster will be deployed in a production environment, a domain name is preferred. Furthermore, many sources claim that a top-level domain or a subdomain is required to create a Kubernetes cluster with Kops. Alternatively, gossip-based DNS can be used instead, and then, the cluster domain name would have to end with \textit{.k8s.local} and the API server would be available under the AWS load balancer address \cite{kops-howto-aws} \cite{online-kops-aws} \cite{kops-howto-k8s} \cite{kops-gossip}.
+When all the cluster health checks are passed, then the cluster is healthy. But, the cluster should be also usable for end users. End users will want to deploy applications on top of the cluster. Thus, they have to have the possibility to reach the cluster endpoint, which in practice means, that they have to \textbf{be able to reach the Kubernetes API Server endpoint}. Such an endpoint may be an IP address or a domain name. Since the cluster will be deployed in a production environment, a domain name is preferred. Furthermore, many sources claim that a top-level domain or a subdomain is required to create a Kubernetes cluster with \textit{kops}. Alternatively, gossip-based DNS can be used instead, and then, the cluster domain name would have to end with \textit{.k8s.local} and the API server would be available under the AWS load balancer address \cite{online-kops-aws,kops-gossip,kops-howto-k8s,kops-howto-aws}.
 
 % test app can be deployed
-In order to verify that an application can be deployed on top of a Kubernetes cluster, a simple Apache server will be deployed. A Helm Chart will be used \cite{helm-apache}. Then, Bats-core tests will be run to check that the Apache server works (more precisely: that the Apache endpoint is reachable from a remote machine).
+In order to verify that an application can be deployed on top of a Kubernetes cluster, a simple Apache server will be deployed. A \textit{Helm} Chart will be used \cite{helm-apache}. Then, \textit{Bats-core} tests will be run to check that the Apache server works (more precisely: that the Apache endpoint is reachable from a remote machine).
 
-To summarize, in order for a cluster to be healthy and usable, the following acceptance criteria must be met:
+To summarize, in order for a cluster to be \textit{healthy and usable}, the following acceptance criteria must be met:
 \begin{itemize}
-\item the cluster should be tested with Bats-core (i.e particular number of worker nodes should be deployed, particular Kubernetes version should be used),
+\item the cluster should be tested with \textit{Bats-core} (i.e particular number of worker nodes should be deployed, particular Kubernetes version should be used),
 \item the Kubernetes API Server endpoint should be reachable for the end users under a domain name (i.e. an end user can connect with the cluster using \textit{kubectl}),
 \item it should be tested that an application can be deployed on top of a Kubernetes cluster (i.e. an Apache server will be deployed and tested).
 \end{itemize}
 
 \subsubsection{Automated Operations}
 
-In order to be able to perform automated operations, \textbf{a Kubernetes cluster configuration and commands needed to manage the cluster should be stored in a version control system}. This is the goal of Infrastructure as Code. Such a solution will also allow cluster changes to be applied through reviewable commits and in turn it will allow to avoid possible collisions from simultaneous changes being made. Moreover, a history of the version controlled source code may act as an audit trail \cite{online-kops-ci} \cite{online-kops-manifest}. Both: eksctl and kops support \textbf{cluster configuration through YAML files}. In this work, all the code needed to create a Kubernetes cluster will be stored in \textbf{a Git repository}.
+In order to be able to perform automated operations, \textbf{a Kubernetes cluster configuration and commands needed to manage the cluster should be stored in a version control system}. This is the goal of Infrastructure as Code. Such a solution will also allow cluster changes to be applied through reviewable commits and in turn it will allow to avoid possible collisions from simultaneous changes being made. Moreover, a history of the version controlled source code may act as an audit trail \cite{online-kops-ci,online-kops-manifest}. Both: \textit{eksctl} and \textit{kops} support \textbf{cluster configuration through \textit{YAML} files}. In this work, all the code needed to create a Kubernetes cluster will be stored in \textbf{a Git repository}.
 
-Furthermore, \textbf{to automate the operations, a Bash script will be used}. It should be possible to use this script in order to: create, test and delete a cluster. This Bash script will be named \textit{tasks}. There will be one such script provided for kops cluster and one for eksctl cluster. It will be possible to run the following commands:
-\begin{lstlisting}[basicstyle=\small,caption={Commands provided by tasks file - a Bash script which automates a Kubernetes cluster operations},captionpos=b,language=Bash,xleftmargin=1cm]
+Furthermore, \textbf{to automate the operations, a \textit{Bash} script will be used}. It should be possible to use this script in order to: create, test and delete a cluster. This \textit{Bash} script will be named \textit{tasks}. There will be one such script provided for \textit{kops} cluster and one for \textit{eksctl} cluster. It will be possible to run the commands presented in Listing \ref{tasks-cmds}.
+\begin{lstlisting}[basicstyle=\small,caption={Commands provided by tasks file -- a \textit{Bash} script which automates a~Kubernetes cluster operations},captionpos=b,language=Bash,xleftmargin=1cm,label=tasks-cmds]
 $ ./tasks _create
 $ ./tasks _test
 $ ./tasks _delete
 \end{lstlisting}
 
-It is essential to obey the Infrastructure as Code policy, because it facilitates repeating the operations and the whole experiment of a cluster deployment. Although, in this work no CI server is going to be used, \textbf{it should be possible to invoke the automated commands (by using the Bash script) in a potential CI pipeline}.
+It is essential to obey the Infrastructure as Code policy, because it facilitates repeating the operations and the whole experiment of a cluster deployment. Although, in this work no CI server is going to be used, \textbf{it should be possible to invoke the automated commands (by using the \textit{Bash} script) in a potential CI pipeline}.
 
 Moreover, it should be also possible to \textbf{differentiate between two deployment environments: testing and production}. The testing environment should be very similar to the production environment. But, there may be more tests run in the testing environment and more resources used in the production environment. Another thing to note is, due to the automation requirement, there should be no need to perform any operations using AWS Management Console, but it is desirable to view any potential dashboards (e.g. with metrics) through a web browser.
 
-It is recommended to set up \textbf{a package manager for reusable deployments} which happen on top of Kubernetes \cite{gruntwork-howto-blog}. In this work Helm will be used and it was already described in the subchapter: \rel{tools}. Applications deployments which happen on top of Kubernetes are already facilitated thanks to many resources available by Kubernetes API, such as: Deployment \cite{k8s-resources-depl} or DaemonSet \cite{k8s-resources-ds}, etc.
+It is recommended to set up \textbf{a package manager for reusable deployments} which happen on top of Kubernetes \cite{gruntwork-howto-blog}. In this work \textit{Helm} will be used and it was already described in the subchapter: \rel{tools}. Applications deployments which happen on top of Kubernetes are already facilitated thanks to many resources available by Kubernetes API, such as: Deployment \cite{k8s-resources-depl} or DaemonSet \cite{k8s-resources-ds}, etc.
 
-Furthermore, it has to be possible to create a cluster in a testing or production environment. Thus, some kind of templating mechanism is needed. Both: eksctl and kops use YAML configuration files. Whenever a YAML file template will be used and it will contain Bash variables, the file name will end with: \textit{.tmpl.yaml}. But, when a file will be a YAML file template generated by kops, the file name will end with: \textit{.kops-tmpl.yaml}
+Furthermore, it has to be possible to create a cluster in a testing or production environment. Thus, some kind of templating mechanism is needed. Both \textit{eksctl} and \textit{kops} use \textit{YAML} configuration files. Whenever a \textit{YAML} file template will be used and it will contain \textit{Bash} variables, the file name will end with \textit{.tmpl.yaml}. But, when a file will be a \textit{YAML} file template generated by \textit{kops}, the file name will end with \textit{.kops-tmpl.yaml}
 
 To summarize, in order to satisfy the Automated Operations requirement, the following measures will be applied:
 \begin{itemize}
 \item all the code and configuration needed to deploy a cluster will be stored in a Git repository,
-\item cluster will be configure with YAML file,
-\item a Bash script will be used to create, test and delete a cluster,
-\item Helm will be used to automate a test application deployment,
-\item it will be possible to choose between two deployment environments: testing and production (a templating mechanism with Bash variables will be used).
+\item cluster will be configure with \textit{YAML} file,
+\item \textit{Bash} script will be used to create, test and delete a cluster,
+\item \textit{Helm} will be used to automate a test application deployment,
+\item it will be possible to choose between two deployment environments: testing and production (a templating mechanism with \textit{Bash} variables will be used).
 \end{itemize}
 
 
 \subsubsection{Central Logging}
 
-The plan here is to simply \textbf{use AWS CloudWatch service}. It should be easy to enable when using eksctl. It is not enabled by default due to data ingestion and storage costs \cite{eksctl-cw}. There should be also a possibility to enable logging to AWS CloudWatch when using kops.
+The plan here is to simply \textbf{use AWS CloudWatch service}. It should be easy to enable when using \textit{eksctl}. It is not enabled by default due to data ingestion and storage costs \cite{eksctl-cw}. There should be also a possibility to enable logging to \textit{AWS CloudWatch} when using \textit{kops}.
 
 \subsubsection{Central Monitoring}
 
-To satisfy the Central Monitoring requirement, it is planned to use \textbf{AWS CloudWatch}. There also exist a solution - a program called: Kubernetes Metrics Server. And even though it is a server which provides source of container resource metrics, it should not be used as an accurate source of resource usage metrics. Its main usage is for CPU/Memory based horizontal autoscaling and for automatically adjusting/suggesting resources needed by containers. Thus, it will not be used for Central Monitoring. But one should be aware of its existence \cite{k8s-metrics-server}.
+To satisfy the Central Monitoring requirement, it is planned to use \textbf{AWS CloudWatch}. There also exist a solution -- a program called: Kubernetes Metrics Server. And even though it is a server which provides source of container resource metrics, it should not be used as an accurate source of resource usage metrics. Its main usage is for CPU/Memory based horizontal autoscaling and for automatically adjusting/suggesting resources needed by containers. Thus, it will not be used for Central Monitoring. But one should be aware of its existence \cite{k8s-metrics-server}.
 
 
 \subsubsection{Central Audit}
 
-This requirement will be simply met by utilizing \textbf{the AWS CloudTrail service}. This service should show us, which user is responsible for what changes made to the AWS resources used. Besides, AWS CloudTrail can be also used to detect unusual activity in the AWS accounts \cite{online-ct}.
+This requirement will be simply met by utilizing \textbf{the AWS CloudTrail service}. This service should show us, which user is responsible for what changes made to the AWS resources used. Besides, \textit{AWS CloudTrail} can be also used to detect unusual activity in the AWS accounts \cite{online-ct}.
 
 \subsubsection{Backup}
 
-In order to implement and test backup, \textbf{Velero will be used}. First, Velero will be used to create a backup. Then a disaster will be simulated: a whole Kubernetes namespace will be deleted with all the resources deployed inside. The last phase will be the backup restore phaze. It is expected that the namespace and all the resources in it will be restored \cite{eksworkshop-backup} \cite{velero-examples}.
+In order to implement and test backup, \textbf{\textit{Velero} will be used}. First, \textit{Velero} will be used to create a backup. Then a disaster will be simulated: a whole Kubernetes namespace will be deleted with all the resources deployed inside. The last phase will be the backup restore phaze. It is expected that the namespace and all the resources in it will be restored \cite{eksworkshop-backup,velero-examples}.
 
-Let's now apply a broader perspective, to understand \textbf{why backing up a Kubernetes cluster is needed}. Since a cluster configuration will be kept in a Git repository (in YAML files) and all the commands needed to operate the cluster (create, test, delete) will be automated, then it should be possible to recreate the cluster using the mentioned Git repository. There are even opinions which claim that if you are asking how to backup a Kubernetes cluster (like EKS), you are using it wrong \cite{reddit-on-backup}. However, it should be remembered that the Git repository needed to operate the Kubernetes cluster (using Infrastructure as code) contains only the configuration and operations. It does not contain the cluster state. The cluster state is represented by deployed containerized applications and workloads, their associated network and disk resources, and other information \cite{k8s-concepts}. Thus, anytime one deploys an application on top of the cluster, the cluster's state changes. All the cluster state is stored in Etcd and even the official Kubernetes documentation recommends to have a back up plan for those data \cite{k8s-components}.
+Let's now apply a broader perspective, to understand \textbf{why backing up a Kubernetes cluster is needed}. Since a cluster configuration will be kept in a Git repository (in \textit{YAML} files) and all the commands needed to operate the cluster (create, test, delete) will be automated, then it should be possible to recreate the cluster using the mentioned Git repository. There are even opinions which claim that if you are asking how to backup a Kubernetes cluster (like EKS), you are using it wrong \cite{reddit-on-backup}. However, it should be remembered that the Git repository needed to operate the Kubernetes cluster (using Infrastructure as code) contains only the configuration and operations. It does not contain the cluster state. The cluster state is represented by deployed containerized applications and workloads, their associated network and disk resources, and other information \cite{k8s-concepts}. Thus, anytime one deploys an application on top of the cluster, the cluster's state changes. All the cluster state is stored in Etcd and even the official Kubernetes documentation recommends to have a back up plan for those data \cite{k8s-components}.
 
-The other thing is \textbf{backing up all the applications deployed on top of Kubernetes}. Their deployment should also be automated (e.g. with Helm charts), but this automation is also not sufficient in terms of backup. In order to backup such applications, one may have to backup both: their configuration and data. The data may be kept on various volumes (e.g. AWS Elastic Block Store). This problem is, however, out of scope of this work, but one should be aware that it should be handled as well.
+The other thing is \textbf{backing up all the applications deployed on top of Kubernetes}. Their deployment should also be automated (e.g. with \textit{Helm} charts), but this automation is also not sufficient in terms of backup. In order to backup such applications, one may have to backup both: their configuration and data. The data may be kept on various volumes (e.g. AWS Elastic Block Store). This problem is, however, out of scope of this work, but one should be aware that it should be handled as well.
 
 \subsubsection{Capacity planning and High Availability}
+\label{subsection-cp-ha}
 
-The needed capacity, meaning: number of machines and IT resources (CPU, Memory) must be discussed. The important thing is, that the to-be-deployed Kubernetes cluster, should have the minimal amount of capacity, but still it should be representative for a production environment. Here \textbf{chicken-counting} (0, 1, many) comes to the rescue. Applying the chicken-counting technique means that if a production site has 250 web servers, 2 should be enough to represent it \cite{book-cicd}. Since a Kubernetes cluster consists of a master node and worker nodes, then it was decided that \textbf{a representative cluster would be made of two worker nodes}. One worker node will be created together with cluster creation and the second worker will be added automatically by the Autoscaler. When it comes to number of master nodes needed, one is enough for the minimal deployment. But in order to achieve high availability at least two master nodes are needed and they should span multiple AZs \cite{article-aws-architecting}. However, having an odd number is recommended for master nodes to avoid issues with consesus/quorum. Thus, \textbf{at least three master nodes are needed} \cite{online-ha-k8s-blog} \cite{online-kops-ha}.
+The needed capacity, meaning: number of machines and IT resources (CPU, Memory) must be discussed. The important thing is, that the to-be-deployed Kubernetes cluster, should have the minimal amount of capacity, but still it should be representative for a production environment. Here \textbf{chicken-counting} (0, 1, many) comes to the rescue. Applying the chicken-counting technique means that if a production site has 250 web servers, 2 should be enough to represent it \cite{book-cicd}. Since a Kubernetes cluster consists of a master node and worker nodes, then it was decided that \textbf{a representative cluster would be made of two worker nodes}. One worker node will be created together with cluster creation and the second worker will be added automatically by the Autoscaler. When it comes to number of master nodes needed, one is enough for the minimal deployment. But in order to achieve high availability at least two master nodes are needed and they should span multiple AZs \cite{article-aws-architecting}. However, having an odd number is recommended for master nodes to avoid issues with consesus/quorum. Thus, \textbf{at least three master nodes are needed} \cite{online-kops-ha,online-ha-k8s-blog}.
 
 The capacity of a cluster means the sum of CPU and memory of all the cluster worker nodes. Multiple ways are possible to achieve the desired target capacity. Example given: if a cluster with a total capacity of 8 CPU cores and 32 GB of RAM is needed, then it can be achieved by, for example, having two nodes (each with 4 CPU and 16 GB RAM) or having four nodes (each with 2 CPU and 8 GB RAM) \cite{kubernetes-node-size}. Now there are two questions:
 \begin{itemize}
-\item it is better to have a few bigger nodes or many smaller nodes?
-\item what is the minimal capacity needed for a production cluster?
+\item It is better to have a few bigger nodes or many smaller nodes?
+\item What is the minimal capacity needed for a production cluster?
 \end{itemize}
 
-The table below summarizes the advantages and disadvantages of having a few bigger nodes. For more information about the pros and cons presented in the table \ref{tab:pros-cons-large-nodes}, a reader is referred to an online source: "Architecting Kubernetes clusters — choosing a worker node size" \cite{kubernetes-node-size}.
+Table \ref{tab:pros-cons-large-nodes} summarizes the advantages and disadvantages of having a few bigger nodes. More information about the pros and cons are presented in "Architecting Kubernetes clusters — choosing a worker node size" \cite{kubernetes-node-size}.
 
 \begin{table}[H]
+\captionsetup{justification=centering}
+\caption{\label{tab:pros-cons-large-nodes}Comparison advantages and disadvantages of having a few bigger nodes in a Kubernetes cluster instead of having many smaller nodes \cite{kubernetes-node-size}}
 \begin{tabularx}{1\textwidth} {
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X | }
@@ -229,15 +232,14 @@ The table below summarizes the advantages and disadvantages of having a few bigg
  \hline
   Large numbers of nodes can be a challenge for the Kubernetes control plane (there are many network communication paths and also also more load on the etcd database) & The impact of one failed node is big   \\
  \hline
-  Better resources utilization & -  \\
+  Better resources utilization & ---  \\
  \hline
 \end{tabularx}
-\caption{\label{tab:pros-cons-large-nodes}Comparison advantages and disadvantages of having a few bigger nodes in a Kubernetes cluster instead of having many smaller nodes \cite{kubernetes-node-size}}
 \end{table}
 
-However, in the Internet, there is contradictory information about the limited replication. The online source cited above \cite{kubernetes-node-size} states that there can be maximally as many replicas as worker nodes in a cluster, while another source - a blog post \cite{learnk8s-ll} claims that there can be more pod replicas than nodes. This information was not verified in practice in this work. Perhaps the replicas limit depends on Kubernetes version - but this is just a speculation of this work's author.
+However, in the Internet, there is contradictory information about the limited replication. The online source cited above \cite{kubernetes-node-size} states that there can be maximally as many replicas as worker nodes in a cluster, while another source -- a blog post \cite{learnk8s-ll} claims that there can be more pod replicas than nodes. This information was not verified in practice in this work. Perhaps the replicas limit depends on Kubernetes version -- but this is just a speculation of this work's author.
 
-It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node \cite{kubernetes-node-size} \cite{kubernetes-large}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as AWS EKS is concerned, there are some hard limits for number of pods allowed for a particular EC2 instance type. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4 \cite{kubernetes-node-size} \cite{eks-hard-limits}.
+It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node \cite{kubernetes-large,kubernetes-node-size}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as \textit{AWS EKS} is concerned, there are some hard limits for number of pods allowed for a particular EC2 instance type. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4 \cite{eks-hard-limits,kubernetes-node-size}.
 
 \textbf{There was no official statement found stating the minimal capacity of a Kubernetes cluster}. Thus, in the empirical part, the work will be started from using the smallest (and cheapest EC2 instance type). Should there be any problems, instance types with more resources will be used. Generally, the EC2 resources type should depend on the total quantity of resources needed by pods. (Some pods will be deployed in order to test whether the cluster is healthy). Some overhead must be also considered, because the amount of compute resources that are available for pods, \textbf{the allocatable}, is smaller than the capacity of the whole node \cite{k8s-alloc}.
 
@@ -245,7 +247,7 @@ To summarize: the production cluster should have at least three master nodes and
 
 \subsubsection{Autoscaling}
 
-The idea here is to test whether a cluster, which consists of master nodes and worker nodes, will be able to, by itself, create and delete another worker node. This decision, whether to scale in or out, should be taken according to how many resources there are available for pods. The demand for more resources will be artificially created by increasing the value of \textit{replicaCount} in the Apache Helm Chart \cite{helm-apache}.
+The idea here is to test whether a cluster, which consists of master nodes and worker nodes, will be able to, by itself, create and delete another worker node. This decision, whether to scale in or out, should be taken according to how many resources there are available for pods. The demand for more resources will be artificially created by increasing the value of \textit{replicaCount} in the Apache \textit{Helm} Chart \cite{helm-apache}.
 
 
 \subsubsection{Security}
@@ -254,7 +256,7 @@ There are many security measures that could be applied on a cluster. In order to
 
 \textbf{VPC stands for Virtual Private Cloud} and it is an AWS resource, providing the networking services. When a VPC is created, it means that a virtual private network is created and assigned to a particular AWS account. AWS resources can be launched into that VPC. Each VPC has a CIDR block assigned. The VPC cannot span more than one AWS Region. The VPC can be divided into subnetworks (or subnets). One subnet cannot span more than one Availability Zone. \textbf{Subnets can be either public or private}. If a subnet's traffic is routed to an internet gateway (which is an AWS resource), the subnet is known as a public subnet. Otherwise, a subnet is private \cite{aws-vpc}. This means that public subnets have access to the Internet.
 
-By default, both kops and eksctl deploy Kubernetes clusters using public subnets. This means, that anyone who knows the URL of the Kubernetes master node, can access its API Server. Additionally, if one has a private SSH key, then they can SSH login into the master node. A simple way to restrict access to the cluster is to use \textbf{Security Groups}. Security Groups rules will be used to limit SSH access to the master and worker nodes and also to limit access to API Server endpoint \cite{online-kops-cs}. In result, only one IP address should be able to access the endpoints.
+By default, both \textit{kops} and \textit{eksctl} deploy Kubernetes clusters using public subnets. This means, that anyone who knows the URL of the Kubernetes master node, can access its API Server. Additionally, if one has a private SSH key, then they can SSH login into the master node. A simple way to restrict access to the cluster is to use \textbf{Security Groups}. Security Groups rules will be used to limit SSH access to the master and worker nodes and also to limit access to API Server endpoint \cite{online-kops-cs}. In result, only one IP address should be able to access the endpoints.
 
 The deployments described in this work are operated by one person only. Thus, the IP address of the author's laptop will be used. However, when working in a bigger team of many Kubernetes cluster administrators, one could use a NAT Gateway or NAT instance IP address as a single allowed IP address. Furthermore, a bastion host could be used to securely SSH login into the master node\cite{aws-bastion}.
 
@@ -268,6 +270,6 @@ The chosen approach was to read about AWS resources pricing and more or less est
 
 \subsection{Summary}
 
-This chapter was needed to gather all the requirements and to establish acceptance criteria for each of the requirements. Apart from that the AWS Region was set to \textit{eu-west-1} and the Kubernetes version was chosen to be 1.16.9 for kops and 1.16.8 for eksctl. The chapter also attempted to state how many master and worker nodes are needed. There should be 3 master and 2 worker nodes deployed.
+This chapter was needed to gather all the requirements and to establish acceptance criteria for each of the requirements. Apart from that the AWS Region was set to \textit{eu-west-1} and the Kubernetes version was chosen to be 1.16.9 for \textit{kops} and 1.16.8 for \textit{eksctl}. The chapter also attempted to state how many master and worker nodes are needed. There should be 3 master and 2 worker nodes deployed.
 
 Another topic touched in this chapter were the development tools. They were all listed here. It was decided that a Docker image will be used with all the development tools already installed. This solution was chosen, because it was easy to recreate such an environment (such a Docker container) and it helped with automating the deployment.

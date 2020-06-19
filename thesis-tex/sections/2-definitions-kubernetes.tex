@@ -26,23 +26,25 @@ Kubernetes was built \textbf{to make deployments easy, to reduce the time and ef
 
 Kubernetes is the first project of the CNCF \cite{article-state-machine}. Kubernetes is already \textbf{used by some well-known entities}, e.g. NASA \cite{nasa}, F-16 jets \cite{online-f16}, Zalando \cite{online-zalando}, ING \cite{online-ing}, booking.com \cite{online-bookingcom}. Apart from that, the \textbf{Kubernetes popularity is growing}, basing on the information from CNCF Survey 2019, which states that 78\% of respondents use Kubernetes in production and that this is a huge jump from 58\% using in the previous --- 2018 year \cite{cncf-2019}. Even the older CNCF Survey from year 2017 shows Kubernetes as number one cloud management platform --- it it presented in figure \ref{fig:cncf-con}.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=12cm]{figures/cncf-container-orchestrators.png}
-    \captionsetup{justification=centering,margin=2cm}
-    \caption{Results of CNCF Survey from year 2017 showing Kubernetes as number one cloud management platform \cite{cncf-2017}}
-    \label{fig:cncf-con}
-\end{figure}
-
 The \textbf{basic working unit in Kubernetes is a pod}. A pod is an abstraction and it represents one application, a set of containers. Two things are crucial to know about pods \cite{article-modelling-performance-k8s}:
 \begin{itemize}
 \item all the containers defined in a pod will be deployed on one machine,
 \item a pod has one IP address assigned and all the containers defined in this pod share the same IP address.
 \end{itemize}
 
-A pod is all that is needed to deploy a set of containers. Pod is a Kubernetes object and there are many more objects, for example: deployment, replica sets, service, ingress. The important thing to note is that these \textbf{objects can be configured in a declarative way}, thanks to YAML files \cite{k8s-declarative}.
+A pod is all that is needed to deploy a set of containers. Pod is a Kubernetes object and there are many more objects, for example: deployment, replica sets, service, ingress. The important thing to note is that these \textbf{objects can be configured in a declarative way}, thanks to \textit{YAML} files \cite{k8s-declarative}.
 
 Kubernetes provides mechanisms for maintaining, deploying, healing and scaling containerized microservices. Thanks to that, Kubernetes hides the complexity of microservices orchestration. It is much easier to satisfy non-functional requirements of microservices deployment by using Kubernetes. An example of such requirements may be: availability, healing, redundancy or autoscaling \cite{article-k8s-as-avail}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=14cm]{figures/cncf-container-orchestrators.png}
+    \captionsetup{justification=centering,margin=2cm}
+    \caption{Results of CNCF Survey from year 2017 showing Kubernetes as number one cloud management platform \cite{cncf-2017}}
+    \label{fig:cncf-con}
+\end{figure}
+
+
 
 \subsection{Kubernetes architecture}
 % this short summary before each subchapter helps me to stay focused on what i want to write about

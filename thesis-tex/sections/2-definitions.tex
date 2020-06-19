@@ -60,7 +60,7 @@ Each stage of a pipeline may be either passed or failed. The failed stage indica
 There exists an extension of continuous integration and it is called: \textbf{Continuous delivery (CD)}. CD verifies that a piece of software is always in a deployable state. CD is thus even more attractive than CI, because it offers even more automation \cite{online-do-cicd}.
 
 \subsubsection{Infrastructure as Code}
-Together with automation and DevOps there comes the term: \textbf{Infrastructure as Code (IaC)}. IaC may be understood as an approach to automate the infrastructure based on practices from software development. Consistent and repeatable routines are encouraged for infrastructure provisioning and configuration. There are three core practices required to implement IaC: \textbf{define everything as code} (e.g. the configuration can be saved as YAML files), \textbf{continuously validate the code} and, \textbf{build a system from small, loosely-coupled pieces} \cite{book-iac}.
+Together with automation and DevOps there comes the term: \textbf{Infrastructure as Code (IaC)}. IaC may be understood as an approach to automate the infrastructure based on practices from software development. Consistent and repeatable routines are encouraged for infrastructure provisioning and configuration. There are three core practices required to implement IaC: \textbf{define everything as code} (e.g. the configuration can be saved as \textit{YAML} files), \textbf{continuously validate the code} and, \textbf{build a system from small, loosely-coupled pieces} \cite{book-iac}.
 
 Back in time, developers dealt with software, while operations teams worked on hardware and the operating systems. Now, the hardware is in the cloud and thus, it can be handled in the same way as software. \textbf{The DevOps movement brings software development skills to operations}. It concerns both: tools and workflows \cite{book-cndwk}. The movement from deployment on-premises to the cloud also deserves a few words, but it will be handled in the subchapter: \ref{section-aws}.
 
@@ -97,7 +97,7 @@ Furthermore, AWS offers \textbf{a highly reliable and scalable infrastructure} \
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=8cm]{figures/cncf-aws-pop1.png}
+    \includegraphics[width=6cm]{figures/cncf-aws-pop1.png}
     \captionsetup{justification=centering,margin=2cm}
     \caption{Hosted serverless platforms preferred by CNCF community during September and October 2019 \cite{cncf-2019}}
     \label{fig:cncf-aws-pop1}
@@ -137,7 +137,7 @@ In order to be able to work with Docker containers, one has to know the \textbf{
 
 Below, there is an example of a source code which creates (builds) a Docker image. Just one file is enough for this task: \textbf{a Dockerfile} (listing \ref{lst:dockerfile}).
 
-\begin{lstlisting}[basicstyle=\small,caption={A Dockerfile to build a Docker image with SSH server installed. Based on Docker official documentation \cite{online-docker-doc-bi}},captionpos=b,language=Bash,xleftmargin=0.3cm,label={lst:dockerfile}]
+\begin{lstlisting}[basicstyle=\scriptsize,caption={A Dockerfile to build a Docker image with SSH server installed. Based on Docker official documentation \cite{online-docker-doc-bi}},captionpos=b,language=Bash,xleftmargin=0.3cm,label={lst:dockerfile}]
 FROM ubuntu:16.04
 
 RUN apt-get update && apt-get install -y openssh-server
