@@ -16,3 +16,5 @@ core
 *.xml
 *blx.bib
 src/.kube
+thesis-tex/thesis.pdf
+notes
