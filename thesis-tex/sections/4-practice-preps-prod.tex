@@ -14,8 +14,8 @@ While it matters not which Availability Zone will be chosen, \textbf{choosing a 
 
 AWS Local Zones are a new type of AWS infrastructure deployment. Thanks to them, AWS resources can be put closer to large population, industry, and IT centers where no AWS Region exists today. AWS Local Zones help to run latency sensitive applications closer to end users. Even single-digit millisecond latency can be achieved. The use cases for such latency are for example: media & entertainment content creation, real-time gaming, reservoir simulations, electronic design automation, and machine learning \cite{lz}. AWS Local Zones are available since 9th March 2020 and there is currently one AWS Local Zone, available in Los Angeles, California \cite{lz-blog}. For this work, single-digit millisecond latency is not needed.
 
-In this work, AWS EC2 instances will be used (Elastic Compute Cloud resources). The following \textit{AWS CLI} command was run to list all the available regions for the AWS account of the author of this work:
-\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{AWS CLI} tool used to list all the available regions (for an AWS account)}]
+In this work, \textit{AWS EC2 instance type} will be used (Elastic Compute Cloud resources). The \textit{AWS CLI} command presented in listing \ref{lst:4-aws-list-regions} was run to list all the available regions for the AWS account of the author of this work.
+\begin{lstlisting}[basicstyle=\scriptsize,label=lst:4-aws-list-regions,caption={A command of \textit{AWS CLI} tool used to list all the available regions (for an AWS account)}]
 $ aws ec2 describe-regions
 \end{lstlisting}
 
@@ -29,11 +29,11 @@ The returned list of Regions was: "eu-north-1", "eu-west-3", "eu-west-2", "eu-we
 \item "eu-south-1" -- Europe (Milan).
 \end{itemize}
 
-The next criterion of choosing the Region is \textbf{price}. The pricing for EC2 instances were compared for 5 AWS Regions (available for a particular AWS account, in Europe). A few EC2 instance types were considered, but from the General Purpose family of types. Only Linux/UNIX usage was taken into consideration. The comparison is presented in the table \ref{tab:ec2-pricing}. The data comes from the official AWS EC2 pricing website \cite{ec2-pricing}. The prices are noted \textbf{in USD per hour of an EC2 instance running}.
+The next criterion of choosing the Region is \textbf{price}. The pricing for \textit{EC2 instance types} were compared for 5 AWS Regions (available for a particular AWS account, in Europe). A few \textit{EC2 instance types} were considered, but from the General Purpose family of types. Only Linux/UNIX usage was taken into consideration. The comparison is presented in the table \ref{tab:ec2-pricing}. The data comes from the official AWS EC2 pricing website \cite{ec2-pricing}. The prices are noted \textbf{in USD per hour of an \textit{EC2 instance} running}.
 
 \begin{table}[H]
 \captionsetup{justification=centering}
-\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an EC2 instance on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing~website \cite{ec2-pricing}}
+\caption{\label{tab:ec2-pricing}Comparison of the price, noted in USD, of 1 hour running of an \textit{EC2 instance} on AWS, considering a few selected AWS Regions. Based on the official AWS EC2 pricing~website \cite{ec2-pricing}}
 \begin{tabularx}{0.9\textwidth} {
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -56,8 +56,8 @@ The next criterion of choosing the Region is \textbf{price}. The pricing for EC2
 \end{table}
 
 
-Basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) -- "eu-west-1"}. Then, the next thing to decide upon was choosing availability zones. All the AZs available in the chosen region can be listed with the following command \cite{online-kops-aws}:
-\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{AWS CLI} tool used to list all the available AZs in the chosen AWS Region)},captionpos=b,language=Bash,xleftmargin=1cm]
+Basing on the three factors (Region being available for an AWS account, in Europe and the cheapest) - \textbf{the Region chosen is: Europe (Ireland) -- "eu-west-1"}. Then, the next thing to decide upon was choosing availability zones. All the AZs available in the chosen region can be itemized with the command shown in listing \ref{lst:4-aws-list-azs} \cite{online-kops-aws}:
+\begin{lstlisting}[basicstyle=\small,label=lst:4-aws-list-azs,caption={A command of \textit{AWS CLI} tool used to list all the available \textit{AZs} in the chosen AWS Region)},captionpos=b,language=Bash,xleftmargin=1cm]
 $ aws ec2 describe-availability-zones --region eu-west-1
 \end{lstlisting}
 The command output listed the following AZs: "eu-west-1a", "eu-west-1b", "eu-west-1c".
@@ -157,7 +157,7 @@ To summarize, in order for a cluster to be \textit{healthy and usable}, the foll
 In order to be able to perform automated operations, \textbf{a Kubernetes cluster configuration and commands needed to manage the cluster should be stored in a version control system}. This is the goal of Infrastructure as Code. Such a solution will also allow cluster changes to be applied through reviewable commits and in turn it will allow to avoid possible collisions from simultaneous changes being made. Moreover, a history of the version controlled source code may act as an audit trail \cite{online-kops-ci,online-kops-manifest}. Both: \textit{eksctl} and \textit{kops} support \textbf{cluster configuration through \textit{YAML} files}. In this work, all the code needed to create a Kubernetes cluster will be stored in \textbf{a Git repository}.
 
 Furthermore, \textbf{to automate the operations, a \textit{Bash} script will be used}. It should be possible to use this script in order to: create, test and delete a cluster. This \textit{Bash} script will be named \textit{tasks}. There will be one such script provided for \textit{kops} cluster and one for \textit{eksctl} cluster. It will be possible to run the commands presented in Listing \ref{tasks-cmds}.
-\begin{lstlisting}[basicstyle=\small,caption={Commands provided by tasks file -- a \textit{Bash} script which automates a~Kubernetes cluster operations},captionpos=b,language=Bash,xleftmargin=1cm,label=tasks-cmds]
+\begin{lstlisting}[basicstyle=\scriptsize,caption={Commands provided by tasks file -- a \textit{Bash} script which automates a~Kubernetes cluster operations},captionpos=b,language=Bash,xleftmargin=1cm,label=tasks-cmds]
 $ ./tasks _create
 $ ./tasks _test
 $ ./tasks _delete
@@ -216,6 +216,7 @@ The capacity of a cluster means the sum of CPU and memory of all the cluster wor
 Table \ref{tab:pros-cons-large-nodes} summarizes the advantages and disadvantages of having a few bigger nodes. More information about the pros and cons are presented in "Architecting Kubernetes clusters — choosing a worker node size" \cite{kubernetes-node-size}.
 
 \begin{table}[H]
+\small{
 \captionsetup{justification=centering}
 \caption{\label{tab:pros-cons-large-nodes}Comparison advantages and disadvantages of having a few bigger nodes in a Kubernetes cluster instead of having many smaller nodes \cite{kubernetes-node-size}}
 \begin{tabularx}{1\textwidth} {
@@ -235,15 +236,16 @@ Table \ref{tab:pros-cons-large-nodes} summarizes the advantages and disadvantage
   Better resources utilization & ---  \\
  \hline
 \end{tabularx}
+}
 \end{table}
 
 However, in the Internet, there is contradictory information about the limited replication. The online source cited above \cite{kubernetes-node-size} states that there can be maximally as many replicas as worker nodes in a cluster, while another source -- a blog post \cite{learnk8s-ll} claims that there can be more pod replicas than nodes. This information was not verified in practice in this work. Perhaps the replicas limit depends on Kubernetes version -- but this is just a speculation of this work's author.
 
-It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node \cite{kubernetes-large,kubernetes-node-size}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as \textit{AWS EKS} is concerned, there are some hard limits for number of pods allowed for a particular EC2 instance type. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4 \cite{eks-hard-limits,kubernetes-node-size}.
+It is officially claimed, that Kubernetes supports up to 5000 nodes and up to 100 pods per node \cite{kubernetes-large,kubernetes-node-size}. However, in practice, 500 nodes may already lead to non-trivial challenges. Furthermore, as far as \textit{AWS EKS} is concerned, there are some hard limits for number of pods allowed for a particular \textit{EC2 instance type}. For example, for a t2.medium instance, the maximum number of pods is 17, for t2.small it's 11, and for both: t2.micro and t2.nano it's 4 \cite{eks-hard-limits,kubernetes-node-size}.
 
-\textbf{There was no official statement found stating the minimal capacity of a Kubernetes cluster}. Thus, in the empirical part, the work will be started from using the smallest (and cheapest EC2 instance type). Should there be any problems, instance types with more resources will be used. Generally, the EC2 resources type should depend on the total quantity of resources needed by pods. (Some pods will be deployed in order to test whether the cluster is healthy). Some overhead must be also considered, because the amount of compute resources that are available for pods, \textbf{the allocatable}, is smaller than the capacity of the whole node \cite{k8s-alloc}.
+\textbf{There was no official statement found stating the minimal capacity of a Kubernetes cluster}. Thus, in the empirical part, the work will be started from using the smallest (and cheapest \textit{EC2 instance type}). Should there be any problems, instance types with more resources will be used. Generally, the EC2 resources type should depend on the total quantity of resources needed by pods. (Some pods will be deployed in order to test whether the cluster is healthy). Some overhead must be also considered, because the amount of compute resources that are available for pods, \textbf{the allocatable}, is smaller than the capacity of the whole node \cite{k8s-alloc}.
 
-To summarize: the production cluster should have at least three master nodes and two worker nodes. The experiments will start from the smallest (and cheapest EC2 instance type) available.
+To summarize: the production cluster should have at least three master nodes and two worker nodes. The experiments will start from the smallest (and cheapest \textit{EC2 instance type}) available.
 
 \subsubsection{Autoscaling}
 
@@ -264,7 +266,7 @@ To summarize: in order to make the cluster more secure, access to the cluster sh
 
 \subsection{Expected cost}
 
-The cost of running the Kubernetes cluster is expected to be low. The clusters will be run for a short while - just to run some tests and then deleted. This should never be longer than 0.5 hour. Experiments may take longer, around several hours. However, the AWS resources which will be used are cheap and their cost depends on how for long they will exist. All the AWS resources which will be used are: S3 buckets, EC3 instances, VPC subnets, Security Groups, Internet Gateway, EBS volumes (attached to EC2 instances), Autoscaling groups, Keypairs, Load balancers.
+The cost of running the Kubernetes cluster is expected to be low. The clusters will be run for a short while - just to run some tests and then deleted. This should never be longer than 0.5 hour. Experiments may take longer, around several hours. However, the AWS resources which will be used are cheap and their cost depends on how for long they will exist. All the AWS resources which will be used are: \textit{S3 buckets, EC3 instances, VPC subnets, Security Groups, Internet Gateway, EBS volumes} (attached to \textit{EC2 instances}), \textit{Autoscaling groups, Keypairs, Load balancers}.
 
 The chosen approach was to read about AWS resources pricing and more or less estimate how much a single experiment would cost. Since it was a small number (less than 1 USD), it was decided to use Cost Allocation Tags \cite{amazon-cost-tags}. One custom tag will be set to distinguish a Kubernetes cluster deployment from other AWS resources.
 

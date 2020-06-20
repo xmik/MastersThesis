@@ -72,7 +72,7 @@ Searching through \textit{Github.com}, there are several \textbf{command-line to
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=17cm]{figures/custom-tools.png}
+    \includegraphics[width=15cm]{figures/custom-tools.png}
     \captionsetup{justification=centering,margin=2cm}
     \caption{Selected opensource tools which deploy a Kubernetes cluster, found on \textit{Github.com}, state for date: 20.04.2020}
     \label{fig:ct}
@@ -109,18 +109,18 @@ The goal of this method is to have the Kubernetes control plane managed by AWS. 
 
 The control plane being already highly available means that there should be at least two API server nodes and three etcd nodes that run across three Availability Zones within a Region. In addition,\textit{AWS EKS} is responsible for automatically detecting and replacing unhealthy control plane instances. Furthermore, version upgrades should be provided automatically and applied \cite{what-is-eks}. There exists a \textbf{Service Level Agreement (SLA)} especially concerning \textit{AWS EKS}. It is a policy which governs the use of the Amazon Elastic Container Service for Kubernetes. For example, the SLA states what is the Monthly Uptime Percentage during any monthly billing cycle (at least 99.95\%) \cite{eks-sla}. Thanks to such a SLA, \textit{AWS EKS} is claimed to be \textbf{reliable and recommended for production workloads} \cite{what-is-eks}.
 
-As far as the master components are concerned, they are run in an account managed by AWS. The Kubernetes API is exposed via the Amazon EKS endpoint which is associated with the cluster. Each Amazon EKS cluster control plane runs on its own set of Amazon EC2 instances \cite{eks-clusters}.
+As far as the master components are concerned, they are run in an account managed by AWS. The Kubernetes API is exposed via the \textit{Amazon EKS} endpoint which is associated with the cluster. Each \textit{Amazon EKS} cluster control plane runs on its own set of \textit{Amazon EC2 instances} \cite{eks-clusters}.
 
-Furthermore, \textit{AWS EKS} also manages the Kubernetes (worker) nodes. The nodes are run in one's AWS account and AWS connects them to the already deployed control plane via the cluster API server endpoint. The worker nodes are grouped in an AWS EC2 Auto Scaling group. The latter fact has some consequences, namely all these nodes have to \cite{eks-worker}:
+Furthermore, \textit{AWS EKS} also manages the Kubernetes (worker) nodes. The nodes are run in one's AWS account and AWS connects them to the already deployed control plane via the cluster API server endpoint. The worker nodes are grouped in an \textit{AWS EC2 Auto Scaling group}. The latter fact has some consequences, namely all these nodes have to \cite{eks-worker}:
 \begin{itemize}
-\item use the same Amazon EC2 instance type,
-\item be instantiated from the same Amazon EC2 image (called: AMI, an abbreviation from Amazon Machine Image \cite{aws-ami}),
-\item use the same Amazon EKS worker node IAM role.
+\item use the same \textit{Amazon EC2 instance type},
+\item be instantiated from the same \textit{Amazon EC2} image (called: \textit{AMI}, an abbreviation from \textit{Amazon Machine Image} \cite{aws-ami}),
+\item use the same \textit{Amazon EKS} worker node \textit{IAM role}.
 \end{itemize}
 
-Fortunately, an \textit{AWS EKS} cluster can contain multiple node groups, therefore there is a possibility to utilize nodes of various AMIs  \cite{eks-worker}. This is an important information, because a Kubernetes administrator may be interested in choosing a particular operating system for a node. There exist such AMIs, which are specifically designed for EKS. This AMI is built on top of Amazon Linux 2 and has some essential tools installed and configured: Docker, kubelet, and the AWS IAM Authenticator. The way in which the AMI is built is coded and made opensource. Thanks to this solution, everyone can build their own AMI, basing on the opensource version  \cite{eks-optimized-ami}. There is even an option to have Windows worker nodes \cite{eks-worker-win}.
+Fortunately, an \textit{AWS EKS} cluster can contain multiple node groups, therefore there is a possibility to utilize nodes of various \textit{AMIs}  \cite{eks-worker}. This is an important information, because a Kubernetes administrator may be interested in choosing a particular operating system for a node. There exist such \textit{AMIs}, which are specifically designed for \textit{EKS}. This \textit{AMI} is built on top of Amazon Linux 2 and has some essential tools installed and configured: \textit{Docker}, \textit{kubelet}, and the \textit{AWS IAM Authenticator}. The way in which the \textit{AMI} is built is coded and made opensource. Thanks to this solution, everyone can build their own \textit{AMI}, basing on the opensource version  \cite{eks-optimized-ami}. There is even an option to have Windows worker nodes \cite{eks-worker-win}.
 
-The cluster control plane is fronted by \textbf{an Elastic Load Balancing Network Load Balancer} and also all the networking is taken care of (elastic network interfaces are provisioned in VPC subnets) to provide connectivity from the control plane instances to the worker nodes. Thanks to that, the \textit{AWS EKS} \textbf{user can access the Kubernetes API Server} \cite{eks-clusters}.
+The cluster control plane is fronted by \textbf{an Elastic Load Balancing Network Load Balancer} and also all the networking is taken care of (elastic network interfaces are provisioned in \textit{VPC subnets}) to provide connectivity from the control plane instances to the worker nodes. Thanks to that, the \textit{AWS EKS} \textbf{user can access the Kubernetes API Server} \cite{eks-clusters}.
 
 In order to use \textit{AWS EKS}, there are two ways supported:
 \begin{itemize}
@@ -129,13 +129,13 @@ In order to use \textit{AWS EKS}, there are two ways supported:
 \end{itemize}
 
 Both of them demand installing \textit{AWS CLI}. In this work, \textbf{the method with \textit{eksctl} CLI is applied}. \textit{Eksctl} is officially the CLI for \textit{AWS EKS}, endorsed by AWS, though it was launched by WeaveWorks. With \textit{eksctl}, a simple command can be used to instantiate the whole cluster \cite{eks-cli-official}:
-\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{eksctl} CLI tool used to create a Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
+\begin{lstlisting}[basicstyle=\scriptsize,caption={A command of \textit{eksctl} CLI tool used to create a Kubernetes cluster},captionpos=b,language=Bash,xleftmargin=1cm]
 $ eksctl create cluster
 \end{lstlisting}
 
 The cluster can be \textbf{configured with a \textit{YAML} file and also by setting \textit{eksctl} CLI flags}. The documentation describing how to do it, is presented on the official \textit{eksctl} website \cite{eksctl}. There is also an example \textit{YAML} configuration file attached on that website. This file is used to customize a cluster. It is also appended below.
 
-\begin{lstlisting}[basicstyle=\small,caption={An example \textit{YAML} file used to customize a Kubernetes cluster created with \textit{eksctl} CLI tool \cite{eksctl}},captionpos=b,language=Bash,xleftmargin=1cm]
+\begin{lstlisting}[basicstyle=\scriptsize,caption={An example \textit{YAML} file used to customize a Kubernetes cluster created with \textit{eksctl} CLI tool \cite{eksctl}},captionpos=b,language=Bash,xleftmargin=1cm]
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 
@@ -171,8 +171,8 @@ Much more information on how to deploy \textit{AWS EKS} Kubernetes cluster can b
 \textit{Here is briefly described the second of the two methods, which are used in the empirical part of this work.}
 \\
 
-\textit{Kops} was already introduced in the subchapter: \ref{cli-tools-to-k8s}. Similarly to \textit{eksctl}, \textit{kops} can also create a \textit{Highly Available Kubernetes cluster}. However it demands more work than \textit{eksctl}. The commands which allow to create a cluster on AWS is given in listing \ref{lst:kops-create} \cite{book-mastering-k8s}:
-\begin{lstlisting}[basicstyle=\small,caption={The commands of \textit{kops} CLI tool used to create a Kubernetes cluster configuration and then to deploy the cluster},captionpos=b,language=Bash,xleftmargin=1cm,label=lst:kops-create]
+\textit{Kops} was already introduced in the subchapter: \ref{cli-tools-to-k8s}. Similarly to \textit{eksctl}, \textit{kops} can also create a \textit{Highly Available Kubernetes cluster}. However it demands more work than \textit{eksctl}. The commands which allow to create a cluster on AWS are given in listing \ref{lst:kops-create} \cite{book-mastering-k8s}.
+\begin{lstlisting}[basicstyle=\scriptsize,caption={The commands of \textit{kops} CLI tool used to create a Kubernetes cluster configuration and then to deploy the cluster},captionpos=b,language=Bash,xleftmargin=1cm,label=lst:kops-create]
 $ kops create cluster ${CLUSTER_NAME} --state \
   "s3://${K8S_EXP_KOPS_S3_BUCKET}" --cloud=aws \
   --zones=us-east-1c
@@ -181,13 +181,13 @@ $ kops update cluster ${CLUSTER_NAME} --state \
 \end{lstlisting}
 But, before these commands can be run, one has to provide some minimal DNS configuration via Route53 (an AWS resource responsible for networking), set up a \textit{S3 bucket} (another AWS resource, responsible for storage) to store the cluster configuration \cite{book-mastering-k8s} and also configure the \textit{AWS IAM} user (an AWS resource responsible for access management) and create a SSH key pair \cite{online-kops-aws}. \textit{Amazon S3} is an AWS service which provides object storage.  \textit{AWS IAM} is an abbreviation from \textit{AWS Identity and Access Management} and it is responsible for managing access to AWS services and resources. The instructions explaining how to set up the AWS resources are provided on the official \textit{kops} website \cite{online-kops-aws}.
 
-The configuration of \textit{kops} is kept in an S3 bucket. In order to change the configuration, the following command has to be used \cite{online-kops-aws}:
-\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{kops} CLI tool used to edit a Kubernetes cluster~configuration},captionpos=b,language=Bash,xleftmargin=1cm]
+The configuration of \textit{kops} is kept in an S3 bucket. In order to change the configuration, the command shown in listing \ref{lst:3-kops-edit} has to be used \cite{online-kops-aws}.
+\begin{lstlisting}[basicstyle=\scriptsize, label=lst:3-kops-edit,caption={A command of \textit{kops} CLI tool used to edit a Kubernetes cluster~configuration},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kops edit cluster ${NAME}
 \end{lstlisting}
 
-A configuration specification file is generated during the create phase and uploaded to a S3 bucket. The configuration can be also kept in \textit{YAML} file. All the configuration options are available on a \textit{kops} documentation website \cite{online-kops-yaml-config-golang}. A cluster can be created then in the following way \cite{online-kops-yaml-config}:
-\begin{lstlisting}[basicstyle=\small,caption={A command of \textit{kops} CLI tool used to create a Kubernetes cluster using a \textit{YAML} configuration file},captionpos=b,language=Bash,xleftmargin=1cm]
+A configuration specification file is generated during the create phase and uploaded to a S3 bucket. The configuration can be also kept in \textit{YAML} file. All the configuration options are available on a \textit{kops} documentation website \cite{online-kops-yaml-config-golang}. A cluster can be created using the command provided in listing \ref{lst:3-kops-create} \cite{online-kops-yaml-config}:
+\begin{lstlisting}[basicstyle=\scriptsize, label=lst:3-kops-create,caption={A command of \textit{kops} CLI tool used to create a Kubernetes cluster using a \textit{YAML} configuration file},captionpos=b,language=Bash,xleftmargin=1cm]
 $ kops create -f $NAME.yaml
 \end{lstlisting}
 
@@ -223,7 +223,7 @@ All the AWS Services, used to manage containers, are as follows:
 
 \textbf{AWS ECR} is not a service which strictly manages the containers, but it manages images. It is \textbf{a fully-managed Docker container registry}. AWS ECR eliminates the need to run such a registry on-premises or worry about scaling the underlying infrastructure. The images are hosted in a highly available and scalable architecture. Similarly to AWS ECS, AWS ECR also integrates with IAM \cite{ecr}.
 
-\textbf{AWS Fargate is a serverless service to run containers}. This service is responsible for allocating the right amount of compute, eliminating the need to choose instances and scale cluster capacity. It can work with both: AWS ECS and \textit{AWS EKS}. AWS Fargate runs each task or pod in its own kernel, therefore the tasks and pods are provided with their own isolated compute environment. Without Fargate, the containers are run on EC2 instances, so the end user has to pay for both: an EC2 instance and for an ECS container \cite{fargate}. Running serverless Kubernetes Pods Using \textit{AWS EKS} and AWS Fargate is very new, a blog post informing about this possibility was created at 3rd of December 2019~\cite{fargate-for-eks}.
+\textbf{AWS Fargate is a serverless service to run containers}. This service is responsible for allocating the right amount of compute, eliminating the need to choose instances and scale cluster capacity. It can work with both: \textit{AWS ECS} and \textit{AWS EKS}. \textit{AWS Fargate} runs each task or pod in its own kernel, therefore the tasks and pods are provided with their own isolated compute environment. Without Fargate, the containers are run on \textit{EC2 instances}, so the end user has to pay for both: an \textit{EC2 instance} and for an \textit{ECS} container \cite{fargate}. Running serverless Kubernetes Pods Using \textit{AWS EKS} and \textit{AWS Fargate} is very new, a blog post informing about this possibility was created at 3rd of December 2019~\cite{fargate-for-eks}.
 
 The last service on the list above, \textbf{AWS EKS}, was already described in this chapter.
 
@@ -231,6 +231,6 @@ The last service on the list above, \textbf{AWS EKS}, was already described in t
 
 There are \textbf{many methods of deploying a Kubernetes cluster}. According to the authors of "Cloud Native DevOps with Kubernetes" \cite{book-cndwk}, the best solution is to use \textbf{Managed Services}. The authors argue that, thanks to this method, one can get a fully working, secure, highly available, production-grade cluster in a few minutes and for a little price. Managed Services are certainly a good way to try Kubernetes out. Then, if one wants to do something non-standard or to experiment with the cluster, then one could choose \textbf{a custom or a hybrid solution}. The self-hosted, deployed on-premises way is recommended if the following qualities are of a great importance: price, low-network latency, regulatory requirements and total control over hardware \cite{book-mastering-k8s}.
 
-Managed Services offer many features like: built-in autoscaling, security, high availability, having serverless options. However, they may be more expensive (for example, when using \textit{AWS EKS}, one has to pay \$0.10 per hour for each Amazon EKS cluster \cite{online-eks-pricing}) and less customizable. Custom solutions allow the Kubernetes administrator to broaden their knowledge and \textbf{grasp the deep understanding} on what is going on under the Kubernetes hood (i.e. one can customize how the Kubernetes control plane is deployed or set up a custom network topology).
+Managed Services offer many features like: built-in autoscaling, security, high availability, having serverless options. However, they may be more expensive (for example, when using \textit{AWS EKS}, one has to pay \$0.10 per hour for each \textit{Amazon EKS} cluster \cite{online-eks-pricing}) and less customizable. Custom solutions allow the Kubernetes administrator to broaden their knowledge and \textbf{grasp the deep understanding} on what is going on under the Kubernetes hood (i.e. one can customize how the Kubernetes control plane is deployed or set up a custom network topology).
 
 There is \textbf{no one right answer} which fits all the use cases. It is always advised to do one's own research and to try and experiment with the existing methods.

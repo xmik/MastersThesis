@@ -58,7 +58,7 @@ $ kops create cluster --state \
 \end{lstlisting}
 \end{mdframed}
 
-The command \textit{kops create cluster} instructs \textit{kops} how to create a cluster. The flag \verb|--master-count=1| says that there will be one master node created, \verb|--master-size=t2.nano| sets the EC2 instance type and \verb|--master-zones=eu-west-1a| configures the AZs in which master nodes will be deployed. Similar flags are used to configure worker nodes. The \verb|--state| flag sets which S3 bucket to use.  \textbf{As expected and what is aligned with the \textit{kops} documentation \cite{online-kops-aws}, the above commands failed}, because the S3 bucket was not created (listing \ref{lst:5-error-kops-create}).
+The command \textit{kops create cluster} instructs \textit{kops} how to create a cluster. The flag \verb|--master-count=1| says that there will be one master node created, \verb|--master-size=t2.nano| sets the \textit{EC2 instance type} and \verb|--master-zones=eu-west-1a| configures the AZs in which master nodes will be deployed. Similar flags are used to configure worker nodes. The \verb|--state| flag sets which S3 bucket to use.  \textbf{As expected and what is aligned with the \textit{kops} documentation \cite{online-kops-aws}, the above commands failed}, because the S3 bucket was not created (listing \ref{lst:5-error-kops-create}).
 \begin{lstlisting}[basicstyle=\tiny,caption={Output of the commands used to create a cluster with \textit{kops}, without prerequisite steps performed},captionpos=b,language=Bash ,label=lst:5-error-kops-create]
 error reading cluster configuration "dummy-k8s-kops.k8s.local":
 error reading s3://dummy-k8s-kops-state-store/dummy-k8s-kops.k8s.local/config:
@@ -127,7 +127,7 @@ The created file \textit{cluster-minimal.kops-tmpl.yaml} was a Go template \cite
   \verb|${K8S_EXP_KOPS_S3_BUCKET}|.
 \end{itemize}
 
-The output of \textit{kops create cluster} command listed the actions which \textit{kops} will perform on the AWS account, e.g. creating EBS volumes for Etcd, configuring IAM, creating keypairs for Kubernetes services, configuring network and setting EC2 instances. Details of the to-be-created resources were also provided, for example, the command output informed that the EC2 image will be: \textit{kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17}. Apart from printing the output, \textit{kops} created a directory named the same as the cluster name (\textit{testing.k8s-kops-for-masters-thesis.k8s.local}) in the S3 bucket. Among the files automatically created by \textit{kops}, there is a configuration file named: \textit{config} and it contains the cluster settings. \textbf{The cluster configuration can be edited from command line} with the command presented below. Running the editing command starts a \textit{vim} session (listing \ref{5-edit}).
+The output of \textit{kops create cluster} command listed the actions which \textit{kops} will perform on the AWS account, e.g. creating EBS volumes for Etcd, configuring IAM, creating keypairs for Kubernetes services, configuring network and setting \textit{EC2 instances}. Details of the to-be-created resources were also provided, for example, the command output informed that the EC2 image will be: \textit{kope.io/k8s-1.16-debian-stretch-amd64-hvm-ebs-2020-01-17}. Apart from printing the output, \textit{kops} created a directory named the same as the cluster name (\textit{testing.k8s-kops-for-masters-thesis.k8s.local}) in the S3 bucket. Among the files automatically created by \textit{kops}, there is a configuration file named: \textit{config} and it contains the cluster settings. \textbf{The cluster configuration can be edited from command line} with the command presented below. Running the editing command starts a \textit{vim} session (listing \ref{5-edit}).
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=5-edit,caption={Command used to edit a Kubernetes cluster managed by \textit{kops}},captionpos=b,language=Bash]
 $ kops edit cluster ${K8S_EXP_CLUSTER_NAME} \
   --state "s3://${K8S_EXP_KOPS_S3_BUCKET}"
@@ -169,7 +169,7 @@ ssh: Could not resolve \
 Name does not resolve
 \end{lstlisting}
 
-It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the EC2 instances. Thus, as a solution -- bigger EC2 instances were used: \textit{t2.micro} instead of \textit{t2.nano}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources \cite{online-perfect-k8s-blog,online-kops-sa,online-ha-k8s-blog}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to \textit{kops} creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publicly reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
+It was expected that the latter command should fail, because \textit{api.testing.k8s-kops-for-masters-thesis.k8s.local} is not a public domain name and thus, it is not available from remote locations (such as this work author's computer). But the former command should have worked. In practice, there was no way to connect to the \textit{EC2 instances}. Thus, as a solution -- bigger \textit{EC2 instances} were used: \textit{t2.micro} instead of \textit{t2.nano}. Using this particular instance type, \textit{t2.micro}, was observed in several online sources \cite{online-perfect-k8s-blog,online-kops-sa,online-ha-k8s-blog}. This time the command succeeded. It was possible to list the worker nodes with: \textit{kubectl get nodes}. It was doable thanks to \textit{kops} creating an AWS Classic LoadBalancer. It exposed the following DNS A record that was publicly reachable: \textit{api-testing-k8s-kops-for--l9puut-1371087518.eu-west-1.elb.amazonaws.com}.
 
 It is also worth mentioning that the kubeconfig (\textit{~/.kube/config}), a Kubernetes configuration file needed to connect to a cluster, was generated automatically. Another thing to notice is that the command, which deploys a Kubernetes cluster, returned immediately, without waiting for the cluster to be ready. In the next deployments, some waiting mechanism must be applied, so that the cluster creation and verification can be automated. Listing \ref{lst:5-kops-cluster-info} presents command used to request information about the cluster:
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,caption={Command used to request information about a running Kubernetes cluster},label=lst:5-kops-cluster-info]
@@ -282,13 +282,13 @@ The options used to create a production \textit{kops} cluster were described in 
  \hline
  -{}-master-count=3  & deploy 3 master nodes \\
  \hline
- -{}-master-size=t2.micro  & choose EC2 instance type for master nodes \\
+ -{}-master-size=t2.micro  & choose \textit{EC2 instance type} for master nodes \\
  \hline
  -{}-zones="eu-west-1a"  & choose AZs for node instances \\
  \hline
  -{}-node-count=1  & deploy 1 worker node \\
  \hline
- -{}-node-size=t2.micro  & choose EC2 instance type for worker nodes \\
+ -{}-node-size=t2.micro  & choose \textit{EC2 instance type} for worker nodes \\
  \hline
  -{}-ssh-access=\$\{my\_ip\}/32  & apply more security \\
  \hline
@@ -350,7 +350,7 @@ kops$ ./kops/tasks _create
 \end{lstlisting}
 
 This command utilizes the \textit{Bash} variables set: \verb|K8S_EXP_ENVIRONMENT|, \\
-\verb|K8S_EXP_CLUSTER_NAME|, \verb|K8S_EXP_KOPS_S3_BUCKET| and creates \textit{cluster.yaml} file (out of the \textit{Bash} template file: \textit{cluster.tmpl.yaml}). Then, a \textit{kops} secret with SSH key is created. Then it updates the configuration on S3 using the local file \textit{cluster.tmpl.yaml}. Then, it creates a cluster. It creates AWS resources needed for Kubernetes cluster (EC2 instances, VPC, etc.).
+\verb|K8S_EXP_CLUSTER_NAME|, \verb|K8S_EXP_KOPS_S3_BUCKET| and creates \textit{cluster.yaml} file (out of the \textit{Bash} template file: \textit{cluster.tmpl.yaml}). Then, a \textit{kops} secret with SSH key is created. Then it updates the configuration on S3 using the local file \textit{cluster.tmpl.yaml}. Then, it creates a cluster. It creates AWS resources needed for Kubernetes cluster (\textit{EC2 instances, VPC}, etc.).
 
 It was decided that this command should stop only after the Kubernetes cluster is ready. Thus, a simple \textit{Bash} loop was implemented, which checks every 1 second if a cluster is ready. The loop is presented in listing \ref{lst:5-kops-wait}.
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-wait,caption={A waiting mechanism that waits until a \textit{kops} cluster is ready}]
@@ -362,8 +362,8 @@ done;
 
 
 
-Thanks to the custom cloud label: \textit{deployment}, it is now possible to list all the AWS EC2 instances, which have this AWS tag (cloud label) set (listing \ref{lst:5-kops-list-ec2}).
-\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-list-ec2,caption={Listing all AWS EC2 instances by AWS tag}]
+Thanks to the custom cloud label: \textit{deployment}, it is now possible to list all the \textit{AWS EC2 instances}, which have this AWS tag (cloud label) set (listing \ref{lst:5-kops-list-ec2}).
+\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-list-ec2,caption={Listing all \textit{AWS EC2 instancs} by AWS tag}]
 $ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" \
   --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,\
   Name:Tags[?Key=='Name']|[0].Value,Status:State.Name}"
@@ -477,9 +477,9 @@ An example log message is presented in listing \ref{lst:5-kops-logs}:
 It can be also verified, that the custom labels applied to AWS resources by the cluster \textit{YAML} configuration file, are indeed visible. The custom label here is \textit{deployment: kops-testing} (Fig. \ref{fig:kops-master-ec2-custom-tags}).
 \begin{figure}[H]
     \centering
-    \includegraphics[width=16cm]{figures/kops-master-ec2-custom-tags.png}
+    \includegraphics[width=14cm]{figures/kops-master-ec2-custom-tags.png}
     \captionsetup{justification=centering,margin=2cm}
-    \caption{AWS Management Console showing tags applied on~EC2 instance which is a master node}
+    \caption{AWS Management Console showing tags applied on~\textit{EC2 instance} which is a master node}
     \label{fig:kops-master-ec2-custom-tags}
 \end{figure}
 
@@ -668,7 +668,7 @@ apache-testing   12/200   200          12        13m
 \end{lstlisting}
 
 This triggered the creation of another node and in a short while, there were two nodes in the cluster (listing \ref{lst:5-kops-ec2-list2}).
-\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-ec2-list2,caption={Listing the EC2 instances, 1 of them was created by autoscaler}]
+\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-ec2-list2,caption={Listing the \textit{EC2 instances}, 1 of them was created by autoscaler}]
 kops$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" \
   --query "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags\
     [?Key=='Name']|[0].Value,Status:State.Name}"
@@ -697,7 +697,7 @@ kops$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" \
 ]
 \end{lstlisting}
 
-Afterwards, the pod replicas were scaled back to "1" and then, autoscaler terminated one of the worker nodes. Soon, one of the EC2 instances was in the status: \textit{erminated}. This proved that autoscaler works for a Kubernetes cluster deployed with \textit{kops}.
+Afterwards, the pod replicas were scaled back to "1" and then, autoscaler terminated one of the worker nodes. Soon, one of the \textit{EC2 instances} was in the status: \textit{erminated}. This proved that autoscaler works for a Kubernetes cluster deployed with \textit{kops}.
 
 When it comes to running a cluster in the High Availability mode, there were no problems whatsoever. No matter if the cluster was created with one master node or multiple master nodes -- it was working. In \textit{High Availability} mode, the information about the cluster, listing the master and the worker nodes, is demonstrated in listing \ref{lst:5-kops-get-nodes-info}. Several master machines were observed.
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-get-nodes-info,caption={Getting information about the cluster}]
@@ -732,67 +732,67 @@ The machines can be also viewed on AWS Management Console (Fig. \ref{fig:k8s-kop
     \centering
     \includegraphics[width=16cm]{figures/k8s-kops-ha-aws-small.png}
     \captionsetup{justification=centering,margin=2cm}
-    \caption{EC2 instance in HA mode for \textit{kops} cluster}
+    \caption{\textit{EC2 instance} in \textit{HA} mode for \textit{kops} cluster}
     \label{fig:k8s-kops-ha-aws}
 \end{figure}
 
 The tests were invoked both in \textit{High Availability} mode and also with one master cluster. The tests succeeded in both cases. In HA mode, all the Kubernetes control plane components were duplicated in this case -- three times (listing \ref{lst:5-kops-get-pods}).
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-kops-get-pods,caption={Kubernetes control plane components, \textit{High Availability}}]
 $ kubectl -n kube-system get pod
-NAME                                                                  READY   STATUS\
-    RESTARTS   AGE
-dns-controller-776cdf4ff4-xw4tg                                       1/1     Running\
-   0          2m18s
-etcd-manager-events-ip-172-20-108-29.eu-west-1.compute.internal       1/1     Running\
-   0          66s
-etcd-manager-events-ip-172-20-61-242.eu-west-1.compute.internal       1/1     Running\
-   0          86s
-etcd-manager-events-ip-172-20-89-96.eu-west-1.compute.internal        1/1     Running\
-   0          96s
-etcd-manager-main-ip-172-20-108-29.eu-west-1.compute.internal         1/1     Running\
-   0          53s
-etcd-manager-main-ip-172-20-61-242.eu-west-1.compute.internal         1/1     Running\
-   0          56s
-etcd-manager-main-ip-172-20-89-96.eu-west-1.compute.internal          1/1     Running\
-   0          80s
-kops-controller-2tz4h                                                 1/1     Running\
-   0          2m8s
-kops-controller-7mr7s                                                 1/1     Running\
-   0          2m14s
-kops-controller-psfch                                                 1/1     Running\
-   0          2m8s
-kube-apiserver-ip-172-20-108-29.eu-west-1.compute.internal            1/1     Running\
-   3          110s
-kube-apiserver-ip-172-20-61-242.eu-west-1.compute.internal            1/1     Running\
-   3          114s
-kube-apiserver-ip-172-20-89-96.eu-west-1.compute.internal             1/1     Running\
-   3          92s
-kube-controller-manager-ip-172-20-108-29.eu-west-1.compute.internal   1/1     Running\
-   0          2m6s
-kube-controller-manager-ip-172-20-61-242.eu-west-1.compute.internal   1/1     Running\
-   0          105s
-kube-controller-manager-ip-172-20-89-96.eu-west-1.compute.internal    1/1     Running\
-   0          79s
-kube-dns-autoscaler-594dcb44b5-ccnjf                                  1/1     Running\
-   0          2m19s
-kube-dns-b84c667f4-5tb9z                                              3/3     Running\
-   0          105s
-kube-dns-b84c667f4-8vmh4                                              3/3     Running\
-   0          2m21s
-kube-proxy-ip-172-20-108-29.eu-west-1.compute.internal                1/1     Running\
-   0          116s
-kube-proxy-ip-172-20-55-72.eu-west-1.compute.internal                 1/1     Running\
-   0          110s
-kube-proxy-ip-172-20-61-242.eu-west-1.compute.internal                1/1     Running\
-   0          65s
-kube-proxy-ip-172-20-89-96.eu-west-1.compute.internal                 1/1     Running\
-   0          61s
-kube-scheduler-ip-172-20-108-29.eu-west-1.compute.internal            1/1     Running\
-   0          2m
-kube-scheduler-ip-172-20-61-242.eu-west-1.compute.internal            1/1     Running\
-   0          2m13s
-kube-scheduler-ip-172-20-89-96.eu-west-1.compute.internal             1/1     Running\
-   0          112s
+NAME         READY\
+  STATUS  RESTARTS   AGE
+dns-controller-776cdf4ff4-xw4tg                                     1/1\
+  Running 0          2m18s
+etcd-manager-events-ip-172-20-108-29.eu-west-1.compute.internal     1/1\
+  Running 0          66s
+etcd-manager-events-ip-172-20-61-242.eu-west-1.compute.internal     1/1 \
+  Running 0          86s
+etcd-manager-events-ip-172-20-89-96.eu-west-1.compute.internal      1/1\
+  Running 0          96s
+etcd-manager-main-ip-172-20-108-29.eu-west-1.compute.internal       1/1\
+  Running 0          53s
+etcd-manager-main-ip-172-20-61-242.eu-west-1.compute.internal       1/1\
+  Running 0          56s
+etcd-manager-main-ip-172-20-89-96.eu-west-1.compute.internal        1/1\
+  Running 0          80s
+kops-controller-2tz4h                                               1/1\
+  Running 0          2m8s
+kops-controller-7mr7s                                               1/1\
+  Running 0          2m14s
+kops-controller-psfch                                               1/1\
+  Running 0          2m8s
+kube-apiserver-ip-172-20-108-29.eu-west-1.compute.internal          1/1\
+  Running 3          110s
+kube-apiserver-ip-172-20-61-242.eu-west-1.compute.internal          1/1\
+  Running 3          114s
+kube-apiserver-ip-172-20-89-96.eu-west-1.compute.internal           1/1\
+  Running 3          92s
+kube-controller-manager-ip-172-20-108-29.eu-west-1.compute.internal 1/1\
+  Running 0          2m6s
+kube-controller-manager-ip-172-20-61-242.eu-west-1.compute.internal 1/1\
+  Running 0          105s
+kube-controller-manager-ip-172-20-89-96.eu-west-1.compute.internal  1/1\
+  Running 0          79s
+kube-dns-autoscaler-594dcb44b5-ccnjf                                1/1\
+  Running 0          2m19s
+kube-dns-b84c667f4-5tb9z                                            3/3\
+  Running 0          105s
+kube-dns-b84c667f4-8vmh4                                            3/3\
+  Running 0          2m21s
+kube-proxy-ip-172-20-108-29.eu-west-1.compute.internal              1/1\
+  Running 0          116s
+kube-proxy-ip-172-20-55-72.eu-west-1.compute.internal               1/1\
+  Running 0          110s
+kube-proxy-ip-172-20-61-242.eu-west-1.compute.internal              1/1\
+  Running 0          65s
+kube-proxy-ip-172-20-89-96.eu-west-1.compute.internal               1/1\
+  Running 0          61s
+kube-scheduler-ip-172-20-108-29.eu-west-1.compute.internal          1/1\
+  Running 0          2m
+kube-scheduler-ip-172-20-61-242.eu-west-1.compute.internal          1/1\
+  Running 0          2m13s
+kube-scheduler-ip-172-20-89-96.eu-west-1.compute.internal           1/1\
+  Running 0          112s
 \end{lstlisting}
 
 \subsubsection{Testing a cluster}
@@ -1158,7 +1158,7 @@ It was also possible to view the AWS resources which were provided by each Cloud
     \label{eks-cf-resources}
 \end{figure}
 
-The control plane is entirely managed by AWS and it is run across three AWS availability zones in order to ensure high availability. The end user has even no access to the control plane, meaning: there is no EC2 instance with master node visible and when listing all Kubernetes nodes, only the worker nodes are visible (Fig. \ref{eks-on-aws-node}).
+The control plane is entirely managed by AWS and it is run across three AWS availability zones in order to ensure high availability. The end user has even no access to the control plane, meaning: there is no \textit{EC2 instance} with master node visible and when listing all Kubernetes nodes, only the worker nodes are visible (Fig. \ref{eks-on-aws-node}).
 \begin{figure}[H]
     \centering
     \includegraphics[width=16cm]{figures/eks-on-aws-node-small.png}
@@ -1254,7 +1254,7 @@ There was nothing needed to be done in order to provide High Availability. The c
 [info]  subnets for eu-west-1c - public:192.168.64.0/19 private:192.168.160.0/19
 \end{lstlisting}
 
-Central Monitoring system was also already available. AWS provides several metrics considering EC2 instances. The same metrics can be viewed in this subchapter as in the according subchapter for \textit{kops} cluster. All the available metrics are presented in figure \ref{eks-monitoring-ec2-node}.
+Central Monitoring system was also already available. AWS provides several metrics considering \textit{EC2 instances}. The same metrics can be viewed in this subchapter as in the according subchapter for \textit{kops} cluster. All the available metrics are presented in figure \ref{eks-monitoring-ec2-node}.
 \begin{figure}[H]
     \centering
     \includegraphics[width=17cm]{figures/eks-monitoring-ec2-node-small.png}
@@ -1331,7 +1331,7 @@ iam:
     cloudWatch: true
 \end{lstlisting}
 
-Afterwards, the same procedure as described with \textit{kops} was used. In result, deploying a test application and scaling its replicas number to 20 resulted in autoscaler adding another EC2 instance - a worker node. All the worker nodes were listed with the  commands provided in listing \ref{lst:5-eks-list-ec2}.
+Afterwards, the same procedure as described with \textit{kops} was used. In result, deploying a test application and scaling its replicas number to 20 resulted in autoscaler adding another \textit{EC2 instance} - a worker node. All the worker nodes were listed with the  commands provided in listing \ref{lst:5-eks-list-ec2}.
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-eks-list-ec2,caption={Listing \textit{EC2 instances}, one was created by autoscaler},captionpos=b,language=Bash]
 eks$ aws ec2 describe-instances --filters "Name=tag-key,Values=deployment" --query\
   "Reservations[*].Instances[*].{PublicIP:PublicIpAddress,Name:Tags\
@@ -1357,7 +1357,7 @@ NAME                                          STATUS   ROLES    AGE   VERSION
 ip-192-168-111-191.eu-west-1.compute.internal Ready    <none>   67s   v1.16.8-eks-e16311
 ip-192-168-162-84.eu-west-1.compute.internal  Ready    <none>   10m   v1.16.8-eks-e16311
 \end{lstlisting}
-Afterwards, the testing application was uninstalled with \textit{Helm} and after more than 5 minutes, the worker node EC2 instance was automatically removed.
+Afterwards, the testing application was uninstalled with \textit{Helm} and after more than 5 minutes, the worker node \textit{EC2 instance} was automatically removed.
 
 \subsubsection{Testing a cluster}
 The testing procedure was the same as with \textit{kops}. Different command was invoked (because all the commands to run with \textit{eksctl} were put into one file), but all the \textit{Bats-core} tests were the same. Even the same \textit{Bats-core} files were used. There was obviously no \textit{kops validate cluster} command run, because that command was dedicated to \textit{kops} clusters only. For the details, please refer to section \ref{kops-testing}. Running all the tests took slightly less than 7 minutes. It took long to have a working Load Balancer. The command to run tests was presented in listing \ref{lst:5-eks-test}.
@@ -1404,7 +1404,7 @@ nodeGroups:
         - arn:aws:iam::aws:policy/ElasticLoadBalancingFullAccess
 \end{lstlisting}
 
-When deploying Cluster Autoscaler, there was a problem. The Cluster Autoscaler pod was in status \textit{Pending}. This is the same case as with the \textit{Velero} Pod, described in section \ref{kops-troubleshooting}. In this case there was too little memory. The EC2 instances type which was used initially, were \textit{t2.nano}. It was decided to try \textit{t2.micro} instances type. The problem was debugged with command presented in listing \ref{lst:5-eks-ts4}.
+When deploying Cluster Autoscaler, there was a problem. The Cluster Autoscaler pod was in status \textit{Pending}. This is the same case as with the \textit{Velero} Pod, described in section \ref{kops-troubleshooting}. In this case there was too little memory. The \textit{EC2 instance types} which were used initially, were \textit{t2.nano}. It was decided to try \textit{t2.micro} instances type. The problem was debugged with command presented in listing \ref{lst:5-eks-ts4}.
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-eks-ts4,caption={Debugging cluster autoscaler},captionpos=b,language=Bash ]
 eks$ kubectl get -n kube-system pod
 NAME                                  READY   STATUS    RESTARTS   AGE
@@ -1433,7 +1433,7 @@ Events:
   0/1 nodes are available: 1 Insufficient pods.
 \end{lstlisting}
 
-The potential solution, found on Stack Overflow, suggested that \textit{t2.small} is the smallest instance type which is acceptable \cite{eks-instance-problem-so}. It turned out, that this problem was caused by an already described fact, that \textit{AWS EKS} uses hard limits for number of pods allowed for a particular EC2 instance type \cite{eks-hard-limits}. Thus, even bigger instance was used: \textit{t2.small}. After the bigger instance type was used, all the pods in \textit{kube-system} namespace were in status \textit{Running} (listing \ref{lst:5-eks-ts-get-pod}).
+The potential solution, found on Stack Overflow, suggested that \textit{t2.small} is the smallest instance type which is acceptable \cite{eks-instance-problem-so}. It turned out, that this problem was caused by an already described fact, that \textit{AWS EKS} uses hard limits for number of pods allowed for a particular \textit{EC2 instance type} \cite{eks-hard-limits}. Thus, even bigger instance was used: \textit{t2.small}. After the bigger instance type was used, all the pods in \textit{kube-system} namespace were in status \textit{Running} (listing \ref{lst:5-eks-ts-get-pod}).
 \begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:5-eks-ts-get-pod,caption={Verifying that all the pods are running},captionpos=b,language=Bash ]
 eks$ kubectl get pod -n kube-system
 NAME                       READY   STATUS    RESTARTS   AGE
@@ -1498,7 +1498,7 @@ $ kubectl describe pods ${POD_NAME}
 $ kubectl logs ${POD_NAME}
 \end{lstlisting}
 
-Even the \textbf{pod status} may provide us with enough information, what steps should be taken next. If a pod is in Pending status, then it could mean that there are not enough resources in the cluster (e.g. the worker nodes use too small EC2 instance types or there are too few worker nodes). A pod may be also in status \textit{CrashLoopBackOff} which indicates that a container is repeatedly crashing after restarting. There may a problem also that a Docker image for a container cannot be downloaded and a pod may be in state \textit{ImagePullBackOff} or \textit{ErrImagePull} \cite{k8s-google-tr}.
+Even the \textbf{pod status} may provide us with enough information, what steps should be taken next. If a pod is in Pending status, then it could mean that there are not enough resources in the cluster (e.g. the worker nodes use too small \textit{EC2 instance types} or there are too few worker nodes). A pod may be also in status \textit{CrashLoopBackOff} which indicates that a container is repeatedly crashing after restarting. There may a problem also that a Docker image for a container cannot be downloaded and a pod may be in state \textit{ImagePullBackOff} or \textit{ErrImagePull} \cite{k8s-google-tr}.
 
 It is also always a good idea to \textbf{read log messages} (so access to log messages should be always supplied). The following Kubernetes components log messages may be helpful \cite{k8s-deb-cluster}:
 \begin{itemize}
