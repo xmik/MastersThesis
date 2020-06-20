@@ -117,12 +117,73 @@ In order to deploy the clusters, many tools were needed. However, these tools we
 
 To summarize, both methods require the same steps to work in a production environment specified in this work, but the S3 bucket was used by choice and it could be replaced with some other storage solution.
 
-\subsection{Minimal EC2 instance type needed for a Kubernetes worker node}
-Various EC2 instances types cost various amount of money. Thus, it is preferable if one could use the cheapest possible instance type. It was proved, that \textbf{the smallest EC2 instance type, possible to be used in an AWS EKS cluster is \textit{t2.small}}. It was because of the hard limits set by AWS EKS for number of pods allowed for a particular EC2 instance type. The type \textit{t2.micro} allows for maximally 4 pods \cite{eks-hard-limits}. It was verified by experiment that \textit{eksctl} deploys 4 pods on a worker node, be design. Thus, there is no room left to deploy any application more. The type \textit{t2.small} allows for 11 pods.
+\subsection{Minimal \textit{EC2 instance type} needed for a Kubernetes worker node}
+Various \textit{EC2 instances types} cost various amount of money. Thus, it is preferable to use the cheapest possible instance type. In this subchapter the minimal \textit{EC2 instance type}  needed for a Kubernetes worker node, in a production ready cluster, will be indicated.
 
-Contrary to the AWS EKS cluster, there are no hardcoded limits for the number of pods when using \textit{kops}. \textbf{\textit{Kops} method allowed to use smaller instances of type: \textit{t2.micro}}. Using even smaller type (\textit{t2.nano}) resulted in the worker node being not accessible. There was no way to connect to the EC2 instance. The type \textit{t2.micro} was also used in some publicly available \textit{kops} tutorials, thus it was a proof that the practice matched the theory.
+In order to meet production environment requirements, this number of pods is needed to be deployed on a worker node (additionally to the pods deployed by default by \textit{eksctl} and \textit{kops}):
+\begin{itemize}
+\item \textbf{three pods for a cluster created with \textit{eksctl}} (one pod for testing, one pod for backup and one pod for autoscaler),
+\item \textbf{five pods for a cluster created with \textit{kops}} (one pod for testing, one pod for backup, one pod for autoscaler, two pods for logging).
+\end{itemize}
 
-To summarize, \textbf{\textit{kops} clusters allows worker nodes of smaller and cheaper EC2 instance types}. The smallest working type for \textit{kops} is \textit{t2.micro}, whereas for \textit{eksctl}: \textit{t2.nano}.
+As far as \textit{eksctl} method is concerned, there are by default four pods deployed on a worker node. This was shown in listing \ref{lst:5-eks-ts4}. Thus, \textbf{altogether, there have to be $4+3=7$ pods deployed on a worker node}. Now, the hard limits described in section \ref{subsection-cp-ha} have to be considered. The \textit{EC2 instance types} \textit{t2.nano} and \textit{t2.micro} allow for maximally 4 pods on one EC2 instance \cite{eks-hard-limits}. The next, bigger instance type is \textit{t2.small} and it allows for 11 pods. Conclusion: when it comes to the number of allowed pods on a worker node, the minimal EC2 instance type is \textit{t2.small}.
+
+Another thing to consider is whether \textit{t2.small} is enough when it comes to EC2 CPU and memory resources. This was checked empirically, by deploying a cluster with \textit{eksctl} and then deploying the three pods needed to satisfy the production environment requirements (listing \ref{lst:6-eksctl-create}).
+\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:6-eksctl-create,caption={Deploying a production ready \textit{eksctl} cluster},captionpos=b,language=Bash]
+eks$ export K8S_EXP_ENVIRONMENT=testing
+eks$ ./tasks _create
+eks$ ./tasks _enable_velero
+eks$ ./tasks _enable_as
+eks$ ./tasks _test
+\end{lstlisting}
+
+All the seven pods were in status \textit{Running} and the tests were successful. Thus, it may be concluded that when in comes to EC2 instance CPU and memory resources, the EC2 instance type \textit{t2.small} is enough. This may be seen in listing \ref{lst:6-eksctl-t2small-success}.
+\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:6-eksctl-t2small-success,caption={Verifying a production ready \textit{eksctl} cluster},captionpos=b,language=Bash]
+eks$ ./tasks _test
++ cd ../tests
++ bats tests.bats
+ ✓ kubernetes machines have correct version
+ ✓ 1 kubernetes worker nodes have status: Ready
+ ✓ kubectl cluster-info returns expected output
+ ✓ a test application can be deployed on kubernetes
+ ✓ a test application is available (ingress resource works)
+ ✓ a test service (test website) can be deleted from kubernetes
+
+6 tests, 0 failures
+
+
+real	6m46.134s
+user	0m13.979s
+sys	0m4.544s
++ cd ../eks
+eks$ kubectl get --all-namespaces pod
+NAMESPACE     NAME                                READY STATUS  RESTARTS AGE
+kube-system   aws-node-p4985                      1/1   Running 0        11m
+kube-system   cluster-autoscaler-7d7b5564df-2t6jj 1/1   Running 0        3m2s
+kube-system   coredns-8568c98b77-hps7d            1/1   Running 0        27m
+kube-system   coredns-8568c98b77-l4pw5            1/1   Running 0        27m
+kube-system   kube-proxy-md2fd                    1/1   Running 0        11m
+testing       apache-testing-7448f49855-qdfzx     1/1   Running 0        111s
+velero        velero-6fffc8dc85-tflxg             1/1   Running 0        3m54s
+\end{lstlisting}
+
+The third aspect is, that it is possible to deploy some pods on a master node or mark the master node as schedulable only by Kubernetes system components \cite{k8s-adv-sch}. However, this is not the case for \textit{AWS EKS}. In \textit{AWS EKS}, the control plane is locked down and scheduling any workloads on the control plane nodes is forbidden \cite{k8s-eks-master-no-schedulable}.
+
+
+
+Contrary to the \textit{AWS EKS} cluster, there are no hardcoded limits for the number of pods when using \textit{kops}. From the experiments run in the section \ref{kops-troubleshooting}, it was tested that the \textit{EC2 instance type t2.micro} is too small. The experiment was repeated with  the \textit{EC2 instance type t2.small} for a worker node and with deploying all the services needed for a production environment (listing \ref{lst:6-kops-create}).
+\begin{lstlisting}[basicstyle=\scriptsize,xleftmargin=0cm,label=lst:6-kops-create,caption={Deploying a production ready \textit{kops} cluster},captionpos=b,language=Bash]
+kops$ export K8S_EXP_ENVIRONMENT=testing
+kops$ ./tasks _create
+kops$ ./tasks _enable_velero
+kops$ ./tasks _enable_as
+kops$ ./tasks _enable_logging
+kops$ ./tasks _test
+\end{lstlisting}
+
+The tests were successful and all the pods were in status \textit{Running}. Thus, it may be concluded that the minimal \textit{EC2 instance type} is \textit{t2.small}.
+
+To summarize, \textbf{both methods of deploying Kubernetes clusters \textit{kops} and \textit{eksctl} allow worker nodes minimally of \textit{EC2 instance type: t2.small}}, in order to satisfy the production deployment requirements. However, for experimental environments, \textit{kops} allows for smaller types (\textit{t2.micro} can be used).
 
 \subsection{Easiness of configuration}
 
@@ -191,19 +252,19 @@ When it comes to the S3 cost, the storage cost is very cheap - \$0.023 for 1 GB 
  \hline
   \textbf{AWS Resource} & \textbf{Cost using \textit{eksctl} method} \\
  \hline
- 1 Nat Gateway \cite{amazon-vpc-pricing} & 720 * \$0.048 = \$34.56 \\
+ 1 \textit{Nat Gateway} \cite{amazon-vpc-pricing} & 720 * \$0.048 = \$34.56 \\
  \hline
- Classic Load Balancer \cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
+ \textit{Classic Load Balancer} \cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
  \hline
- 2 CloudFormation stacks \cite{amazon-cf-pricing}  & 88 * \$0.0009 = \$ 0.0792 \\
+ 2 \textit{CloudFormation stacks} \cite{amazon-cf-pricing}  & 88 * \$0.0009 = \$ 0.0792 \\
  \hline
- AWS EKS cluster \cite{online-eks-pricing} & 720 * \$0.10 = \$ 72 \\
+ \textit{AWS EKS} cluster \cite{online-eks-pricing} & 720 * \$0.10 = \$ 72 \\
  \hline
- 2 EC2 instances of type: \textit{t2.small} \cite{ec2-pricing}  & 2 * 720 * \$0.025 = \$36 \\
+ 2 \textit{EC2 instances} of type: \textit{t2.small} \cite{ec2-pricing}  & 2 * 720 * \$0.025 = \$36 \\
  \hline
- keeping files on S3 bucket \cite{s3-pricing}  & \$0.023 \\
+ keeping files on \textit{S3 bucket} \cite{s3-pricing}  & \$0.023 \\
  \hline
- \textbf{Total}  & \textbf{\$ 162.82} \\
+ \textbf{Total}  & \textbf{\$ 162.8222} \\
  \hline
 \end{tabularx}
 \end{table}
@@ -219,20 +280,22 @@ When it comes to the S3 cost, the storage cost is very cheap - \$0.023 for 1 GB 
  \hline
   \textbf{AWS Resource} & \textbf{Cost using \textit{kops} method} \\
  \hline
- 5 EC2 instances of type: \textit{t2.micro} \cite{ec2-pricing} & 720 * \$0.0126 = \$ 9.072  \\
+ 3 \textit{EC2 instances} of type: \textit{t2.micro} \cite{ec2-pricing} & 3 * 720 * \$0.0126 = \$ 27.216  \\
  \hline
- Classic Load Balancer \cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
+ 2 \textit{EC2 instances} of type: \textit{t2.small} \cite{ec2-pricing}  & 2 * 720 * \$0.025 = \$36 \\
  \hline
- 6 EBS volumes of type gp2 and 20GB each \cite{ebs-pricing} & 6 * 20 * \$0.11 = \$13.2 \\
+ \textit{Classic Load Balancer} \cite{amazon-elb-pricing}  & 720 * \$0.028 = \$20.16 \\
  \hline
- keeping files on S3 bucket \cite{s3-pricing}  & \$0.023 \\
+ 6 \textit{EBS volumes} of type gp2 and 20GB each \cite{ebs-pricing} & 6 * 20 * \$0.11 = \$13.2 \\
  \hline
- \textbf{Total}  & \textbf{\$42.46} \\
+ keeping files on \textit{S3 bucket} \cite{s3-pricing}  & \$0.023 \\
+ \hline
+ \textbf{Total}  & \textbf{\$96.599} \\
  \hline
 \end{tabularx}
 \end{table}
 
-Based on the calculations provided above it costs \$ 162.82 to run a Kubernetes cluster created by \textit{eksctl} and \$42.46 to run a Kubernetes cluster created by \textit{kops}, on AWS, for a 30-day month. Some costs, e.g. data transfer, were not included.
+Based on the calculations provided above it costs \$ 162.83 to run a Kubernetes cluster created by \textit{eksctl} and \$ 96.60 to run a Kubernetes cluster created by \textit{kops}, on AWS, for a 30-day month. Some costs, e.g. data transfer, were not included.
 
 % \subsection{Updating a running cluster}
 % * how to change running cluster configuration
@@ -247,10 +310,10 @@ Based on the calculations provided above it costs \$ 162.82 to run a Kubernetes 
 
 \subsection{Summary}
 
-This was the main chapter of this work. It utilized the knowledge and experience gained throughout the previous, empirical chapters. The goal of this study was to compare two methods of a Kubernetes cluster deployment: using \textit{kops} and using \textit{eksctl}. In this chapter,  seven comparison criteria were applied. The criteria entailed: whether all the production environment requirements were met, time needed to operate a cluster, additional prerequisites, minimal EC2 instance types for worker nodes, easiness of configuration, meeting the automation requirement and cost of chosen Kubernetes cluster operations.
+This was the main chapter of this work. It utilized the knowledge and experience gained throughout the previous, empirical chapters. The goal of this master's thesis was to compare two methods of a Kubernetes cluster deployment: using \textit{kops} and using \textit{eksctl}. In this chapter,  seven comparison criteria were applied. The criteria entailed: whether all the production environment requirements were met, time needed to operate a cluster, number of additional prerequisites, minimal EC2 instance types for worker nodes, easiness of configuration, meeting the automation requirement and cost of chosen Kubernetes cluster operations.
 
 Some criteria are subjective, because one may enjoy having a wide choice of possible configuration to set, whereas another (or other use case) would prefer to create a cluster without a redundant hassle. Unquestionably: time and cost are the criteria helping us to decide objectively which method is better. Considering the two criteria, the winner is \textit{kops}. \textit{Kops} also provides more configuration options and can be applied on multiple clouds (not only AWS).
 
-On the contrary, \textit{eksctl} provides an easier way to configure the cluster, because it is convenient to create a \textit{YAML} configuration file by hand. There are also no prerequisites needed before performing the deployment with \textit{eksctl}, unless one needs to satisfy the backup requirement. Then, some storage location (such as an S3 bucket) is needed. \textit{Kops} needs an S3 bucket to keep the cluster configuration. Besides, \textit{eksctl} provides a managed service (AWS EKS), thus the Kubernetes cluster administrator does not have to worry about managing the control plane components.
+On the contrary, \textit{eksctl} provides an easier way to configure the cluster, because it is convenient to create a \textit{YAML} configuration file by hand. There are also no prerequisites needed before performing the deployment with \textit{eksctl}, unless one needs to satisfy the backup requirement. Then, some storage location (such as an S3 bucket) is needed. \textit{Kops} needs an S3 bucket to keep the cluster configuration. Besides, \textit{eksctl} provides a managed service (\textit{AWS EKS}), thus the Kubernetes cluster administrator does not have to worry about managing the control plane components.
 
-The last things that should be noted is that \textit{eksctl} is not the same as AWS EKS, even though \textit{eksctl} utilizes AWS EKS resource. Furthermore, all the results collected in this study may depend on the versions of \textit{kops}, \textit{eksctl} and maybe Kubernetes itself. This study used the particular versions of each tool and is based on the author's own experiments.
+The last things that should be noted is that \textit{eksctl} is not the same as \textit{AWS EKS}, even though \textit{eksctl} utilizes \textit{AWS EKS} resource. Furthermore, all the results collected in this study may depend on the versions of \textit{kops}, \textit{eksctl} and maybe Kubernetes itself. This thesis used the particular versions of each tool and is based on the author's own experiments.

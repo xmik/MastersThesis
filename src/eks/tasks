@@ -12,6 +12,28 @@ fi
 export K8S_EXP_CLUSTER_NAME="eks-${K8S_EXP_ENVIRONMENT}"
 export K8S_EXP_VELERO_S3_BUCKET="k8s-eks-for-masters-thesis.k8s.local"
 
+function create_s3_bucket() {
+  local bucket_name=$1
+  local region=$2
+
+  if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${bucket_name} >/dev/null; then
+    echo "S3 Bucket already exists"
+  else
+    echo "Creating S3 Bucket: ${bucket_name}"
+    set -x
+    aws s3api create-bucket --bucket ${bucket_name} --region ${region} --create-bucket-configuration LocationConstraint=${region}
+    # enable s3 bucket versioning.
+    # strongly recommended in: https://aws.amazon.com/blogs/compute/kubernetes-clusters-aws-kops/
+    # https://kops.sigs.k8s.io/getting_started/aws
+    aws s3api put-bucket-versioning --bucket ${bucket_name} --versioning-configuration Status=Enabled
+    # enable s3 default encryption (AES-256, SSE-S3)
+    # https://kops.sigs.k8s.io/getting_started/aws
+    aws s3api put-bucket-encryption --bucket ${bucket_name} --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+    set +x
+    echo "Success"
+  fi
+}
+
 command="$1"
 case "${command}" in
     _create)
@@ -45,10 +67,7 @@ case "${command}" in
         sudo mv velero/velero /usr/local/bin/velero
         ;;
     _enable_velero)
-        if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_VELERO_S3_BUCKET}; then
-          echo "Error: S3 Bucket: ${K8S_EXP_VELERO_S3_BUCKET} does not exist"
-          exit 1
-        fi
+        create_s3_bucket ${K8S_EXP_VELERO_S3_BUCKET} ${K8S_EXP_REGION}
         set -x
         kubectl create namespace velero
         helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts

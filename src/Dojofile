@@ -1,2 +1,2 @@
 DOJO_DOCKER_IMAGE="kudulab/k8s-aws-dojo:0.1.0"
-DOJO_DOCKER_OPTIONS="-v $(pwd)/.kube:/home/dojo/.kube -p 8001:8001"
+DOJO_DOCKER_OPTIONS="-v $(pwd)/.kube:/home/dojo/.kube"

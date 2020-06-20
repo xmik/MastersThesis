@@ -110,8 +110,8 @@ case "${command}" in
 
         # deploy the cluster; --force is needed if "kops create cluster" was not run before
         set -x
-        kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
         kops replace -f ${config_file} --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" --force
+        kops create secret --name ${K8S_EXP_CLUSTER_NAME} --state "s3://${K8S_EXP_KOPS_S3_BUCKET}" sshpublickey admin -i ~/.ssh/id_rsa.pub
         set +x
 
         # print date, so that end user can expect how much longer to wait
@@ -151,10 +151,7 @@ case "${command}" in
         sudo mv velero/velero /usr/local/bin/velero
         ;;
     _enable_velero)
-        if aws s3api list-buckets | jq '.Buckets[]["Name"]' | grep ${K8S_EXP_VELERO_S3_BUCKET}; then
-          echo "Error: S3 Bucket: ${K8S_EXP_VELERO_S3_BUCKET} does not exist"
-          exit 1
-        fi
+        create_s3_bucket ${K8S_EXP_VELERO_S3_BUCKET} ${K8S_EXP_REGION}
         set -x
         kubectl create namespace velero
         helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts
