@@ -1,23 +1,23 @@
 \begin{abstract}
-{\scriptsize The presented master's thesis aims to deploy Kubernetes cluster on AWS cloud, in a production environment, using different deployment methods. The production environment is defined as an environment which satisfies selected requirements. The nine requirements were selected, including among others central logging, high availability and automation.}
+{\scriptsize The presented master’s thesis aims to \textbf{deploy Kubernetes cluster on AWS cloud, in a production environment, using two deployment methods}. The production environment is defined as an environment which satisfies selected requirements. The nine selected requirements included central logging, high availability, and automation.}
 
-{\scriptsize Two deployment methods were chosen: using kops and using eksctl. The methods are first theoretically research and described. Then, they are used in the empirical part to deploy Kubernetes clusters. The methods are a~great help and they facilitate the cluster deployment.}
+{\scriptsize Two deployment methods were chosen: using \textit{kops} and using  \textit{eksctl}. The methods were first theoretically researched and described. Then, they were used in the empirical part to deploy Kubernetes clusters. The methods were a~great help and they facilitated the clusters deployment.}
 
-{\scriptsize \textbf{These two methods of Kubernetes cluster deployment were compared} using several comparison criteria. The criteria contained, among others: time, cost and the verdict whether a deployment method can satisfy all the production environment requirements. The conclusion was that each method can be used for different use cases. For example: kops allows more configuration, whereas eksctl is easier to configure. Kops method was deemed faster (in relation to cluster operations) and cheaper.}
+{\scriptsize \textbf{These two methods of Kubernetes cluster deployment were compared}. Several comparison criteria included time, cost, and the verdict whether a method satisfied all the production environment requirements. The conclusion was that each method can be used for different use cases. \textit{Kops} allows more configuration, whereas  \textit{eksctl} is easier to configure. \textit{Kops} method was deemed faster (in relation to cluster operations) and cheaper.}
 
-{\scriptsize \textbf{Keywords:} Kubernetes, Amazon Web Services (AWS), Amazon Elastic Kubernetes Service (EKS), eksctl, kops, deployment, operations automation.}
+{\scriptsize \textbf{Keywords:} \textit{Kubernetes}, \textit{Amazon Web Services (AWS)}, \textit{Amazon Elastic Kubernetes Service (EKS)}, \textit{eksctl}, \textit{kops}, \textit{deployment}, \textit{operations automation}.}
 
 \\
 \begin{center}
 \textbf{Streszczenie}
 \end{center}
 
-{\scriptsize Celem tej pracy magisterskiej jest zainstalowanie i skonfigurowanie klustra Kubernetes na chmurze AWS, w~środowisku produkcyjnym, wykorzystując różne metody. Środowisko produkcyjne zdefiniowano jako takie środowisko, które spełnia wybrane wymagania. Wyselekcjonowano dziewięć wymagań, m. in.: centralny system logowania, High Availability oraz automatyzację operacji.}
+{\scriptsize Celem niniejszej pracy dyplomowej było \textbf{przeanalizowanie możliwości wykorzystania klastra Kubernetes w procesie produkcji oprogramowania w aspekcie instalacji i konfiguracji klastra na chmurze AWS na przykładzie dwóch wybranych metod}. Środowisko produkcyjne zdefiniowano jako takie środowisko, które spełnia wybrane wymagania produkcyjne – wyselekcjonowano dziewięć wymagań, m. in.: centralny system logowania, High Availability oraz automatyzacja operacji.}
 
-{\scriptsize Wybrano dwie metody wdrażana klustra Kubernetes: używając programu kops oraz programu eksctl. Metody te zostały najpierw poznane i opisane teoretycznie. Następnie, wykorzystano je w empirycznej części pracy. Obie metody stanowiły wielką pomoc w instalowaniu i konfiguracji klustra.}
+{\scriptsize Wybrano dwie metody wdrażana klastra Kubernetes: program \textit{kops} oraz program  \textit{eksctl}. Metody te zostały najpierw opisane teoretycznie, a następnie użyto ich w empirycznej części pracy. Obie metody stanowiły wielkie wsparcie w procesie instalowania i konfiguracji klastra.}
 
-{\scriptsize Następnie, \textbf{te dwie wybrane metody wdrażana klustra Kubernetes porównano}, wykorzystując parę kryteriów. Kryteria te dotyczyły m. in.: czasu, kosztu, sprawdzenia, czy każda z metod spełnia wybrane wymogi środowiska produkcyjnego. Po tym badaniu wysnuto wniosek, że każda z wybranych metod może być użyta w zależności od potrzeb. Na przykład: posługując się programem kops, dostępne jest więcej opcji konfigurujących kluster, a natomiast używając eksctl - konfiguracja jest łatwiejsza. Metoda używająca kops okazała się szybsza (jeśli chodzi o czas wykonywania operacji typu: stworzenie, przetestowanie, usunięcie klustra) i tańsza.}
+{\scriptsize Następnie, \textbf{obie wybrane metody wdrażana klastra Kubernetes porównano}, wykorzystując wybrane kryteria. Dotyczyły one m. in. czasu, kosztu, sprawdzenia, czy każda z metod spełnia wybrane wymogi środowiska produkcyjnego. Po tym badaniu wysnuto wniosek, że każda z wybranych metod może być użyta do wdrożenia klastra Kubernetes w zależności od konkretnych potrzeb deweloperów. Na przykład posługując się programem \textit{kops}, dostępnych jest więcej opcji konfigurujących klaster, a używając programu  \textit{eksctl} łatwiejsza staje się konfiguracja klastra. Metoda używająca \textit{kops} okazała się szybsza (jeśli chodzi o czas wykonywania operacji typu: tworzenie, przetestowanie, usuniecie klastra) i tańsza.}
 
+{\scriptsize \textbf{Słowa kluczowe:} \textit{klaster Kubernetes}, \textit{chmura Amazon Web Services (AWS)}, \textit{Amazon Elastic Kubernetes Service}, \textit{kops}, \textit{eksctl}.}
 
-{\scriptsize \textbf{Słowa kluczowe:} Kubernetes, Amazon Web Services (AWS), Amazon Elastic Kubernetes Service (EKS), eksctl, kops, deployment, automatyzacja operacji.}
 \end{abstract}
